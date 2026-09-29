@@ -1,11 +1,16 @@
+import type { Metadata } from "next";
 import AppHeader from "@/components/app/AppHeader";
 import AnalyticsScreen from "@/components/analytics/AnalyticsScreen";
 import Link from "next/link";
 
-export const metadata = {
-  title: "Analytics | TaskFlow",
+export const metadata: Metadata = {
+  title: "Productivity Analytics & Insights",
   description: "Productivity metrics, velocity, and completion trends in TaskFlow.",
+  alternates: {
+    canonical: "/analytics",
+  },
 };
+
 
 export default function AnalyticsPage() {
   return (

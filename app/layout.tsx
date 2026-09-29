@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import ServiceWorkerRegistrar from "@/components/app/ServiceWorkerRegistrar";
 import AppFooter from "@/components/app/AppFooter";
+import JsonLd from "@/components/app/JsonLd";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -14,15 +15,85 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const BASE_URL =
+  process.env.NEXT_PUBLIC_APP_URL || "https://taskflow-assignment.vercel.app";
+
 export const metadata: Metadata = {
-  title: "TaskFlow",
+  metadataBase: new URL(BASE_URL),
+  title: {
+    default: "TaskFlow - Modern Offline Productivity Suite",
+    template: "%s | TaskFlow",
+  },
   description:
-    "A single-user, offline-capable task and notes app with no sign-up and no server; all data lives in the browser.",
+    "A fast, single-user, offline-capable productivity suite featuring task management with drag-and-drop reordering, interactive calendar scheduling, Microsoft Word-style rich text notes, and productivity analytics.",
+  keywords: [
+    "productivity",
+    "task manager",
+    "to-do app",
+    "rich text notes",
+    "WYSIWYG editor",
+    "calendar schedule",
+    "productivity analytics",
+    "offline-first",
+    "PWA",
+    "IndexedDB",
+    "Next.js 16",
+    "HNG",
+  ],
+  authors: [
+    {
+      name: "Tolulope Folorunso",
+      url: "https://linkedin.com/in/tolulopebuilds/",
+    },
+  ],
+  creator: "Tolulope Folorunso",
+  publisher: "TaskFlow",
+  applicationName: "TaskFlow",
   icons: {
     icon: [
       { url: "/icon.svg", type: "image/svg+xml" },
     ],
     apple: "/apple-icon.png",
+  },
+  manifest: "/manifest.webmanifest",
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "/",
+    siteName: "TaskFlow",
+    title: "TaskFlow - Modern Offline Productivity Suite",
+    description:
+      "A fast, single-user, offline-capable productivity suite featuring task management with drag-and-drop reordering, interactive calendar scheduling, Microsoft Word-style rich text notes, and productivity analytics.",
+    images: [
+      {
+        url: "/apple-icon.png",
+        width: 512,
+        height: 512,
+        alt: "TaskFlow Vector Logo and Branding",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "TaskFlow - Modern Offline Productivity Suite",
+    description:
+      "A fast, single-user, offline-capable productivity suite featuring task management with drag-and-drop reordering, interactive calendar scheduling, Microsoft Word-style rich text notes, and productivity analytics.",
+    creator: "@tolulopebuilds",
+    images: ["/apple-icon.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  alternates: {
+    canonical: "/",
   },
 };
 
@@ -48,6 +119,7 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{ __html: themeInitializerScript }}
         />
+        <JsonLd />
       </head>
       <body className="min-h-full flex flex-col bg-bg text-text transition-colors duration-150">
         <ServiceWorkerRegistrar />
@@ -57,3 +129,4 @@ export default function RootLayout({
     </html>
   );
 }
+

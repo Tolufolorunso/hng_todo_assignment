@@ -1,11 +1,16 @@
+import type { Metadata } from "next";
 import AppHeader from "@/components/app/AppHeader";
 import CalendarScreen from "@/components/calendar/CalendarScreen";
 import Link from "next/link";
 
-export const metadata = {
-  title: "Calendar | TaskFlow",
+export const metadata: Metadata = {
+  title: "Calendar & Schedule",
   description: "Schedule and due date mapping for TaskFlow tasks.",
+  alternates: {
+    canonical: "/calendar",
+  },
 };
+
 
 export default function CalendarPage() {
   return (
