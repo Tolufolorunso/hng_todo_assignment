@@ -1,4 +1,5 @@
 import AppHeader from "@/components/app/AppHeader";
+import AnalyticsScreen from "@/components/analytics/AnalyticsScreen";
 import Link from "next/link";
 
 export const metadata = {
@@ -42,35 +43,7 @@ export default function AnalyticsPage() {
           </Link>
         </div>
 
-        {/* Preview Shell / Coming Soon card for Feature 13 */}
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-border/80 bg-surface p-12 text-center shadow-card">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-accent-soft text-accent">
-            <svg
-              width="32"
-              height="32"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M3 3v18h18" />
-              <path d="m19 9-5 5-4-4-3 3" />
-            </svg>
-          </div>
-          <h2 className="mt-5 text-lg font-semibold text-text">
-            Analytics & Velocity Insights
-          </h2>
-          <p className="mt-2 max-w-md text-sm text-muted">
-            The completion rate velocity gauges, category breakdown bars, and priority distribution charts are being provisioned in Milestone E.
-          </p>
-          <div className="mt-6 flex items-center gap-2 rounded-full border border-accent/20 bg-accent-soft px-3.5 py-1 text-xs font-medium text-accent">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />
-            Scheduled for Milestone E Feature 13
-          </div>
-        </div>
+        <AnalyticsScreen />
       </main>
     </>
   );
