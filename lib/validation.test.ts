@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   DESCRIPTION_MAX_LENGTH,
+  NOTE_BODY_MAX_LENGTH,
+  NOTE_TITLE_MAX_LENGTH,
   TITLE_MAX_LENGTH,
+  validateNoteInput,
+  validateNotePatch,
   validateTaskInput,
   validateTaskPatch,
 } from "@/lib/validation";
@@ -87,5 +91,79 @@ describe("validateTaskPatch", () => {
   it("leaves untouched fields out of the result", () => {
     const result = validateTaskPatch({ completed: true });
     expect(result.ok && Object.keys(result.value)).toEqual(["completed"]);
+  });
+});
+
+describe("validateNoteInput", () => {
+  it("accepts a valid note and trims the title and body", () => {
+    const result = validateNoteInput({ title: "  Meeting  ", body: " Agenda " });
+    expect(result).toEqual({ ok: true, value: { title: "Meeting", body: "Agenda" } });
+  });
+
+  it("defaults a missing body to an empty string", () => {
+    const result = validateNoteInput({ title: "Meeting" });
+    expect(result).toEqual({ ok: true, value: { title: "Meeting", body: "" } });
+  });
+
+  it("rejects an empty title with a required error", () => {
+    expect(validateNoteInput({ title: "" })).toEqual({
+      ok: false,
+      error: "Title is required.",
+    });
+  });
+
+  it("rejects a whitespace-only title", () => {
+    const result = validateNoteInput({ title: "   " });
+    expect(result.ok).toBe(false);
+  });
+
+  it("accepts a title exactly at the limit", () => {
+    const result = validateNoteInput({ title: "a".repeat(NOTE_TITLE_MAX_LENGTH) });
+    expect(result.ok).toBe(true);
+  });
+
+  it("rejects a title over the limit", () => {
+    const result = validateNoteInput({ title: "a".repeat(NOTE_TITLE_MAX_LENGTH + 1) });
+    expect(result.ok).toBe(false);
+  });
+
+  it("accepts a body exactly at the limit", () => {
+    const result = validateNoteInput({
+      title: "Note",
+      body: "a".repeat(NOTE_BODY_MAX_LENGTH),
+    });
+    expect(result.ok).toBe(true);
+  });
+
+  it("rejects a body over the limit", () => {
+    const result = validateNoteInput({
+      title: "Note",
+      body: "a".repeat(NOTE_BODY_MAX_LENGTH + 1),
+    });
+    expect(result.ok).toBe(false);
+  });
+});
+
+describe("validateNotePatch", () => {
+  it("returns an empty patch for an empty input", () => {
+    expect(validateNotePatch({})).toEqual({ ok: true, value: {} });
+  });
+
+  it("normalizes a provided title and body", () => {
+    expect(validateNotePatch({ title: " New ", body: " Body " })).toEqual({
+      ok: true,
+      value: { title: "New", body: "Body" },
+    });
+  });
+
+  it("rejects an empty title in a patch", () => {
+    expect(validateNotePatch({ title: "  " }).ok).toBe(false);
+  });
+
+  it("accepts a body-only patch", () => {
+    expect(validateNotePatch({ body: "Only body" })).toEqual({
+      ok: true,
+      value: { body: "Only body" },
+    });
   });
 });
