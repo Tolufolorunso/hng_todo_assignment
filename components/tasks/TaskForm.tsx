@@ -50,7 +50,7 @@ export default function TaskForm({ onAdded, onWriteError }: TaskFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-2" noValidate>
-      <label htmlFor="task-title" className="text-sm font-medium">
+      <label htmlFor="task-title" className="text-sm font-medium text-text">
         Add a task
       </label>
       <div className="flex gap-2">
@@ -64,18 +64,18 @@ export default function TaskForm({ onAdded, onWriteError }: TaskFormProps) {
           placeholder="What needs doing?"
           aria-invalid={error !== null}
           aria-describedby={error !== null ? ERROR_ID : undefined}
-          className="min-w-0 flex-1 rounded-lg border border-black/[.12] bg-transparent px-3 py-2 text-sm outline-none focus:border-indigo-500 dark:border-white/[.2]"
+          className="min-w-0 flex-1 rounded-control border border-border bg-surface px-3 py-2 text-sm text-text outline-none placeholder:text-faint focus:border-accent focus:ring-2 focus:ring-accent-soft"
         />
         <button
           type="submit"
           disabled={submitting}
-          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-500 disabled:opacity-60"
+          className="rounded-control bg-accent px-4 py-2 text-sm font-medium text-accent-ink transition-colors hover:bg-accent-hover disabled:opacity-60"
         >
           {submitting ? "Adding..." : "Add"}
         </button>
       </div>
       {error !== null && (
-        <p id={ERROR_ID} role="alert" className="text-sm text-red-600 dark:text-red-400">
+        <p id={ERROR_ID} role="alert" className="text-sm text-danger">
           {error}
         </p>
       )}

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import TaskForm from "@/components/tasks/TaskForm";
 import TaskItem from "@/components/tasks/TaskItem";
-import { TaskNotFoundError, listTasks, updateTask } from "@/lib/tasks";
+import { TaskNotFoundError, deleteTask, listTasks, updateTask } from "@/lib/tasks";
 import type { Task } from "@/types/task";
 
 type Status = "loading" | "ready" | "error";
@@ -54,12 +54,49 @@ export default function TasksScreen() {
     }
   }
 
+  async function handleUpdate(
+    task: Task,
+    patch: { title: string; description: string },
+  ): Promise<boolean> {
+    setMutationError(null);
+    setPendingId(task.id);
+    try {
+      await updateTask(task.id, patch);
+      await load();
+      return true;
+    } catch (caught) {
+      setMutationError(
+        caught instanceof TaskNotFoundError
+          ? "That task no longer exists. Reload the page to refresh the list."
+          : "Could not update the task. Please try again.",
+      );
+      return false;
+    } finally {
+      setPendingId(null);
+    }
+  }
+
+  async function handleDelete(task: Task): Promise<boolean> {
+    setMutationError(null);
+    setPendingId(task.id);
+    try {
+      await deleteTask(task.id);
+      await load();
+      return true;
+    } catch {
+      setMutationError("Could not delete the task. Please try again.");
+      return false;
+    } finally {
+      setPendingId(null);
+    }
+  }
+
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-6 py-12">
-      <h1 className="text-2xl font-semibold tracking-tight">Tasks</h1>
+      <h1 className="text-2xl font-semibold tracking-tight text-text">Tasks</h1>
 
       {status === "error" ? (
-        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+        <p role="alert" className="text-sm text-danger">
           Could not load your tasks. Reload the page to try again.
         </p>
       ) : (
@@ -67,19 +104,19 @@ export default function TasksScreen() {
       )}
 
       {mutationError !== null && (
-        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+        <p role="alert" className="text-sm text-danger">
           {mutationError}
         </p>
       )}
 
       {status === "loading" && (
-        <p role="status" className="text-sm text-zinc-500 dark:text-zinc-400">
+        <p role="status" className="text-sm text-muted">
           Loading tasks...
         </p>
       )}
 
       {status === "ready" && tasks.length === 0 && (
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">No tasks yet.</p>
+        <p className="text-sm text-muted">No tasks yet.</p>
       )}
 
       {status === "ready" && tasks.length > 0 && (
@@ -90,6 +127,8 @@ export default function TasksScreen() {
               task={task}
               disabled={pendingId !== null}
               onToggle={handleToggle}
+              onUpdate={handleUpdate}
+              onDelete={handleDelete}
             />
           ))}
         </ul>
