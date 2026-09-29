@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import ServiceWorkerRegistrar from "@/components/app/ServiceWorkerRegistrar";
+import AppFooter from "@/components/app/AppFooter";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -51,6 +52,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-bg text-text transition-colors duration-150">
         <ServiceWorkerRegistrar />
         {children}
+        <AppFooter />
       </body>
     </html>
   );
