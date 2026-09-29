@@ -17,6 +17,12 @@ export const metadata: Metadata = {
   title: "TaskFlow",
   description:
     "A single-user, offline-capable task and notes app with no sign-up and no server; all data lives in the browser.",
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
+    apple: "/apple-icon.png",
+  },
 };
 
 export const viewport: Viewport = {

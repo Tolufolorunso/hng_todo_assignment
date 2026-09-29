@@ -5,6 +5,7 @@ import Link from "next/link";
 import OfflineIndicator from "@/components/app/OfflineIndicator";
 import BackupModal from "@/components/backup/BackupModal";
 import ThemeToggle from "@/components/app/ThemeToggle";
+import TaskFlowLogo from "@/components/brand/TaskFlowLogo";
 
 interface AppHeaderProps {
   active: "tasks" | "notes" | "calendar" | "analytics";
@@ -110,20 +111,8 @@ export default function AppHeader({ active }: AppHeaderProps) {
           className="group flex items-center gap-2.5 text-text outline-none focus-visible:ring-2 focus-visible:ring-accent"
           aria-label="TaskFlow home"
         >
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-accent to-accent-hover text-accent-ink shadow-sm transition-transform group-hover:scale-105">
-            <svg
-              width="15"
-              height="15"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="3.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M20 6 9 17l-5-5" />
-            </svg>
+          <div className="flex h-8 w-8 items-center justify-center transition-transform group-hover:scale-105">
+            <TaskFlowLogo size={32} />
           </div>
           <span className="text-base font-semibold tracking-tight text-text">
             Task<span className="text-accent">Flow</span>
