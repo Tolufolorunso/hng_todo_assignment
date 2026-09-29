@@ -6,6 +6,7 @@ import OfflineIndicator from "@/components/app/OfflineIndicator";
 import BackupModal from "@/components/backup/BackupModal";
 import ThemeToggle from "@/components/app/ThemeToggle";
 import TaskFlowLogo from "@/components/brand/TaskFlowLogo";
+import MobileNavBar from "@/components/app/MobileNavBar";
 
 interface AppHeaderProps {
   active: "tasks" | "notes" | "calendar" | "analytics";
@@ -103,83 +104,89 @@ export default function AppHeader({ active }: AppHeaderProps) {
   const [isBackupOpen, setIsBackupOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-20 border-b border-border bg-bg/85 backdrop-blur-md transition-colors">
-      <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-6">
-        {/* Brand */}
-        <Link
-          href="/"
-          className="group flex items-center gap-2.5 text-text outline-none focus-visible:ring-2 focus-visible:ring-accent"
-          aria-label="TaskFlow home"
-        >
-          <div className="flex h-8 w-8 items-center justify-center transition-transform group-hover:scale-105">
-            <TaskFlowLogo size={32} />
-          </div>
-          <span className="text-base font-semibold tracking-tight text-text">
-            Task<span className="text-accent">Flow</span>
-          </span>
-        </Link>
-
-        {/* Navigation Tabs */}
-        <nav
-          aria-label="Main"
-          className="flex items-center gap-1 rounded-xl border border-border bg-surface-muted/80 p-1"
-        >
-          {NAV_ITEMS.map((item) => {
-            const isActive = active === item.key;
-            return (
-              <Link
-                key={item.key}
-                href={item.href}
-                aria-current={isActive ? "page" : undefined}
-                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
-                  isActive
-                    ? "border border-border/60 bg-surface text-text shadow-sm"
-                    : "text-muted hover:bg-surface/50 hover:text-text"
-                }`}
-              >
-                <span className={isActive ? "text-accent" : "text-faint"}>
-                  {item.icon}
-                </span>
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
-
-        {/* Header Right Utilities */}
-        <div className="flex items-center gap-2.5">
-          <ThemeToggle />
-          <button
-            type="button"
-            onClick={() => setIsBackupOpen(true)}
-            aria-label="Backup and restore data"
-            className="flex items-center gap-1.5 rounded-lg border border-border/80 bg-surface px-2.5 py-1.5 text-xs font-semibold text-text shadow-sm transition-all hover:border-border-strong hover:bg-surface-muted"
+    <>
+      <header className="sticky top-0 z-20 border-b border-border bg-bg/85 backdrop-blur-md transition-colors">
+        <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
+          {/* Brand */}
+          <Link
+            href="/"
+            className="group flex items-center gap-2.5 text-text outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            aria-label="TaskFlow home"
           >
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-            <span>Data</span>
-          </button>
-          <OfflineIndicator />
-        </div>
-      </div>
+            <div className="flex h-8 w-8 items-center justify-center transition-transform group-hover:scale-105">
+              <TaskFlowLogo size={32} />
+            </div>
+            <span className="text-base font-semibold tracking-tight text-text">
+              Task<span className="text-accent">Flow</span>
+            </span>
+          </Link>
 
-      <BackupModal
-        isOpen={isBackupOpen}
-        onClose={() => setIsBackupOpen(false)}
-      />
-    </header>
+          {/* Desktop Navigation Tabs */}
+          <nav
+            aria-label="Main navigation"
+            className="hidden sm:flex items-center gap-1 rounded-xl border border-border bg-surface-muted/80 p-1"
+          >
+            {NAV_ITEMS.map((item) => {
+              const isActive = active === item.key;
+              return (
+                <Link
+                  key={item.key}
+                  href={item.href}
+                  aria-current={isActive ? "page" : undefined}
+                  className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
+                    isActive
+                      ? "border border-border/60 bg-surface text-text shadow-sm"
+                      : "text-muted hover:bg-surface/50 hover:text-text"
+                  }`}
+                >
+                  <span className={isActive ? "text-accent" : "text-faint"}>
+                    {item.icon}
+                  </span>
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
+
+          {/* Header Right Utilities */}
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            <ThemeToggle />
+            <button
+              type="button"
+              onClick={() => setIsBackupOpen(true)}
+              aria-label="Backup and restore data"
+              className="flex items-center gap-1.5 rounded-lg border border-border/80 bg-surface px-2.5 py-1.5 text-xs font-semibold text-text shadow-sm transition-all hover:border-border-strong hover:bg-surface-muted active:scale-95"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              <span>Data</span>
+            </button>
+            <OfflineIndicator />
+          </div>
+        </div>
+
+        <BackupModal
+          isOpen={isBackupOpen}
+          onClose={() => setIsBackupOpen(false)}
+        />
+      </header>
+
+      {/* Mobile Bottom Navigation Bar */}
+      <MobileNavBar active={active} />
+    </>
   );
 }
+

@@ -74,7 +74,7 @@ export default function StandaloneNoteView({ id }: StandaloneNoteViewProps) {
 
   if (status === "loading") {
     return (
-      <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-6 py-12">
+      <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-8 pb-24 sm:px-6 sm:py-12 sm:pb-12">
         <div className="flex items-center gap-2 text-xs text-muted">
           <span className="h-4 w-4 animate-spin rounded-full border-2 border-accent border-t-transparent" />
           <span>Opening document...</span>
@@ -92,7 +92,7 @@ export default function StandaloneNoteView({ id }: StandaloneNoteViewProps) {
 
   if (status === "not_found") {
     return (
-      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col items-center justify-center gap-4 px-6 py-20 text-center">
+      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col items-center justify-center gap-4 px-4 py-16 pb-24 sm:px-6 sm:py-20 sm:pb-20 text-center">
         <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-border bg-surface text-muted shadow-sm">
           <svg
             width="24"
@@ -142,7 +142,7 @@ export default function StandaloneNoteView({ id }: StandaloneNoteViewProps) {
 
   if (status === "error" || !note) {
     return (
-      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col items-center justify-center gap-4 px-6 py-20 text-center">
+      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col items-center justify-center gap-4 px-4 py-16 pb-24 sm:px-6 sm:py-20 sm:pb-20 text-center">
         <div className="rounded-xl border border-danger/40 bg-danger-soft p-4 text-xs text-danger" role="alert">
           Could not load the requested note. Please try again.
         </div>
@@ -159,7 +159,7 @@ export default function StandaloneNoteView({ id }: StandaloneNoteViewProps) {
   const stats = calculateReadingStats(note.body);
 
   return (
-    <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-6 py-8 sm:py-12 print:max-w-full print:p-0">
+    <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-4 py-6 pb-24 sm:px-6 sm:py-12 sm:pb-12 print:max-w-full print:p-0">
       {/* Top Action Bar */}
       <nav
         aria-label="Document reader navigation"
