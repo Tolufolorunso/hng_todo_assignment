@@ -5,7 +5,7 @@ import {
   type TaskInput,
   type TaskPatch,
 } from "@/lib/validation";
-import type { Task } from "@/types/task";
+import type { Task, TaskPriority } from "@/types/task";
 
 export class TaskValidationError extends Error {
   constructor(message: string) {
@@ -107,4 +107,73 @@ export function isOverdue(task: Task, todayIso: string): boolean {
     return false;
   }
   return task.dueDate < todayIso;
+}
+
+export type TaskStatusFilter = "all" | "active" | "completed";
+export type TaskSortKey = "dueDate" | "priority" | "created";
+
+const PRIORITY_RANK: Record<TaskPriority, number> = {
+  high: 0,
+  medium: 1,
+  low: 2,
+};
+
+function byCreatedThenId(a: Task, b: Task): number {
+  if (a.createdAt !== b.createdAt) {
+    return a.createdAt < b.createdAt ? 1 : -1;
+  }
+  return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+}
+
+export function searchTasks(tasks: Task[], query: string): Task[] {
+  const needle = query.trim().toLowerCase();
+  if (needle === "") {
+    return tasks;
+  }
+  return tasks.filter(
+    (task) =>
+      task.title.toLowerCase().includes(needle) ||
+      task.description.toLowerCase().includes(needle),
+  );
+}
+
+export function filterTasksByStatus(
+  tasks: Task[],
+  status: TaskStatusFilter,
+): Task[] {
+  if (status === "active") {
+    return tasks.filter((task) => !task.completed);
+  }
+  if (status === "completed") {
+    return tasks.filter((task) => task.completed);
+  }
+  return tasks;
+}
+
+export function sortTasks(tasks: Task[], sort: TaskSortKey): Task[] {
+  const sorted = [...tasks];
+  sorted.sort((a, b) => {
+    if (sort === "created") {
+      return byCreatedThenId(a, b);
+    }
+    if (sort === "priority") {
+      const rank = PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority];
+      return rank !== 0 ? rank : byCreatedThenId(a, b);
+    }
+    // due date: ascending, with tasks that have no due date after dated ones
+    if (a.dueDate === null && b.dueDate === null) {
+      return byCreatedThenId(a, b);
+    }
+    if (a.dueDate === null) {
+      return 1;
+    }
+    if (b.dueDate === null) {
+      return -1;
+    }
+    if (a.dueDate !== b.dueDate) {
+      return a.dueDate < b.dueDate ? -1 : 1;
+    }
+    return byCreatedThenId(a, b);
+  });
+  return sorted;
 }

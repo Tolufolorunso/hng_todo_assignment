@@ -1,14 +1,20 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import TaskControls from "@/components/tasks/TaskControls";
 import TaskForm from "@/components/tasks/TaskForm";
 import TaskItem from "@/components/tasks/TaskItem";
 import {
   TaskNotFoundError,
   deleteTask,
+  filterTasksByStatus,
   listTasks,
+  searchTasks,
+  sortTasks,
   todayIsoDate,
   updateTask,
+  type TaskSortKey,
+  type TaskStatusFilter,
 } from "@/lib/tasks";
 import type { Task, TaskPriority } from "@/types/task";
 
@@ -20,6 +26,9 @@ export default function TasksScreen() {
   const [mutationError, setMutationError] = useState<string | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [todayIso] = useState(() => todayIsoDate());
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<TaskStatusFilter>("all");
+  const [sort, setSort] = useState<TaskSortKey>("created");
 
   const load = useCallback(
     () =>
@@ -103,6 +112,17 @@ export default function TasksScreen() {
     }
   }
 
+  const visibleTasks = sortTasks(
+    filterTasksByStatus(searchTasks(tasks, query), statusFilter),
+    sort,
+  );
+
+  function clearFilters() {
+    setQuery("");
+    setStatusFilter("all");
+    setSort("created");
+  }
+
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-6 py-12">
       <h1 className="text-2xl font-semibold tracking-tight text-text">Tasks</h1>
@@ -132,19 +152,51 @@ export default function TasksScreen() {
       )}
 
       {status === "ready" && tasks.length > 0 && (
-        <ul className="flex flex-col gap-2">
-          {tasks.map((task) => (
-            <TaskItem
-              key={task.id}
-              task={task}
-              todayIso={todayIso}
-              disabled={pendingId !== null}
-              onToggle={handleToggle}
-              onUpdate={handleUpdate}
-              onDelete={handleDelete}
-            />
-          ))}
-        </ul>
+        <>
+          <TaskControls
+            query={query}
+            status={statusFilter}
+            sort={sort}
+            disabled={pendingId !== null}
+            onQueryChange={setQuery}
+            onStatusChange={setStatusFilter}
+            onSortChange={setSort}
+          />
+
+          {visibleTasks.length === 0 ? (
+            <div className="rounded-card border border-border bg-surface p-6 text-center">
+              <p className="text-sm font-medium text-text">
+                No tasks match your view
+              </p>
+              <p className="mt-1 text-sm text-muted">
+                {query.trim() !== ""
+                  ? `Nothing matches "${query.trim()}".`
+                  : "No tasks in this status."}
+              </p>
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="mt-3 rounded-control border border-border bg-surface px-3 py-1.5 text-sm font-medium text-text transition-colors hover:border-border-strong"
+              >
+                Clear filters
+              </button>
+            </div>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {visibleTasks.map((task) => (
+                <TaskItem
+                  key={task.id}
+                  task={task}
+                  todayIso={todayIso}
+                  disabled={pendingId !== null}
+                  onToggle={handleToggle}
+                  onUpdate={handleUpdate}
+                  onDelete={handleDelete}
+                />
+              ))}
+            </ul>
+          )}
+        </>
       )}
     </main>
   );

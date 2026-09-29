@@ -5,9 +5,12 @@ import {
   TaskValidationError,
   createTask,
   deleteTask,
+  filterTasksByStatus,
   getTask,
   isOverdue,
   listTasks,
+  searchTasks,
+  sortTasks,
   todayIsoDate,
   updateTask,
 } from "@/lib/tasks";
@@ -240,5 +243,123 @@ describe("isOverdue", () => {
     expect(
       isOverdue(task({ dueDate: "2026-05-31", completed: true }), "2026-06-01"),
     ).toBe(false);
+  });
+});
+
+function makeTask(overrides: Partial<Task> & { id: string }): Task {
+  return {
+    title: `Task ${overrides.id}`,
+    description: "",
+    completed: false,
+    priority: "medium",
+    dueDate: null,
+    createdAt: "2026-01-01T00:00:00.000Z",
+    updatedAt: "2026-01-01T00:00:00.000Z",
+    completedAt: null,
+    ...overrides,
+  };
+}
+
+describe("searchTasks", () => {
+  const tasks = [
+    makeTask({ id: "1", title: "Buy milk", description: "and eggs" }),
+    makeTask({ id: "2", title: "Write report", description: "about Milk prices" }),
+    makeTask({ id: "3", title: "Call plumber" }),
+  ];
+
+  it("returns the input for a blank query", () => {
+    expect(searchTasks(tasks, "   ")).toBe(tasks);
+  });
+
+  it("matches titles case-insensitively", () => {
+    expect(searchTasks(tasks, "REPORT").map((t) => t.id)).toEqual(["2"]);
+  });
+
+  it("matches descriptions case-insensitively", () => {
+    expect(searchTasks(tasks, "eggs").map((t) => t.id)).toEqual(["1"]);
+  });
+
+  it("trims the query and matches across title and description", () => {
+    expect(searchTasks(tasks, "  milk  ").map((t) => t.id)).toEqual(["1", "2"]);
+  });
+
+  it("returns an empty array when nothing matches", () => {
+    expect(searchTasks(tasks, "zzz")).toEqual([]);
+  });
+});
+
+describe("filterTasksByStatus", () => {
+  const tasks = [
+    makeTask({ id: "1", completed: false }),
+    makeTask({ id: "2", completed: true }),
+    makeTask({ id: "3", completed: false }),
+  ];
+
+  it("returns the input for all", () => {
+    expect(filterTasksByStatus(tasks, "all")).toBe(tasks);
+  });
+
+  it("keeps incomplete tasks for active", () => {
+    expect(filterTasksByStatus(tasks, "active").map((t) => t.id)).toEqual(["1", "3"]);
+  });
+
+  it("keeps completed tasks for completed", () => {
+    expect(filterTasksByStatus(tasks, "completed").map((t) => t.id)).toEqual(["2"]);
+  });
+});
+
+describe("sortTasks", () => {
+  it("sorts by created descending with id tie-break", () => {
+    const tasks = [
+      makeTask({ id: "b", createdAt: "2026-01-02T00:00:00.000Z" }),
+      makeTask({ id: "a", createdAt: "2026-01-02T00:00:00.000Z" }),
+      makeTask({ id: "c", createdAt: "2026-01-03T00:00:00.000Z" }),
+    ];
+    expect(sortTasks(tasks, "created").map((t) => t.id)).toEqual(["c", "a", "b"]);
+  });
+
+  it("sorts by priority high, then medium, then low", () => {
+    const tasks = [
+      makeTask({ id: "low", priority: "low" }),
+      makeTask({ id: "high", priority: "high" }),
+      makeTask({ id: "medium", priority: "medium" }),
+    ];
+    expect(sortTasks(tasks, "priority").map((t) => t.id)).toEqual([
+      "high",
+      "medium",
+      "low",
+    ]);
+  });
+
+  it("sorts by due date ascending with null dates last", () => {
+    const tasks = [
+      makeTask({ id: "none", dueDate: null }),
+      makeTask({ id: "late", dueDate: "2026-06-01" }),
+      makeTask({ id: "soon", dueDate: "2026-05-01" }),
+    ];
+    expect(sortTasks(tasks, "dueDate").map((t) => t.id)).toEqual([
+      "soon",
+      "late",
+      "none",
+    ]);
+  });
+
+  it("breaks equal sort keys by created descending then id ascending", () => {
+    const tasks = [
+      makeTask({ id: "b", dueDate: "2026-05-01", createdAt: "2026-01-01T00:00:00.000Z" }),
+      makeTask({ id: "a", dueDate: "2026-05-01", createdAt: "2026-01-01T00:00:00.000Z" }),
+      makeTask({ id: "c", dueDate: "2026-05-01", createdAt: "2026-01-02T00:00:00.000Z" }),
+    ];
+    expect(sortTasks(tasks, "dueDate").map((t) => t.id)).toEqual(["c", "a", "b"]);
+  });
+
+  it("does not mutate the input array", () => {
+    const tasks = [
+      makeTask({ id: "1", priority: "low" }),
+      makeTask({ id: "2", priority: "high" }),
+    ];
+    const before = tasks.map((t) => t.id);
+    sortTasks(tasks, "priority");
+    expect(tasks.map((t) => t.id)).toEqual(before);
   });
 });
