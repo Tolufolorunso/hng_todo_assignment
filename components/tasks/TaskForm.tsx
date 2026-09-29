@@ -1,8 +1,13 @@
 "use client";
 
 import { useRef, useState } from "react";
+import WysiwygEditor from "@/components/notes/WysiwygEditor";
 import { TaskValidationError, createTask } from "@/lib/tasks";
-import { TITLE_MAX_LENGTH, validateTaskInput } from "@/lib/validation";
+import {
+  DESCRIPTION_MAX_LENGTH,
+  TITLE_MAX_LENGTH,
+  validateTaskInput,
+} from "@/lib/validation";
 import type { TaskCategory } from "@/types/task";
 
 interface TaskFormProps {
@@ -22,6 +27,8 @@ const CATEGORIES: { value: TaskCategory; label: string; activeClass: string }[] 
 
 export default function TaskForm({ onAdded, onWriteError }: TaskFormProps) {
   const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [showDetails, setShowDetails] = useState(false);
   const [category, setCategory] = useState<TaskCategory | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -30,7 +37,7 @@ export default function TaskForm({ onAdded, onWriteError }: TaskFormProps) {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const validation = validateTaskInput({ title, category });
+    const validation = validateTaskInput({ title, description, category });
     if (!validation.ok) {
       setError(validation.error);
       inputRef.current?.focus();
@@ -42,10 +49,13 @@ export default function TaskForm({ onAdded, onWriteError }: TaskFormProps) {
     try {
       await createTask({
         title: validation.value.title,
+        description: validation.value.description,
         category: validation.value.category,
       });
       setTitle("");
+      setDescription("");
       setCategory(null);
+      setShowDetails(false);
       await onAdded();
     } catch (caught) {
       const message =
@@ -120,10 +130,10 @@ export default function TaskForm({ onAdded, onWriteError }: TaskFormProps) {
         </button>
       </div>
 
-      {/* Category selection chips */}
-      <div className="flex flex-wrap items-center gap-2 pt-0.5">
-        <span className="text-[11px] font-medium text-muted">Category:</span>
+      {/* Category selection chips & Details toggle */}
+      <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5">
         <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Select task category">
+          <span className="text-[11px] font-medium text-muted mr-1">Category:</span>
           {CATEGORIES.map((cat) => {
             const isSelected = category === cat.value;
             return (
@@ -144,7 +154,50 @@ export default function TaskForm({ onAdded, onWriteError }: TaskFormProps) {
             );
           })}
         </div>
+
+        <button
+          type="button"
+          onClick={() => setShowDetails(!showDetails)}
+          disabled={submitting}
+          className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-medium transition-all ${
+            showDetails
+              ? "border border-accent/40 bg-accent/15 text-accent"
+              : "border border-border/70 bg-surface-muted/40 text-muted hover:border-border-strong hover:text-text"
+          }`}
+          aria-expanded={showDetails}
+          aria-label="Toggle rich formatted details"
+        >
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M12 20h9" />
+            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+          </svg>
+          <span>{showDetails ? "Hide Details" : "+ Add Details"}</span>
+        </button>
       </div>
+
+      {/* Expandable Rich Text Description Editor */}
+      {showDetails && (
+        <div className="mt-1 overflow-hidden rounded-xl border border-border bg-surface shadow-xs transition-all focus-within:border-accent focus-within:ring-2 focus-within:ring-accent-soft">
+          <WysiwygEditor
+            value={description}
+            onChange={setDescription}
+            disabled={submitting}
+            placeholder="Add formatted details, lists, headings, or notes... Format with the ribbon above."
+            ariaLabel="Task description rich text editor"
+            maxLength={DESCRIPTION_MAX_LENGTH}
+          />
+        </div>
+      )}
 
       {error !== null && (
         <p id={ERROR_ID} role="alert" className="flex items-center gap-1 text-xs font-medium text-danger">

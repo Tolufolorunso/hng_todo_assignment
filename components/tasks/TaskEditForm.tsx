@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import WysiwygEditor from "@/components/notes/WysiwygEditor";
 import {
   DESCRIPTION_MAX_LENGTH,
   TITLE_MAX_LENGTH,
@@ -58,7 +59,6 @@ export default function TaskEditForm({
   >(null);
   const [saving, setSaving] = useState(false);
   const titleRef = useRef<HTMLInputElement>(null);
-  const descriptionRef = useRef<HTMLTextAreaElement>(null);
   const priorityRef = useRef<HTMLSelectElement>(null);
   const dueDateRef = useRef<HTMLInputElement>(null);
   const categoryRef = useRef<HTMLSelectElement>(null);
@@ -75,14 +75,10 @@ export default function TaskEditForm({
       const field = focusFieldFor(validation.error);
       setError(validation.error);
       setErrorField(field);
-      const refs = {
-        title: titleRef,
-        description: descriptionRef,
-        priority: priorityRef,
-        dueDate: dueDateRef,
-        category: categoryRef,
-      };
-      refs[field].current?.focus();
+      if (field === "title") titleRef.current?.focus();
+      else if (field === "priority") priorityRef.current?.focus();
+      else if (field === "dueDate") dueDateRef.current?.focus();
+      else if (field === "category") categoryRef.current?.focus();
       return;
     }
 
@@ -122,20 +118,20 @@ export default function TaskEditForm({
           htmlFor="task-edit-description"
           className="text-xs font-semibold text-muted"
         >
-          Description
+          Description (Microsoft Word-style Rich Text)
         </label>
-        <textarea
-          id="task-edit-description"
-          ref={descriptionRef}
-          value={description}
-          onChange={(event) => setDescription(event.target.value)}
-          maxLength={DESCRIPTION_MAX_LENGTH}
-          rows={3}
-          placeholder="Add details, context, or notes..."
-          aria-invalid={errorField === "description"}
-          aria-describedby={errorField === "description" ? ERROR_ID : undefined}
-          className="resize-y rounded-xl border border-border bg-surface px-3.5 py-2 text-sm text-text outline-none placeholder:text-faint transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft"
-        />
+        <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-xs transition-all focus-within:border-accent focus-within:ring-2 focus-within:ring-accent-soft">
+          <WysiwygEditor
+            value={description}
+            onChange={setDescription}
+            disabled={busy}
+            placeholder="Add details, context, lists, or notes... Format with the ribbon above."
+            ariaLabel="Task description rich text editor"
+            ariaInvalid={errorField === "description"}
+            ariaDescribedBy={errorField === "description" ? ERROR_ID : undefined}
+            maxLength={DESCRIPTION_MAX_LENGTH}
+          />
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">

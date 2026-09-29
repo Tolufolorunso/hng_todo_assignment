@@ -336,6 +336,15 @@ describe("searchTasks", () => {
   it("returns an empty array when nothing matches", () => {
     expect(searchTasks(tasks, "zzz")).toEqual([]);
   });
+
+  it("matches plain text inside formatted HTML tags in description", () => {
+    const htmlTasks = [
+      makeTask({ id: "h1", title: "Review", description: "<p>Check the <b>quarterly</b> budget</p>" }),
+      makeTask({ id: "h2", title: "Plan", description: "<ul><li>apples &amp; oranges</li></ul>" }),
+    ];
+    expect(searchTasks(htmlTasks, "quarterly").map((t) => t.id)).toEqual(["h1"]);
+    expect(searchTasks(htmlTasks, "oranges").map((t) => t.id)).toEqual(["h2"]);
+  });
 });
 
 describe("filterTasksByStatus", () => {

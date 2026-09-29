@@ -1,7 +1,7 @@
 import type { TaskCategory, TaskPriority } from "@/types/task";
 
 export const TITLE_MAX_LENGTH = 200;
-export const DESCRIPTION_MAX_LENGTH = 2000;
+export const DESCRIPTION_MAX_LENGTH = 20000;
 
 const TASK_PRIORITY_VALUES: readonly TaskPriority[] = ["low", "medium", "high"];
 const DEFAULT_TASK_PRIORITY: TaskPriority = "medium";

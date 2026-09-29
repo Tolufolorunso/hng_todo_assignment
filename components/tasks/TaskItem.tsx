@@ -3,6 +3,7 @@
 import { useState } from "react";
 import TaskEditForm from "@/components/tasks/TaskEditForm";
 import { isOverdue } from "@/lib/tasks";
+import { stripHtmlToText } from "@/lib/html";
 import type { Task, TaskCategory, TaskPriority } from "@/types/task";
 
 interface TaskItemProps {
@@ -85,6 +86,7 @@ export default function TaskItem({
   onDelete,
 }: TaskItemProps) {
   const [mode, setMode] = useState<Mode>("view");
+  const [expanded, setExpanded] = useState(false);
   const checkboxId = `task-${task.id}`;
   const overdue = isOverdue(task, todayIso);
 
@@ -243,15 +245,48 @@ export default function TaskItem({
         >
           {task.title}
         </label>
-        {task.description !== "" && (
-          <p
-            className={`mt-1 text-xs leading-relaxed ${
-              task.completed ? "text-faint line-through" : "text-muted"
-            }`}
-          >
-            {task.description}
-          </p>
-        )}
+        {task.description !== "" && (() => {
+          const hasHtml = /<[a-z][\s\S]*>/i.test(task.description);
+          const plain = stripHtmlToText(task.description);
+          const isLong = plain.length > 180;
+
+          return (
+            <div className="mt-1.5">
+              <div
+                className={`text-xs leading-relaxed transition-all
+                  [&_h1]:text-sm [&_h1]:font-bold [&_h1]:my-1.5
+                  [&_h2]:text-xs [&_h2]:font-bold [&_h2]:my-1
+                  [&_h3]:text-xs [&_h3]:font-semibold [&_h3]:my-1
+                  [&_b]:font-semibold [&_strong]:font-semibold
+                  [&_i]:italic [&_em]:italic
+                  [&_u]:underline
+                  [&_s]:line-through
+                  [&_blockquote]:border-l-2 [&_blockquote]:border-accent/60 [&_blockquote]:pl-2.5 [&_blockquote]:italic [&_blockquote]:my-1
+                  [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:my-1
+                  [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:my-1
+                  [&_li]:my-0.5
+                  [&_p]:my-1
+                  ${task.completed ? "text-faint opacity-60" : "text-muted"}
+                  ${isLong && !expanded ? "line-clamp-3 overflow-hidden" : ""}`}
+              >
+                {hasHtml ? (
+                  <div dangerouslySetInnerHTML={{ __html: task.description }} />
+                ) : (
+                  <p className="whitespace-pre-wrap">{task.description}</p>
+                )}
+              </div>
+              {isLong && (
+                <button
+                  type="button"
+                  onClick={() => setExpanded(!expanded)}
+                  className="mt-1 text-[11px] font-semibold text-accent hover:underline"
+                >
+                  {expanded ? "Show less" : "Show more"}
+                </button>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Badges */}
         <div className="mt-2.5 flex flex-wrap items-center gap-2">

@@ -109,6 +109,18 @@ describe("validateTaskInput", () => {
     expect(result.ok).toBe(false);
   });
 
+  it("accepts rich HTML markup in task description up to the limit", () => {
+    const htmlDescription = "<p>Task details with <b>bold text</b> and <i>formatting</i></p>";
+    const result = validateTaskInput({
+      title: "Task with HTML",
+      description: htmlDescription,
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.description).toBe(htmlDescription);
+    }
+  });
+
   it("defaults a missing priority to medium and a missing due date to null", () => {
     expect(validateTaskInput({ title: "Task" })).toEqual({
       ok: true,

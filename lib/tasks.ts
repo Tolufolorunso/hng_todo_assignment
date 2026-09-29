@@ -1,4 +1,5 @@
 import { getDb } from "@/lib/db";
+import { stripHtmlToText } from "@/lib/html";
 import {
   validateTaskInput,
   validateTaskPatch,
@@ -146,11 +147,13 @@ export function searchTasks(tasks: Task[], query: string): Task[] {
   if (needle === "") {
     return tasks;
   }
-  return tasks.filter(
-    (task) =>
-      task.title.toLowerCase().includes(needle) ||
-      task.description.toLowerCase().includes(needle),
-  );
+  return tasks.filter((task) => {
+    if (task.title.toLowerCase().includes(needle)) {
+      return true;
+    }
+    const plain = stripHtmlToText(task.description).toLowerCase();
+    return plain.includes(needle) || task.description.toLowerCase().includes(needle);
+  });
 }
 
 export function filterTasksByStatus(
