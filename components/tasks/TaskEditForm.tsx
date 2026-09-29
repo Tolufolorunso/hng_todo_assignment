@@ -6,19 +6,33 @@ import {
   TITLE_MAX_LENGTH,
   validateTaskInput,
 } from "@/lib/validation";
-import type { Task } from "@/types/task";
+import type { Task, TaskPriority } from "@/types/task";
 
 interface TaskEditFormProps {
   task: Task;
   disabled: boolean;
-  onSave: (patch: { title: string; description: string }) => Promise<boolean>;
+  onSave: (patch: {
+    title: string;
+    description: string;
+    priority: TaskPriority;
+    dueDate: string | null;
+  }) => Promise<boolean>;
   onCancel: () => void;
 }
 
 const ERROR_ID = "task-edit-error";
 
-function focusFieldFor(error: string): "title" | "description" {
-  return error.startsWith("Description") ? "description" : "title";
+function focusFieldFor(error: string): "title" | "description" | "priority" | "dueDate" {
+  if (error.startsWith("Description")) {
+    return "description";
+  }
+  if (error.startsWith("Priority")) {
+    return "priority";
+  }
+  if (error.startsWith("Due date")) {
+    return "dueDate";
+  }
+  return "title";
 }
 
 export default function TaskEditForm({
@@ -29,13 +43,17 @@ export default function TaskEditForm({
 }: TaskEditFormProps) {
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description);
+  const [priority, setPriority] = useState<TaskPriority>(task.priority);
+  const [dueDate, setDueDate] = useState(task.dueDate ?? "");
   const [error, setError] = useState<string | null>(null);
-  const [errorField, setErrorField] = useState<"title" | "description" | null>(
-    null,
-  );
+  const [errorField, setErrorField] = useState<
+    "title" | "description" | "priority" | "dueDate" | null
+  >(null);
   const [saving, setSaving] = useState(false);
   const titleRef = useRef<HTMLInputElement>(null);
   const descriptionRef = useRef<HTMLTextAreaElement>(null);
+  const priorityRef = useRef<HTMLSelectElement>(null);
+  const dueDateRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     titleRef.current?.focus();
@@ -44,12 +62,18 @@ export default function TaskEditForm({
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const validation = validateTaskInput({ title, description });
+    const validation = validateTaskInput({ title, description, priority, dueDate });
     if (!validation.ok) {
       const field = focusFieldFor(validation.error);
       setError(validation.error);
       setErrorField(field);
-      (field === "title" ? titleRef : descriptionRef).current?.focus();
+      const refs = {
+        title: titleRef,
+        description: descriptionRef,
+        priority: priorityRef,
+        dueDate: dueDateRef,
+      };
+      refs[field].current?.focus();
       return;
     }
 
@@ -103,6 +127,46 @@ export default function TaskEditForm({
           aria-describedby={errorField === "description" ? ERROR_ID : undefined}
           className="resize-y rounded-control border border-border bg-surface px-3 py-2 text-sm text-text outline-none placeholder:text-faint focus:border-accent focus:ring-2 focus:ring-accent-soft"
         />
+      </div>
+
+      <div className="flex flex-wrap gap-3">
+        <div className="flex flex-col gap-1">
+          <label
+            htmlFor="task-edit-priority"
+            className="text-xs font-medium text-muted"
+          >
+            Priority
+          </label>
+          <select
+            id="task-edit-priority"
+            ref={priorityRef}
+            value={priority}
+            onChange={(event) => setPriority(event.target.value as TaskPriority)}
+            aria-invalid={errorField === "priority"}
+            aria-describedby={errorField === "priority" ? ERROR_ID : undefined}
+            className="rounded-control border border-border bg-surface px-3 py-2 text-sm text-text outline-none focus:border-accent focus:ring-2 focus:ring-accent-soft"
+          >
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label htmlFor="task-edit-due" className="text-xs font-medium text-muted">
+            Due date
+          </label>
+          <input
+            id="task-edit-due"
+            ref={dueDateRef}
+            type="date"
+            value={dueDate}
+            onChange={(event) => setDueDate(event.target.value)}
+            aria-invalid={errorField === "dueDate"}
+            aria-describedby={errorField === "dueDate" ? ERROR_ID : undefined}
+            className="rounded-control border border-border bg-surface px-3 py-2 text-sm text-text outline-none focus:border-accent focus:ring-2 focus:ring-accent-soft"
+          />
+        </div>
       </div>
 
       {error !== null && (

@@ -5,6 +5,8 @@ export interface Task {
   title: string;
   description: string;
   completed: boolean;
+  priority: TaskPriority;
+  dueDate: string | null;
   createdAt: string;
   updatedAt: string;
   completedAt: string | null;

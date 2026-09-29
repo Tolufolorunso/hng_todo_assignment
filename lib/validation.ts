@@ -1,5 +1,11 @@
+import type { TaskPriority } from "@/types/task";
+
 export const TITLE_MAX_LENGTH = 200;
 export const DESCRIPTION_MAX_LENGTH = 2000;
+
+const TASK_PRIORITY_VALUES: readonly TaskPriority[] = ["low", "medium", "high"];
+const DEFAULT_TASK_PRIORITY: TaskPriority = "medium";
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 export type ValidationResult<T> =
   | { ok: true; value: T }
@@ -8,23 +14,31 @@ export type ValidationResult<T> =
 export interface TaskInput {
   title: string;
   description?: string;
+  priority?: TaskPriority;
+  dueDate?: string | null;
 }
 
 export interface ValidTaskInput {
   title: string;
   description: string;
+  priority: TaskPriority;
+  dueDate: string | null;
 }
 
 export interface TaskPatch {
   title?: string;
   description?: string;
   completed?: boolean;
+  priority?: TaskPriority;
+  dueDate?: string | null;
 }
 
 export interface ValidTaskPatch {
   title?: string;
   description?: string;
   completed?: boolean;
+  priority?: TaskPriority;
+  dueDate?: string | null;
 }
 
 function validateTitle(raw: string): ValidationResult<string> {
@@ -52,6 +66,39 @@ function validateDescription(raw: string): ValidationResult<string> {
   return { ok: true, value: description };
 }
 
+function validatePriority(
+  raw: TaskPriority | undefined,
+): ValidationResult<TaskPriority> {
+  if (raw === undefined) {
+    return { ok: true, value: DEFAULT_TASK_PRIORITY };
+  }
+  if (typeof raw !== "string" || !TASK_PRIORITY_VALUES.includes(raw)) {
+    return { ok: false, error: "Priority must be low, medium, or high." };
+  }
+  return { ok: true, value: raw };
+}
+
+function validateDueDate(
+  raw: string | null | undefined,
+): ValidationResult<string | null> {
+  if (raw === undefined || raw === null || raw === "") {
+    return { ok: true, value: null };
+  }
+  if (typeof raw !== "string" || !DATE_ONLY_PATTERN.test(raw)) {
+    return { ok: false, error: "Due date must be a valid date." };
+  }
+  const [year, month, day] = raw.split("-").map(Number);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+  const isRealDate =
+    parsed.getUTCFullYear() === year &&
+    parsed.getUTCMonth() === month - 1 &&
+    parsed.getUTCDate() === day;
+  if (!isRealDate) {
+    return { ok: false, error: "Due date must be a valid date." };
+  }
+  return { ok: true, value: raw };
+}
+
 export function validateTaskInput(input: TaskInput): ValidationResult<ValidTaskInput> {
   const title = validateTitle(input.title);
   if (!title.ok) {
@@ -61,7 +108,23 @@ export function validateTaskInput(input: TaskInput): ValidationResult<ValidTaskI
   if (!description.ok) {
     return description;
   }
-  return { ok: true, value: { title: title.value, description: description.value } };
+  const priority = validatePriority(input.priority);
+  if (!priority.ok) {
+    return priority;
+  }
+  const dueDate = validateDueDate(input.dueDate);
+  if (!dueDate.ok) {
+    return dueDate;
+  }
+  return {
+    ok: true,
+    value: {
+      title: title.value,
+      description: description.value,
+      priority: priority.value,
+      dueDate: dueDate.value,
+    },
+  };
 }
 
 export function validateTaskPatch(patch: TaskPatch): ValidationResult<ValidTaskPatch> {
@@ -88,6 +151,22 @@ export function validateTaskPatch(patch: TaskPatch): ValidationResult<ValidTaskP
       return { ok: false, error: "Completed must be a boolean." };
     }
     value.completed = patch.completed;
+  }
+
+  if (patch.priority !== undefined) {
+    const priority = validatePriority(patch.priority);
+    if (!priority.ok) {
+      return priority;
+    }
+    value.priority = priority.value;
+  }
+
+  if (patch.dueDate !== undefined) {
+    const dueDate = validateDueDate(patch.dueDate);
+    if (!dueDate.ok) {
+      return dueDate;
+    }
+    value.dueDate = dueDate.value;
   }
 
   return { ok: true, value };

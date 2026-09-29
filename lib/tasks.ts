@@ -41,6 +41,8 @@ export async function createTask(input: TaskInput): Promise<Task> {
     title: validation.value.title,
     description: validation.value.description,
     completed: false,
+    priority: validation.value.priority,
+    dueDate: validation.value.dueDate,
     createdAt: timestamp,
     updatedAt: timestamp,
     completedAt: null,
@@ -91,4 +93,18 @@ export async function updateTask(id: string, patch: TaskPatch): Promise<Task> {
 export async function deleteTask(id: string): Promise<void> {
   const db = await getDb();
   await db.delete("tasks", id);
+}
+
+export function todayIsoDate(now: Date = new Date()): string {
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+export function isOverdue(task: Task, todayIso: string): boolean {
+  if (task.completed || task.dueDate === null) {
+    return false;
+  }
+  return task.dueDate < todayIso;
 }

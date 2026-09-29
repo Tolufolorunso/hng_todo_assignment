@@ -13,12 +13,23 @@ import {
 describe("validateTaskInput", () => {
   it("accepts a valid task and trims the title", () => {
     const result = validateTaskInput({ title: "  Buy milk  ", description: " 2 litres " });
-    expect(result).toEqual({ ok: true, value: { title: "Buy milk", description: "2 litres" } });
+    expect(result).toEqual({
+      ok: true,
+      value: {
+        title: "Buy milk",
+        description: "2 litres",
+        priority: "medium",
+        dueDate: null,
+      },
+    });
   });
 
   it("defaults a missing description to an empty string", () => {
     const result = validateTaskInput({ title: "Buy milk" });
-    expect(result).toEqual({ ok: true, value: { title: "Buy milk", description: "" } });
+    expect(result).toEqual({
+      ok: true,
+      value: { title: "Buy milk", description: "", priority: "medium", dueDate: null },
+    });
   });
 
   it("rejects a whitespace-only title", () => {
@@ -56,6 +67,42 @@ describe("validateTaskInput", () => {
     });
     expect(result.ok).toBe(false);
   });
+
+  it("defaults a missing priority to medium and a missing due date to null", () => {
+    expect(validateTaskInput({ title: "Task" })).toEqual({
+      ok: true,
+      value: { title: "Task", description: "", priority: "medium", dueDate: null },
+    });
+  });
+
+  it("accepts each valid priority", () => {
+    for (const priority of ["low", "medium", "high"] as const) {
+      const result = validateTaskInput({ title: "Task", priority });
+      expect(result.ok && result.value.priority).toBe(priority);
+    }
+  });
+
+  it("rejects an unknown priority", () => {
+    expect(validateTaskInput({ title: "Task", priority: "urgent" as never }).ok).toBe(
+      false,
+    );
+  });
+
+  it("accepts a real date-only due date", () => {
+    const result = validateTaskInput({ title: "Task", dueDate: "2026-02-28" });
+    expect(result.ok && result.value.dueDate).toBe("2026-02-28");
+  });
+
+  it("clears an empty due date to null", () => {
+    const result = validateTaskInput({ title: "Task", dueDate: "" });
+    expect(result.ok && result.value.dueDate).toBeNull();
+  });
+
+  it("rejects malformed and impossible due dates", () => {
+    for (const dueDate of ["2026-2-3", "2026-13-01", "2026-02-30", "nope", "2026/02/03"]) {
+      expect(validateTaskInput({ title: "Task", dueDate }).ok).toBe(false);
+    }
+  });
 });
 
 describe("validateTaskPatch", () => {
@@ -91,6 +138,30 @@ describe("validateTaskPatch", () => {
   it("leaves untouched fields out of the result", () => {
     const result = validateTaskPatch({ completed: true });
     expect(result.ok && Object.keys(result.value)).toEqual(["completed"]);
+  });
+
+  it("does not inject priority or due date defaults into a patch", () => {
+    const result = validateTaskPatch({ title: "Keep" });
+    expect(result.ok && Object.keys(result.value)).toEqual(["title"]);
+  });
+
+  it("normalizes a provided priority and due date", () => {
+    expect(validateTaskPatch({ priority: "high", dueDate: "2026-05-01" })).toEqual({
+      ok: true,
+      value: { priority: "high", dueDate: "2026-05-01" },
+    });
+  });
+
+  it("clears a due date with an empty string", () => {
+    expect(validateTaskPatch({ dueDate: "" })).toEqual({
+      ok: true,
+      value: { dueDate: null },
+    });
+  });
+
+  it("rejects an unknown priority and a malformed due date in a patch", () => {
+    expect(validateTaskPatch({ priority: "urgent" as never }).ok).toBe(false);
+    expect(validateTaskPatch({ dueDate: "2026-13-01" }).ok).toBe(false);
   });
 });
 

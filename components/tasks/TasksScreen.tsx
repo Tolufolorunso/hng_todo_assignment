@@ -3,8 +3,14 @@
 import { useCallback, useEffect, useState } from "react";
 import TaskForm from "@/components/tasks/TaskForm";
 import TaskItem from "@/components/tasks/TaskItem";
-import { TaskNotFoundError, deleteTask, listTasks, updateTask } from "@/lib/tasks";
-import type { Task } from "@/types/task";
+import {
+  TaskNotFoundError,
+  deleteTask,
+  listTasks,
+  todayIsoDate,
+  updateTask,
+} from "@/lib/tasks";
+import type { Task, TaskPriority } from "@/types/task";
 
 type Status = "loading" | "ready" | "error";
 
@@ -13,6 +19,7 @@ export default function TasksScreen() {
   const [status, setStatus] = useState<Status>("loading");
   const [mutationError, setMutationError] = useState<string | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
+  const [todayIso] = useState(() => todayIsoDate());
 
   const load = useCallback(
     () =>
@@ -56,7 +63,12 @@ export default function TasksScreen() {
 
   async function handleUpdate(
     task: Task,
-    patch: { title: string; description: string },
+    patch: {
+      title: string;
+      description: string;
+      priority: TaskPriority;
+      dueDate: string | null;
+    },
   ): Promise<boolean> {
     setMutationError(null);
     setPendingId(task.id);
@@ -125,6 +137,7 @@ export default function TasksScreen() {
             <TaskItem
               key={task.id}
               task={task}
+              todayIso={todayIso}
               disabled={pendingId !== null}
               onToggle={handleToggle}
               onUpdate={handleUpdate}

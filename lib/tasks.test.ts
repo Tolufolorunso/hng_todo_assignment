@@ -6,9 +6,12 @@ import {
   createTask,
   deleteTask,
   getTask,
+  isOverdue,
   listTasks,
+  todayIsoDate,
   updateTask,
 } from "@/lib/tasks";
+import type { Task } from "@/types/task";
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -33,6 +36,8 @@ describe("createTask", () => {
     expect(task.title).toBe("Write the spec");
     expect(task.description).toBe("");
     expect(task.completed).toBe(false);
+    expect(task.priority).toBe("medium");
+    expect(task.dueDate).toBeNull();
     expect(task.completedAt).toBeNull();
     expect(task.createdAt).toBe("2026-01-01T00:00:00.000Z");
     expect(task.updatedAt).toBe(task.createdAt);
@@ -167,5 +172,73 @@ describe("deleteTask", () => {
 
   it("is idempotent for a missing id", async () => {
     await expect(deleteTask("missing")).resolves.toBeUndefined();
+  });
+});
+
+describe("createTask priority and due date", () => {
+  it("accepts a priority and due date", async () => {
+    const task = await createTask({
+      title: "Ship it",
+      priority: "high",
+      dueDate: "2026-03-01",
+    });
+    expect(task.priority).toBe("high");
+    expect(task.dueDate).toBe("2026-03-01");
+  });
+
+  it("updates priority and due date through a patch", async () => {
+    const task = await createTask({ title: "Task" });
+    const updated = await updateTask(task.id, { priority: "low", dueDate: "2026-04-02" });
+    expect(updated.priority).toBe("low");
+    expect(updated.dueDate).toBe("2026-04-02");
+
+    const cleared = await updateTask(task.id, { dueDate: null });
+    expect(cleared.dueDate).toBeNull();
+  });
+});
+
+describe("todayIsoDate", () => {
+  it("formats a date as a zero-padded date-only string", () => {
+    expect(todayIsoDate(new Date(2026, 0, 5))).toBe("2026-01-05");
+    expect(todayIsoDate(new Date(2026, 11, 31))).toBe("2026-12-31");
+  });
+});
+
+describe("isOverdue", () => {
+  function task(overrides: Partial<Task>): Task {
+    return {
+      id: "1",
+      title: "Task",
+      description: "",
+      completed: false,
+      priority: "medium",
+      dueDate: null,
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+      completedAt: null,
+      ...overrides,
+    };
+  }
+
+  it("is not overdue with no due date", () => {
+    expect(isOverdue(task({ dueDate: null }), "2026-06-01")).toBe(false);
+  });
+
+  it("is overdue when the due date is before today", () => {
+    expect(isOverdue(task({ dueDate: "2026-05-31" }), "2026-06-01")).toBe(true);
+  });
+
+  it("is not overdue when it is due today", () => {
+    expect(isOverdue(task({ dueDate: "2026-06-01" }), "2026-06-01")).toBe(false);
+  });
+
+  it("is not overdue when the due date is in the future", () => {
+    expect(isOverdue(task({ dueDate: "2026-06-02" }), "2026-06-01")).toBe(false);
+  });
+
+  it("is not overdue when the task is completed", () => {
+    expect(
+      isOverdue(task({ dueDate: "2026-05-31", completed: true }), "2026-06-01"),
+    ).toBe(false);
   });
 });
