@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { createExcerpt } from "@/lib/html";
 import type { Note } from "@/types/note";
 
@@ -131,13 +132,13 @@ export default function NoteList({
           {notes.map((note) => {
             const selected = note.id === selectedId;
             return (
-              <li key={note.id}>
+              <li key={note.id} className="group relative">
                 <button
                   type="button"
                   onClick={() => onSelect(note.id)}
                   disabled={disabled}
                   aria-current={selected ? "true" : undefined}
-                  className={`w-full rounded-xl border p-3.5 text-left transition-all disabled:opacity-60 ${
+                  className={`w-full rounded-xl border p-3.5 pr-11 text-left transition-all disabled:opacity-60 ${
                     selected
                       ? "border-accent/80 bg-surface shadow-card ring-1 ring-accent/30"
                       : "border-border/70 bg-surface hover:border-border-strong hover:bg-surface-muted/50"
@@ -156,6 +157,28 @@ export default function NoteList({
                     </span>
                   )}
                 </button>
+                <Link
+                  href={`/notes/${note.id}`}
+                  title="Open standalone document view"
+                  aria-label={`Open standalone document view for ${note.title}`}
+                  className="absolute right-2.5 top-3 flex h-7 w-7 items-center justify-center rounded-lg border border-border/80 bg-surface/90 text-muted opacity-80 shadow-xs transition-all hover:border-accent/60 hover:bg-accent-soft hover:text-accent hover:opacity-100 group-hover:opacity-100 focus:opacity-100"
+                >
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                    <polyline points="15 3 21 3 21 9" />
+                    <line x1="10" y1="14" x2="21" y2="3" />
+                  </svg>
+                </Link>
               </li>
             );
           })}

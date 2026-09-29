@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { stripHtmlToText, createExcerpt } from "./html";
+import { stripHtmlToText, createExcerpt, calculateReadingStats } from "./html";
 
 describe("HTML helpers", () => {
   describe("stripHtmlToText", () => {
@@ -51,4 +51,41 @@ describe("HTML helpers", () => {
       expect(excerpt.length).toBeLessThanOrEqual(23);
     });
   });
+
+  describe("calculateReadingStats", () => {
+    it("returns 0 words and 0 minutes for empty or whitespace-only content", () => {
+      expect(calculateReadingStats("")).toEqual({ words: 0, readingTimeMinutes: 0 });
+      expect(calculateReadingStats("<p>   </p>")).toEqual({ words: 0, readingTimeMinutes: 0 });
+    });
+
+    it("calculates exact word count and minimum 1 minute reading time for short content", () => {
+      const input = "<p>Quick brown fox jumps over the lazy dog.</p>";
+      expect(calculateReadingStats(input)).toEqual({ words: 8, readingTimeMinutes: 1 });
+    });
+
+    it("handles complex HTML elements, headings, lists, and quotes", () => {
+      const input = `
+        <h2>Project Architecture</h2>
+        <p>This document explains our multi-tier design pattern and state machine.</p>
+        <ul>
+          <li>Persistent local storage</li>
+          <li>Fast client-side indexing</li>
+          <li>Offline capability with PWA</li>
+        </ul>
+      `;
+      const stats = calculateReadingStats(input);
+      expect(stats.words).toBe(22);
+      expect(stats.readingTimeMinutes).toBe(1);
+    });
+
+    it("calculates multi-minute reading time for documents longer than 200 words", () => {
+      // 450 words should be Math.ceil(450 / 200) = 3 minutes
+      const text = Array(450).fill("word").join(" ");
+      const html = `<p>${text}</p>`;
+      const stats = calculateReadingStats(html);
+      expect(stats.words).toBe(450);
+      expect(stats.readingTimeMinutes).toBe(3);
+    });
+  });
 });
+

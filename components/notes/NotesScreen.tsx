@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import NoteEditor from "@/components/notes/NoteEditor";
 import NoteList from "@/components/notes/NoteList";
 import {
@@ -16,12 +17,20 @@ import type { Note } from "@/types/note";
 type Status = "loading" | "ready" | "error";
 
 export default function NotesScreen() {
+  const searchParams = useSearchParams();
+  const urlId = searchParams.get("id");
   const [notes, setNotes] = useState<Note[]>([]);
   const [status, setStatus] = useState<Status>("loading");
   const [mutationError, setMutationError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(urlId);
+  const [prevUrlId, setPrevUrlId] = useState<string | null>(urlId);
   const [pending, setPending] = useState(false);
+
+  if (urlId !== prevUrlId) {
+    setPrevUrlId(urlId);
+    setSelectedId(urlId);
+  }
 
   const load = useCallback(
     () =>

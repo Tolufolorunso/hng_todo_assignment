@@ -49,3 +49,26 @@ export function createExcerpt(rawHtml: string, maxLength = 120): string {
   }
   return plain.slice(0, maxLength).trimEnd() + "...";
 }
+
+export interface ReadingStats {
+  words: number;
+  readingTimeMinutes: number;
+}
+
+/**
+ * Calculates total words and estimated reading time in minutes (assuming 200 words per minute).
+ */
+export function calculateReadingStats(rawHtml: string): ReadingStats {
+  const plainText = stripHtmlToText(rawHtml);
+  if (!plainText) {
+    return { words: 0, readingTimeMinutes: 0 };
+  }
+
+  const words = plainText.trim().split(/\s+/).filter(Boolean).length;
+  if (words === 0) {
+    return { words: 0, readingTimeMinutes: 0 };
+  }
+
+  const readingTimeMinutes = Math.max(1, Math.ceil(words / 200));
+  return { words, readingTimeMinutes };
+}

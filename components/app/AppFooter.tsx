@@ -8,7 +8,7 @@ export default function AppFooter() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
-    <footer className="mt-auto border-t border-border bg-surface/30 backdrop-blur-xs py-6 px-6 text-xs text-muted transition-colors">
+    <footer className="mt-auto border-t border-border bg-surface/30 backdrop-blur-xs py-6 px-6 text-xs text-muted transition-colors print:hidden">
       <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-4 sm:flex-row">
         {/* Left: Brand & Architecture note */}
         <div className="flex flex-col items-center gap-1.5 sm:items-start">
