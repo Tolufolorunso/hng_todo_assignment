@@ -5,6 +5,7 @@ import {
   type NoteInput,
   type NotePatch,
 } from "@/lib/validation";
+import { stripHtmlToText } from "@/lib/html";
 import type { Note } from "@/types/note";
 
 export class NoteValidationError extends Error {
@@ -92,9 +93,11 @@ export function filterNotes(notes: Note[], query: string): Note[] {
   if (needle === "") {
     return notes;
   }
-  return notes.filter(
-    (note) =>
-      note.title.toLowerCase().includes(needle) ||
-      note.body.toLowerCase().includes(needle),
-  );
+  return notes.filter((note) => {
+    if (note.title.toLowerCase().includes(needle)) {
+      return true;
+    }
+    const plain = stripHtmlToText(note.body).toLowerCase();
+    return plain.includes(needle) || note.body.toLowerCase().includes(needle);
+  });
 }

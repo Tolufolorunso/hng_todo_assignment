@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import WysiwygEditor from "@/components/notes/WysiwygEditor";
 import {
   NOTE_BODY_MAX_LENGTH,
   NOTE_TITLE_MAX_LENGTH,
@@ -42,7 +43,6 @@ export default function NoteEditor({
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const titleRef = useRef<HTMLInputElement>(null);
-  const bodyRef = useRef<HTMLTextAreaElement>(null);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -52,7 +52,9 @@ export default function NoteEditor({
       const field = focusFieldFor(validation.error);
       setError(validation.error);
       setErrorField(field);
-      (field === "title" ? titleRef : bodyRef).current?.focus();
+      if (field === "title") {
+        titleRef.current?.focus();
+      }
       return;
     }
 
@@ -80,7 +82,7 @@ export default function NoteEditor({
   return (
     <section
       aria-label={note === null ? "New note" : "Edit note"}
-      className="flex min-h-[420px] flex-col rounded-2xl border border-border/80 bg-surface shadow-card transition-all"
+      className="flex min-h-[500px] flex-col rounded-2xl border border-border/80 bg-surface shadow-card transition-all"
     >
       <form onSubmit={handleSubmit} className="flex flex-1 flex-col" noValidate>
         {/* Note Title Input */}
@@ -107,21 +109,19 @@ export default function NoteEditor({
           )}
         </div>
 
-        {/* Note Body Textarea */}
-        <label htmlFor="note-body" className="sr-only">
-          Note body
-        </label>
-        <textarea
-          id="note-body"
-          ref={bodyRef}
-          value={body}
-          onChange={(event) => setBody(event.target.value)}
-          maxLength={NOTE_BODY_MAX_LENGTH}
-          placeholder="Write your thoughts, markdown, or documentation here..."
-          aria-invalid={errorField === "body"}
-          aria-describedby={errorField === "body" ? ERROR_ID : undefined}
-          className="flex-1 resize-none border-none bg-transparent px-6 py-5 text-sm leading-relaxed text-text outline-none placeholder:text-faint"
-        />
+        {/* Note Body Microsoft Word-style WYSIWYG Editor */}
+        <div className="flex flex-1 flex-col">
+          <WysiwygEditor
+            value={body}
+            onChange={setBody}
+            disabled={busy}
+            placeholder="Write your note here... Format text using the ribbon above."
+            ariaLabel="Note body rich text editor"
+            ariaInvalid={errorField === "body"}
+            ariaDescribedBy={errorField === "body" ? ERROR_ID : undefined}
+            maxLength={NOTE_BODY_MAX_LENGTH}
+          />
+        </div>
 
         {error !== null && (
           <p id={ERROR_ID} role="alert" className="px-6 pb-2 text-xs font-medium text-danger">

@@ -1,5 +1,6 @@
 "use client";
 
+import { createExcerpt } from "@/lib/html";
 import type { Note } from "@/types/note";
 
 type Status = "loading" | "ready" | "error";
@@ -15,11 +16,6 @@ interface NoteListProps {
   onSelect: (id: string) => void;
   onClearSearch: () => void;
   onNew: () => void;
-}
-
-function excerpt(body: string): string {
-  const firstLine = body.trim().split("\n")[0] ?? "";
-  return firstLine;
 }
 
 export default function NoteList({
@@ -154,9 +150,9 @@ export default function NoteList({
                   >
                     {note.title}
                   </span>
-                  {excerpt(note.body) !== "" && (
+                  {createExcerpt(note.body, 120) !== "" && (
                     <span className="mt-1 block truncate text-xs text-muted">
-                      {excerpt(note.body)}
+                      {createExcerpt(note.body, 120)}
                     </span>
                   )}
                 </button>

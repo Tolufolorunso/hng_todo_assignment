@@ -229,7 +229,7 @@ export function validateTaskPatch(patch: TaskPatch): ValidationResult<ValidTaskP
 }
 
 export const NOTE_TITLE_MAX_LENGTH = 200;
-export const NOTE_BODY_MAX_LENGTH = 10000;
+export const NOTE_BODY_MAX_LENGTH = 50000;
 
 export interface NoteInput {
   title: string;
