@@ -97,41 +97,57 @@ export default function NotesScreen() {
   }
 
   return (
-    <main className="mx-auto grid w-full max-w-4xl flex-1 grid-cols-1 gap-6 px-6 py-8 md:grid-cols-[20rem_1fr]">
-      <NoteList
-        notes={visibleNotes}
-        totalCount={notes.length}
-        status={status}
-        query={query}
-        selectedId={selectedId}
-        disabled={pending}
-        onQueryChange={setQuery}
-        onSelect={(id) => setSelectedId(id)}
-        onClearSearch={() => setQuery("")}
-        onNew={() => setSelectedId(null)}
-      />
-
-      <div className="flex flex-col gap-3">
-        {status === "error" ? (
-          <p role="alert" className="text-sm text-danger">
-            Could not load your notes. Reload the page to try again.
+    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-6 py-10">
+      {/* Title Header */}
+      <div className="flex flex-col gap-1 border-b border-border pb-6 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-text">Notes Workspace</h1>
+          <p className="mt-1 text-sm text-muted">
+            Capture free-form context, thoughts, and documentation alongside your tasks.
           </p>
-        ) : (
-          <>
-            {mutationError !== null && (
-              <p role="alert" className="text-sm text-danger">
-                {mutationError}
-              </p>
-            )}
-            <NoteEditor
-              key={selectedId ?? "new"}
-              note={selectedNote}
-              disabled={pending}
-              onSave={handleSave}
-              onDelete={handleDelete}
-            />
-          </>
-        )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
+        {/* Notes List Column */}
+        <div className="lg:col-span-4">
+          <NoteList
+            notes={visibleNotes}
+            totalCount={notes.length}
+            status={status}
+            query={query}
+            selectedId={selectedId}
+            disabled={pending}
+            onQueryChange={setQuery}
+            onSelect={(id) => setSelectedId(id)}
+            onClearSearch={() => setQuery("")}
+            onNew={() => setSelectedId(null)}
+          />
+        </div>
+
+        {/* Note Editor Column */}
+        <div className="flex flex-col gap-4 lg:col-span-8">
+          {status === "error" ? (
+            <div className="rounded-xl border border-danger/40 bg-danger-soft p-4 text-sm text-danger" role="alert">
+              Could not load your notes. Reload the page to try again.
+            </div>
+          ) : (
+            <>
+              {mutationError !== null && (
+                <div className="rounded-xl border border-danger/40 bg-danger-soft p-3.5 text-sm text-danger" role="alert">
+                  {mutationError}
+                </div>
+              )}
+              <NoteEditor
+                key={selectedId ?? "new"}
+                note={selectedNote}
+                disabled={pending}
+                onSave={handleSave}
+                onDelete={handleDelete}
+              />
+            </>
+          )}
+        </div>
       </div>
     </main>
   );

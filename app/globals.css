@@ -1,26 +1,21 @@
 @import "tailwindcss";
 
-/* Theme tokens ported from prototypes/theme.css - the durable output of the
-   prototyping step. :root holds the light values; the dark block overrides them
-   under prefers-color-scheme. Semantic names are exposed to Tailwind through
-   @theme inline, so utilities like bg-surface, text-muted, and border-border
-   follow the active color scheme. The --background and --foreground shell values
-   are kept from the scaffold until the components migrate onto the tokens. */
-
 :root {
   color-scheme: light;
 
   /* surfaces */
-  --bg: #fafafa;
+  --bg: #f8fafc;
   --surface: #ffffff;
-  --surface-muted: #f4f4f5;
-  --border: #e4e4e7;
-  --border-strong: #d4d4d8;
+  --surface-muted: #f1f5f9;
+  --surface-elevated: #ffffff;
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --border-glow: rgba(79, 70, 229, 0.25);
 
   /* text */
-  --text: #18181b;
-  --muted: #71717a;
-  --faint: #a1a1aa;
+  --text: #0f172a;
+  --muted: #64748b;
+  --faint: #94a3b8;
 
   /* accent */
   --accent: #4f46e5;
@@ -29,49 +24,65 @@
   --accent-soft: #eef2ff;
 
   /* priority */
-  --prio-low: #0369a1;
+  --prio-low: #0284c7;
   --prio-low-bg: #e0f2fe;
-  --prio-medium: #b45309;
+  --prio-medium: #d97706;
   --prio-medium-bg: #fef3c7;
-  --prio-high: #b91c1c;
+  --prio-high: #dc2626;
   --prio-high-bg: #fee2e2;
 
   /* states */
-  --danger: #dc2626;
+  --danger: #ef4444;
   --danger-soft: #fef2f2;
-  --success: #15803d;
+  --success: #16a34a;
   --success-soft: #f0fdf4;
+
+  /* shadows */
+  --shadow-card: 0 1px 3px 0 rgba(15, 23, 42, 0.05), 0 1px 2px -1px rgba(15, 23, 42, 0.05);
+  --shadow-card-hover: 0 6px 16px -2px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;
 
-    --bg: #0f0f11;
-    --surface: #18181b;
-    --surface-muted: #1f1f23;
+    /* obsidian surfaces */
+    --bg: #09090b;
+    --surface: #121215;
+    --surface-muted: #1a1a1f;
+    --surface-elevated: #222229;
     --border: #27272a;
     --border-strong: #3f3f46;
+    --border-glow: rgba(99, 102, 241, 0.35);
 
+    /* crisp dark text */
     --text: #f4f4f5;
     --muted: #a1a1aa;
     --faint: #71717a;
 
+    /* electric indigo accent */
     --accent: #6366f1;
     --accent-hover: #818cf8;
-    --accent-soft: rgba(99, 102, 241, 0.18);
+    --accent-ink: #ffffff;
+    --accent-soft: rgba(99, 102, 241, 0.16);
 
-    --prio-low: #7dd3fc;
-    --prio-low-bg: rgba(56, 189, 248, 0.16);
-    --prio-medium: #fcd34d;
-    --prio-medium-bg: rgba(251, 191, 36, 0.16);
-    --prio-high: #fca5a5;
-    --prio-high-bg: rgba(248, 113, 113, 0.16);
+    /* priority */
+    --prio-low: #38bdf8;
+    --prio-low-bg: rgba(56, 189, 248, 0.15);
+    --prio-medium: #fbbf24;
+    --prio-medium-bg: rgba(251, 191, 36, 0.15);
+    --prio-high: #f87171;
+    --prio-high-bg: rgba(248, 113, 113, 0.15);
 
+    /* states */
     --danger: #f87171;
     --danger-soft: rgba(248, 113, 113, 0.14);
     --success: #4ade80;
     --success-soft: rgba(74, 222, 128, 0.14);
+
+    /* shadows */
+    --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.35);
+    --shadow-card-hover: 0 8px 24px -4px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(99, 102, 241, 0.2);
   }
 }
 
@@ -79,8 +90,10 @@
   --color-bg: var(--bg);
   --color-surface: var(--surface);
   --color-surface-muted: var(--surface-muted);
+  --color-surface-elevated: var(--surface-elevated);
   --color-border: var(--border);
   --color-border-strong: var(--border-strong);
+  --color-border-glow: var(--border-glow);
 
   --color-text: var(--text);
   --color-muted: var(--muted);
@@ -103,17 +116,33 @@
   --color-success: var(--success);
   --color-success-soft: var(--success-soft);
 
-  --font-sans: var(--font-geist-sans), "Geist", system-ui, sans-serif;
+  --font-sans: var(--font-geist-sans), "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 
-  --radius-card: 12px;
-  --radius-control: 8px;
+  --radius-card: 14px;
+  --radius-control: 10px;
 
-  --shadow-card: 0 1px 2px rgba(24, 24, 27, 0.06);
+  --shadow-card: var(--shadow-card);
+  --shadow-card-hover: var(--shadow-card-hover);
 }
 
 body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-sans);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 9999px;
 }

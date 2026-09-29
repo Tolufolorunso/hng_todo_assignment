@@ -80,10 +80,11 @@ export default function NoteEditor({
   return (
     <section
       aria-label={note === null ? "New note" : "Edit note"}
-      className="flex min-h-[320px] flex-col rounded-card border border-border bg-surface"
+      className="flex min-h-[420px] flex-col rounded-2xl border border-border/80 bg-surface shadow-card transition-all"
     >
       <form onSubmit={handleSubmit} className="flex flex-1 flex-col" noValidate>
-        <div className="px-5 pt-5">
+        {/* Note Title Input */}
+        <div className="border-b border-border/60 px-6 pt-6 pb-4">
           <label htmlFor="note-title" className="sr-only">
             Note title
           </label>
@@ -94,18 +95,19 @@ export default function NoteEditor({
             value={title}
             onChange={(event) => setTitle(event.target.value)}
             maxLength={NOTE_TITLE_MAX_LENGTH}
-            placeholder="Note title"
+            placeholder="Note title..."
             aria-invalid={errorField === "title"}
             aria-describedby={errorField === "title" ? ERROR_ID : undefined}
-            className="w-full border-none bg-transparent text-xl font-semibold tracking-tight text-text outline-none placeholder:text-faint"
+            className="w-full border-none bg-transparent text-xl font-bold tracking-tight text-text outline-none placeholder:text-faint"
           />
           {note !== null && (
-            <p className="mt-1 font-mono text-xs text-faint">
-              Created {formatStamp(note.createdAt)}, updated {formatStamp(note.updatedAt)}
+            <p className="mt-2 font-mono text-[11px] text-faint">
+              Created {formatStamp(note.createdAt)} &bull; Updated {formatStamp(note.updatedAt)}
             </p>
           )}
         </div>
 
+        {/* Note Body Textarea */}
         <label htmlFor="note-body" className="sr-only">
           Note body
         </label>
@@ -115,61 +117,66 @@ export default function NoteEditor({
           value={body}
           onChange={(event) => setBody(event.target.value)}
           maxLength={NOTE_BODY_MAX_LENGTH}
-          placeholder="Write your note..."
+          placeholder="Write your thoughts, markdown, or documentation here..."
           aria-invalid={errorField === "body"}
           aria-describedby={errorField === "body" ? ERROR_ID : undefined}
-          className="flex-1 resize-none border-none bg-transparent px-5 py-4 text-sm leading-relaxed text-text outline-none placeholder:text-faint"
+          className="flex-1 resize-none border-none bg-transparent px-6 py-5 text-sm leading-relaxed text-text outline-none placeholder:text-faint"
         />
 
         {error !== null && (
-          <p id={ERROR_ID} role="alert" className="px-5 text-sm text-danger">
+          <p id={ERROR_ID} role="alert" className="px-6 pb-2 text-xs font-medium text-danger">
             {error}
           </p>
         )}
 
-        <div className="flex items-center gap-2 border-t border-border px-5 py-3">
+        {/* Footer Actions */}
+        <div className="flex items-center justify-between border-t border-border/70 px-6 py-4">
           {confirming ? (
-            <>
-              <p className="mr-auto text-sm text-danger">Delete this note?</p>
-              <button
-                type="button"
-                onClick={handleDelete}
-                disabled={busy}
-                className="rounded-control bg-danger px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-60"
-              >
-                {deleting ? "Deleting..." : "Delete"}
-              </button>
-              <button
-                type="button"
-                onClick={() => setConfirming(false)}
-                disabled={busy}
-                className="rounded-control border border-border bg-surface px-4 py-2 text-sm font-medium text-text transition-colors hover:border-border-strong disabled:opacity-60"
-              >
-                Cancel
-              </button>
-            </>
-          ) : (
-            <>
-              <span className="mr-auto text-xs text-muted">
-                {saving ? "Saving..." : "Changes are saved with Save"}
-              </span>
-              {note !== null && (
+            <div className="flex w-full items-center justify-between gap-3">
+              <p className="text-xs font-semibold text-danger">Permanently delete this note?</p>
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => setConfirming(true)}
-                  disabled={disabled}
-                  className="rounded-control border border-border bg-surface px-3 py-2 text-sm font-medium text-danger transition-colors hover:bg-danger-soft hover:border-danger disabled:opacity-60"
+                  onClick={handleDelete}
+                  disabled={busy}
+                  className="rounded-xl bg-danger px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition-all hover:brightness-110 disabled:opacity-60"
                 >
-                  Delete
+                  {deleting ? "Deleting..." : "Delete"}
                 </button>
-              )}
-              <button
-                type="submit"
-                disabled={busy}
-                className="rounded-control bg-accent px-4 py-2 text-sm font-medium text-accent-ink transition-colors hover:bg-accent-hover disabled:opacity-60"
-              >
-                {saving ? "Saving..." : note === null ? "Create note" : "Save"}
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirming(false)}
+                  disabled={busy}
+                  className="rounded-xl border border-border bg-surface px-3.5 py-1.5 text-xs font-semibold text-text shadow-sm transition-all hover:border-border-strong hover:bg-surface-muted disabled:opacity-60"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <span className="text-[11px] text-muted">
+                {saving ? "Saving note..." : "Changes persist to IndexedDB"}
+              </span>
+              <div className="flex items-center gap-2">
+                {note !== null && (
+                  <button
+                    type="button"
+                    onClick={() => setConfirming(true)}
+                    disabled={disabled}
+                    className="rounded-xl border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-danger shadow-sm transition-all hover:border-danger/40 hover:bg-danger-soft disabled:opacity-60"
+                  >
+                    Delete
+                  </button>
+                )}
+                <button
+                  type="submit"
+                  disabled={busy}
+                  className="rounded-xl bg-gradient-to-r from-accent to-accent-hover px-4 py-1.5 text-xs font-semibold text-accent-ink shadow-sm transition-all hover:brightness-105 active:scale-95 disabled:opacity-60"
+                >
+                  {saving ? "Saving..." : note === null ? "Create Note" : "Save Note"}
+                </button>
+              </div>
             </>
           )}
         </div>

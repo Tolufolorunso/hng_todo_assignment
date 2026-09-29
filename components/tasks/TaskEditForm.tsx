@@ -90,9 +90,9 @@ export default function TaskEditForm({
   const busy = disabled || saving;
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-3" noValidate>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-3.5" noValidate>
       <div className="flex flex-col gap-1">
-        <label htmlFor="task-edit-title" className="text-xs font-medium text-muted">
+        <label htmlFor="task-edit-title" className="text-xs font-semibold text-muted">
           Title
         </label>
         <input
@@ -104,14 +104,14 @@ export default function TaskEditForm({
           maxLength={TITLE_MAX_LENGTH}
           aria-invalid={errorField === "title"}
           aria-describedby={errorField === "title" ? ERROR_ID : undefined}
-          className="rounded-control border border-border bg-surface px-3 py-2 text-sm text-text outline-none placeholder:text-faint focus:border-accent focus:ring-2 focus:ring-accent-soft"
+          className="rounded-xl border border-border bg-surface px-3.5 py-2 text-sm text-text outline-none placeholder:text-faint transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft"
         />
       </div>
 
       <div className="flex flex-col gap-1">
         <label
           htmlFor="task-edit-description"
-          className="text-xs font-medium text-muted"
+          className="text-xs font-semibold text-muted"
         >
           Description
         </label>
@@ -122,18 +122,18 @@ export default function TaskEditForm({
           onChange={(event) => setDescription(event.target.value)}
           maxLength={DESCRIPTION_MAX_LENGTH}
           rows={3}
-          placeholder="Add details"
+          placeholder="Add details, context, or notes..."
           aria-invalid={errorField === "description"}
           aria-describedby={errorField === "description" ? ERROR_ID : undefined}
-          className="resize-y rounded-control border border-border bg-surface px-3 py-2 text-sm text-text outline-none placeholder:text-faint focus:border-accent focus:ring-2 focus:ring-accent-soft"
+          className="resize-y rounded-xl border border-border bg-surface px-3.5 py-2 text-sm text-text outline-none placeholder:text-faint transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft"
         />
       </div>
 
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <div className="flex flex-col gap-1">
           <label
             htmlFor="task-edit-priority"
-            className="text-xs font-medium text-muted"
+            className="text-xs font-semibold text-muted"
           >
             Priority
           </label>
@@ -144,16 +144,16 @@ export default function TaskEditForm({
             onChange={(event) => setPriority(event.target.value as TaskPriority)}
             aria-invalid={errorField === "priority"}
             aria-describedby={errorField === "priority" ? ERROR_ID : undefined}
-            className="rounded-control border border-border bg-surface px-3 py-2 text-sm text-text outline-none focus:border-accent focus:ring-2 focus:ring-accent-soft"
+            className="rounded-xl border border-border bg-surface px-3 py-1.5 text-xs font-medium text-text outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft"
           >
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
+            <option value="low">Low Priority</option>
+            <option value="medium">Medium Priority</option>
+            <option value="high">High Priority</option>
           </select>
         </div>
 
         <div className="flex flex-col gap-1">
-          <label htmlFor="task-edit-due" className="text-xs font-medium text-muted">
+          <label htmlFor="task-edit-due" className="text-xs font-semibold text-muted">
             Due date
           </label>
           <input
@@ -164,30 +164,30 @@ export default function TaskEditForm({
             onChange={(event) => setDueDate(event.target.value)}
             aria-invalid={errorField === "dueDate"}
             aria-describedby={errorField === "dueDate" ? ERROR_ID : undefined}
-            className="rounded-control border border-border bg-surface px-3 py-2 text-sm text-text outline-none focus:border-accent focus:ring-2 focus:ring-accent-soft"
+            className="rounded-xl border border-border bg-surface px-3 py-1.5 text-xs text-text outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft"
           />
         </div>
       </div>
 
       {error !== null && (
-        <p id={ERROR_ID} role="alert" className="text-sm text-danger">
+        <p id={ERROR_ID} role="alert" className="text-xs font-medium text-danger">
           {error}
         </p>
       )}
 
-      <div className="flex gap-2">
+      <div className="flex items-center gap-2 pt-1">
         <button
           type="submit"
           disabled={busy}
-          className="rounded-control bg-accent px-4 py-2 text-sm font-medium text-accent-ink transition-colors hover:bg-accent-hover disabled:opacity-60"
+          className="rounded-xl bg-gradient-to-r from-accent to-accent-hover px-4 py-2 text-xs font-semibold text-accent-ink shadow-sm transition-all hover:brightness-105 disabled:opacity-60"
         >
-          {saving ? "Saving..." : "Save"}
+          {saving ? "Saving..." : "Save Changes"}
         </button>
         <button
           type="button"
           onClick={onCancel}
           disabled={busy}
-          className="rounded-control border border-border bg-surface px-4 py-2 text-sm font-medium text-text transition-colors hover:border-border-strong disabled:opacity-60"
+          className="rounded-xl border border-border bg-surface px-4 py-2 text-xs font-semibold text-text shadow-sm transition-all hover:border-border-strong hover:bg-surface-muted disabled:opacity-60"
         >
           Cancel
         </button>

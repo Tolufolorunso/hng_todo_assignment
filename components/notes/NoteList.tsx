@@ -39,32 +39,48 @@ export default function NoteList({
   return (
     <section
       aria-label="Notes list"
-      className="flex min-h-0 flex-col gap-3 md:max-h-[calc(100vh-8rem)]"
+      className="flex min-h-0 flex-col gap-3.5 lg:sticky lg:top-24 lg:max-h-[calc(100vh-8rem)]"
     >
       <div className="flex items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold tracking-tight text-text">Notes</h1>
+        <span className="text-xs font-semibold uppercase tracking-wider text-muted">
+          All Notes ({totalCount})
+        </span>
         <button
           type="button"
           onClick={onNew}
           disabled={disabled}
-          className="rounded-control bg-accent px-3 py-2 text-sm font-medium text-accent-ink transition-colors hover:bg-accent-hover disabled:opacity-60"
+          className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-accent to-accent-hover px-3.5 py-1.5 text-xs font-semibold text-accent-ink shadow-sm transition-all hover:brightness-105 active:scale-95 disabled:opacity-60"
         >
-          New note
+          <svg
+            width="13"
+            height="13"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          New Note
         </button>
       </div>
 
       <div className="relative">
         <svg
-          width="15"
-          height="15"
+          width="14"
+          height="14"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          strokeWidth="2"
+          strokeWidth="2.2"
           strokeLinecap="round"
           strokeLinejoin="round"
           aria-hidden="true"
-          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-faint"
+          className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-faint"
         >
           <circle cx="11" cy="11" r="7" />
           <path d="m20 20-3.2-3.2" />
@@ -77,36 +93,37 @@ export default function NoteList({
           type="search"
           value={query}
           onChange={(event) => onQueryChange(event.target.value)}
-          placeholder="Search notes"
+          placeholder="Search notes..."
           autoComplete="off"
-          className="w-full rounded-control border border-border bg-surface py-2 pl-9 pr-3 text-sm text-text outline-none placeholder:text-faint focus:border-accent focus:ring-2 focus:ring-accent-soft"
+          className="w-full rounded-xl border border-border bg-surface py-2 pl-9 pr-3 text-xs text-text outline-none placeholder:text-faint transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft"
         />
       </div>
 
       {status === "loading" && (
-        <p role="status" className="text-sm text-muted">
+        <div className="flex items-center gap-2 py-4 text-xs text-muted">
+          <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-accent border-t-transparent" />
           Loading notes...
-        </p>
+        </div>
       )}
 
       {status === "ready" && totalCount === 0 && (
-        <div className="rounded-card border border-border bg-surface p-6 text-center">
-          <p className="text-sm font-medium text-text">No notes yet</p>
-          <p className="mt-1 text-sm text-muted">
-            Create a note to keep context next to your tasks.
+        <div className="rounded-2xl border border-dashed border-border bg-surface/50 p-8 text-center">
+          <p className="text-xs font-semibold text-text">No notes yet</p>
+          <p className="mt-1 text-xs text-muted">
+            Create a note to keep thoughts and context alongside your tasks.
           </p>
         </div>
       )}
 
       {status === "ready" && totalCount > 0 && notes.length === 0 && (
-        <div className="rounded-card border border-border bg-surface p-6 text-center">
-          <p className="text-sm font-medium text-text">
+        <div className="rounded-2xl border border-border bg-surface p-6 text-center shadow-sm">
+          <p className="text-xs font-semibold text-text">
             No notes match &ldquo;{query.trim()}&rdquo;
           </p>
           <button
             type="button"
             onClick={onClearSearch}
-            className="mt-3 rounded-control border border-border bg-surface px-3 py-1.5 text-sm font-medium text-text transition-colors hover:border-border-strong"
+            className="mt-3 rounded-xl border border-border bg-surface px-3 py-1 text-xs font-semibold text-text shadow-sm transition-all hover:border-border-strong hover:bg-surface-muted"
           >
             Clear search
           </button>
@@ -114,7 +131,7 @@ export default function NoteList({
       )}
 
       {status === "ready" && notes.length > 0 && (
-        <ul className="flex min-h-0 flex-col gap-1 overflow-y-auto">
+        <ul className="flex min-h-0 flex-col gap-2 overflow-y-auto pr-1">
           {notes.map((note) => {
             const selected = note.id === selectedId;
             return (
@@ -124,21 +141,21 @@ export default function NoteList({
                   onClick={() => onSelect(note.id)}
                   disabled={disabled}
                   aria-current={selected ? "true" : undefined}
-                  className={`w-full rounded-control border px-3 py-2 text-left transition-colors disabled:opacity-60 ${
+                  className={`w-full rounded-xl border p-3.5 text-left transition-all disabled:opacity-60 ${
                     selected
-                      ? "border-accent bg-surface shadow-[inset_3px_0_0_0_var(--accent)]"
-                      : "border-transparent hover:bg-surface-muted"
+                      ? "border-accent/80 bg-surface shadow-card ring-1 ring-accent/30"
+                      : "border-border/70 bg-surface hover:border-border-strong hover:bg-surface-muted/50"
                   }`}
                 >
                   <span
                     className={`block truncate text-sm ${
-                      selected ? "font-semibold text-text" : "font-medium text-text"
+                      selected ? "font-bold text-accent" : "font-semibold text-text"
                     }`}
                   >
                     {note.title}
                   </span>
                   {excerpt(note.body) !== "" && (
-                    <span className="mt-0.5 block truncate text-xs text-muted">
+                    <span className="mt-1 block truncate text-xs text-muted">
                       {excerpt(note.body)}
                     </span>
                   )}
@@ -150,8 +167,8 @@ export default function NoteList({
       )}
 
       {status === "ready" && hasQuery && notes.length > 0 && (
-        <p className="text-xs text-faint">
-          {notes.length} of {totalCount} notes
+        <p className="text-[11px] text-faint">
+          Showing {notes.length} of {totalCount} notes
         </p>
       )}
     </section>
