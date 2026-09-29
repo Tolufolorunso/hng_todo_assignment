@@ -9,6 +9,13 @@ interface TaskItemProps {
   task: Task;
   todayIso: string;
   disabled: boolean;
+  isDragging?: boolean;
+  isDragOver?: boolean;
+  onDragStart?: (event: React.DragEvent<HTMLLIElement>, task: Task) => void;
+  onDragOver?: (event: React.DragEvent<HTMLLIElement>, task: Task) => void;
+  onDragLeave?: (event: React.DragEvent<HTMLLIElement>) => void;
+  onDrop?: (event: React.DragEvent<HTMLLIElement>, task: Task) => void;
+  onDragEnd?: (event: React.DragEvent<HTMLLIElement>) => void;
   onToggle: (task: Task, completed: boolean) => void;
   onUpdate: (
     task: Task,
@@ -49,6 +56,13 @@ export default function TaskItem({
   task,
   todayIso,
   disabled,
+  isDragging = false,
+  isDragOver = false,
+  onDragStart,
+  onDragOver,
+  onDragLeave,
+  onDrop,
+  onDragEnd,
   onToggle,
   onUpdate,
   onDelete,
@@ -128,7 +142,43 @@ export default function TaskItem({
   }
 
   return (
-    <li className="group relative flex items-start gap-3.5 rounded-2xl border border-border/80 bg-surface p-4 shadow-card transition-all hover:border-border-strong hover:shadow-card-hover">
+    <li
+      draggable={!disabled && mode === "view"}
+      onDragStart={(event) => onDragStart?.(event, task)}
+      onDragOver={(event) => onDragOver?.(event, task)}
+      onDragLeave={onDragLeave}
+      onDrop={(event) => onDrop?.(event, task)}
+      onDragEnd={onDragEnd}
+      className={`group relative flex items-start gap-3 rounded-2xl border bg-surface p-4 shadow-card transition-all ${
+        isDragging
+          ? "opacity-30 scale-[0.99] border-dashed border-accent/60 bg-surface-muted/50"
+          : isDragOver
+          ? "border-accent ring-2 ring-accent/30 bg-surface-muted/30"
+          : "border-border/80 hover:border-border-strong hover:shadow-card-hover"
+      }`}
+    >
+      {/* Drag Grip Handle */}
+      <div
+        className="flex items-center pt-1 text-faint opacity-35 transition-opacity group-hover:opacity-90 hover:text-text cursor-grab active:cursor-grabbing select-none"
+        title="Drag to reorder"
+        aria-label={`Drag handle for ${task.title}`}
+      >
+        <svg
+          width="13"
+          height="13"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+          aria-hidden="true"
+        >
+          <circle cx="9" cy="5" r="2" />
+          <circle cx="15" cy="5" r="2" />
+          <circle cx="9" cy="12" r="2" />
+          <circle cx="15" cy="12" r="2" />
+          <circle cx="9" cy="19" r="2" />
+          <circle cx="15" cy="19" r="2" />
+        </svg>
+      </div>
+
       {/* Checkbox */}
       <div className="pt-0.5">
         <input

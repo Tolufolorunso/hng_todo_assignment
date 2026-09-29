@@ -9,6 +9,7 @@ import {
   getTask,
   isOverdue,
   listTasks,
+  reorderTasks,
   searchTasks,
   sortTasks,
   todayIsoDate,
@@ -178,6 +179,31 @@ describe("deleteTask", () => {
   });
 });
 
+describe("reorderTasks", () => {
+  it("persists custom order indices across tasks", async () => {
+    const task1 = await createTask({ title: "Task 1" });
+    const task2 = await createTask({ title: "Task 2" });
+    const task3 = await createTask({ title: "Task 3" });
+
+    await reorderTasks([task3.id, task1.id, task2.id]);
+
+    const updated1 = await getTask(task1.id);
+    const updated2 = await getTask(task2.id);
+    const updated3 = await getTask(task3.id);
+
+    expect(updated3?.order).toBe(0);
+    expect(updated1?.order).toBe(1);
+    expect(updated2?.order).toBe(2);
+  });
+
+  it("gracefully ignores non-existent ids", async () => {
+    const task1 = await createTask({ title: "Task 1" });
+    await expect(reorderTasks(["non-existent", task1.id])).resolves.toBeUndefined();
+    const updated1 = await getTask(task1.id);
+    expect(updated1?.order).toBe(1);
+  });
+});
+
 describe("createTask priority and due date", () => {
   it("accepts a priority and due date", async () => {
     const task = await createTask({
@@ -309,6 +335,26 @@ describe("filterTasksByStatus", () => {
 });
 
 describe("sortTasks", () => {
+  it("sorts by order ascending in manual mode", () => {
+    const tasks = [
+      makeTask({ id: "3", order: 2 }),
+      makeTask({ id: "1", order: 0 }),
+      makeTask({ id: "2", order: 1 }),
+    ];
+    expect(sortTasks(tasks, "manual").map((t) => t.id)).toEqual(["1", "2", "3"]);
+  });
+
+  it("falls back to created descending when manual orders are equal or undefined", () => {
+    const tasks = [
+      makeTask({ id: "b", order: 0, createdAt: "2026-01-01T00:00:00.000Z" }),
+      makeTask({ id: "c", order: 0, createdAt: "2026-01-02T00:00:00.000Z" }),
+      makeTask({ id: "a", createdAt: "2026-01-03T00:00:00.000Z" }),
+    ];
+    // a has order undefined -> defaults to 0. c has order 0, b has order 0.
+    // Sorted by created desc: a (01-03), c (01-02), b (01-01).
+    expect(sortTasks(tasks, "manual").map((t) => t.id)).toEqual(["a", "c", "b"]);
+  });
+
   it("sorts by created descending with id tie-break", () => {
     const tasks = [
       makeTask({ id: "b", createdAt: "2026-01-02T00:00:00.000Z" }),

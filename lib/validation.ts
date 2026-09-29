@@ -16,6 +16,7 @@ export interface TaskInput {
   description?: string;
   priority?: TaskPriority;
   dueDate?: string | null;
+  order?: number;
 }
 
 export interface ValidTaskInput {
@@ -23,6 +24,7 @@ export interface ValidTaskInput {
   description: string;
   priority: TaskPriority;
   dueDate: string | null;
+  order?: number;
 }
 
 export interface TaskPatch {
@@ -31,6 +33,7 @@ export interface TaskPatch {
   completed?: boolean;
   priority?: TaskPriority;
   dueDate?: string | null;
+  order?: number;
 }
 
 export interface ValidTaskPatch {
@@ -39,6 +42,7 @@ export interface ValidTaskPatch {
   completed?: boolean;
   priority?: TaskPriority;
   dueDate?: string | null;
+  order?: number;
 }
 
 function validateTitle(raw: string): ValidationResult<string> {
@@ -116,6 +120,11 @@ export function validateTaskInput(input: TaskInput): ValidationResult<ValidTaskI
   if (!dueDate.ok) {
     return dueDate;
   }
+  if (input.order !== undefined) {
+    if (typeof input.order !== "number" || !Number.isFinite(input.order)) {
+      return { ok: false, error: "Order must be a valid number." };
+    }
+  }
   return {
     ok: true,
     value: {
@@ -123,6 +132,7 @@ export function validateTaskInput(input: TaskInput): ValidationResult<ValidTaskI
       description: description.value,
       priority: priority.value,
       dueDate: dueDate.value,
+      ...(input.order !== undefined ? { order: input.order } : {}),
     },
   };
 }
@@ -167,6 +177,13 @@ export function validateTaskPatch(patch: TaskPatch): ValidationResult<ValidTaskP
       return dueDate;
     }
     value.dueDate = dueDate.value;
+  }
+
+  if (patch.order !== undefined) {
+    if (typeof patch.order !== "number" || !Number.isFinite(patch.order)) {
+      return { ok: false, error: "Order must be a valid number." };
+    }
+    value.order = patch.order;
   }
 
   return { ok: true, value };

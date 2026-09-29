@@ -46,6 +46,7 @@ export async function createTask(input: TaskInput): Promise<Task> {
     createdAt: timestamp,
     updatedAt: timestamp,
     completedAt: null,
+    ...(validation.value.order !== undefined ? { order: validation.value.order } : {}),
   };
 
   const db = await getDb();
@@ -95,6 +96,20 @@ export async function deleteTask(id: string): Promise<void> {
   await db.delete("tasks", id);
 }
 
+export async function reorderTasks(orderedIds: string[]): Promise<void> {
+  const db = await getDb();
+  const tx = db.transaction("tasks", "readwrite");
+  for (let i = 0; i < orderedIds.length; i++) {
+    const task = await tx.store.get(orderedIds[i]);
+    if (task) {
+      task.order = i;
+      task.updatedAt = now();
+      await tx.store.put(task);
+    }
+  }
+  await tx.done;
+}
+
 export function todayIsoDate(now: Date = new Date()): string {
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, "0");
@@ -110,7 +125,7 @@ export function isOverdue(task: Task, todayIso: string): boolean {
 }
 
 export type TaskStatusFilter = "all" | "active" | "completed";
-export type TaskSortKey = "dueDate" | "priority" | "created";
+export type TaskSortKey = "manual" | "created" | "dueDate" | "priority";
 
 const PRIORITY_RANK: Record<TaskPriority, number> = {
   high: 0,
@@ -153,6 +168,14 @@ export function filterTasksByStatus(
 export function sortTasks(tasks: Task[], sort: TaskSortKey): Task[] {
   const sorted = [...tasks];
   sorted.sort((a, b) => {
+    if (sort === "manual") {
+      const orderA = a.order ?? 0;
+      const orderB = b.order ?? 0;
+      if (orderA !== orderB) {
+        return orderA - orderB;
+      }
+      return byCreatedThenId(a, b);
+    }
     if (sort === "created") {
       return byCreatedThenId(a, b);
     }

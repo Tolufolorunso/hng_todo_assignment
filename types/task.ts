@@ -7,6 +7,7 @@ export interface Task {
   completed: boolean;
   priority: TaskPriority;
   dueDate: string | null;
+  order?: number;
   createdAt: string;
   updatedAt: string;
   completedAt: string | null;

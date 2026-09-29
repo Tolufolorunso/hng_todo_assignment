@@ -24,6 +24,20 @@ describe("validateTaskInput", () => {
     });
   });
 
+  it("accepts an optional numeric order in input", () => {
+    const result = validateTaskInput({ title: "Task with order", order: 2 });
+    expect(result).toEqual({
+      ok: true,
+      value: {
+        title: "Task with order",
+        description: "",
+        priority: "medium",
+        dueDate: null,
+        order: 2,
+      },
+    });
+  });
+
   it("defaults a missing description to an empty string", () => {
     const result = validateTaskInput({ title: "Buy milk" });
     expect(result).toEqual({
@@ -162,6 +176,15 @@ describe("validateTaskPatch", () => {
   it("rejects an unknown priority and a malformed due date in a patch", () => {
     expect(validateTaskPatch({ priority: "urgent" as never }).ok).toBe(false);
     expect(validateTaskPatch({ dueDate: "2026-13-01" }).ok).toBe(false);
+  });
+
+  it("validates order in a patch", () => {
+    expect(validateTaskPatch({ order: 5 })).toEqual({
+      ok: true,
+      value: { order: 5 },
+    });
+    expect(validateTaskPatch({ order: "5" as never }).ok).toBe(false);
+    expect(validateTaskPatch({ order: Number.NaN }).ok).toBe(false);
   });
 });
 

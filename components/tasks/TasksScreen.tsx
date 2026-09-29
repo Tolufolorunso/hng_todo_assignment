@@ -10,6 +10,7 @@ import {
   deleteTask,
   filterTasksByStatus,
   listTasks,
+  reorderTasks,
   searchTasks,
   sortTasks,
   todayIsoDate,
@@ -26,6 +27,8 @@ export default function TasksScreen() {
   const [status, setStatus] = useState<Status>("loading");
   const [mutationError, setMutationError] = useState<string | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
   const [todayIso] = useState(() => todayIsoDate());
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<TaskStatusFilter>("all");
@@ -117,6 +120,63 @@ export default function TasksScreen() {
     filterTasksByStatus(searchTasks(tasks, query), statusFilter),
     sort,
   );
+
+  function handleDragStart(event: React.DragEvent<HTMLLIElement>, task: Task) {
+    event.dataTransfer.setData("text/plain", task.id);
+    event.dataTransfer.effectAllowed = "move";
+    setDraggingId(task.id);
+  }
+
+  function handleDragOver(event: React.DragEvent<HTMLLIElement>, task: Task) {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    if (dragOverId !== task.id) {
+      setDragOverId(task.id);
+    }
+  }
+
+  function handleDragEnd() {
+    setDraggingId(null);
+    setDragOverId(null);
+  }
+
+  async function handleDrop(
+    event: React.DragEvent<HTMLLIElement>,
+    targetTask: Task,
+  ) {
+    event.preventDefault();
+    setDragOverId(null);
+    const sourceId = draggingId || event.dataTransfer.getData("text/plain");
+    setDraggingId(null);
+
+    if (!sourceId || sourceId === targetTask.id) {
+      return;
+    }
+
+    const fromIndex = visibleTasks.findIndex((t) => t.id === sourceId);
+    const toIndex = visibleTasks.findIndex((t) => t.id === targetTask.id);
+    if (fromIndex === -1 || toIndex === -1 || fromIndex === toIndex) {
+      return;
+    }
+
+    const reorderedVisible = [...visibleTasks];
+    const [moved] = reorderedVisible.splice(fromIndex, 1);
+    reorderedVisible.splice(toIndex, 0, moved);
+
+    const visibleIdSet = new Set(reorderedVisible.map((t) => t.id));
+    const remainingTasks = tasks.filter((t) => !visibleIdSet.has(t.id));
+    const updatedTasks = [...reorderedVisible, ...remainingTasks];
+
+    setTasks(updatedTasks);
+    setSort("manual");
+
+    try {
+      await reorderTasks(updatedTasks.map((t) => t.id));
+    } catch {
+      setMutationError("Could not save task order. Please try again.");
+      await load();
+    }
+  }
 
   function clearFilters() {
     setQuery("");
@@ -225,6 +285,12 @@ export default function TasksScreen() {
                       task={task}
                       todayIso={todayIso}
                       disabled={pendingId !== null}
+                      isDragging={draggingId === task.id}
+                      isDragOver={dragOverId === task.id && draggingId !== task.id}
+                      onDragStart={handleDragStart}
+                      onDragOver={handleDragOver}
+                      onDrop={handleDrop}
+                      onDragEnd={handleDragEnd}
                       onToggle={handleToggle}
                       onUpdate={handleUpdate}
                       onDelete={handleDelete}

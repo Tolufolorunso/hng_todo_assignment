@@ -100,6 +100,7 @@ export default function TaskControls({
             className="rounded-xl border border-border bg-surface px-3 py-1.5 text-xs font-medium text-text outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft"
           >
             <option value="created">Sort: Newest</option>
+            <option value="manual">Sort: Custom</option>
             <option value="dueDate">Sort: Due date</option>
             <option value="priority">Sort: Priority</option>
           </select>
