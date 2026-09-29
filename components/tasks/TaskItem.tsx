@@ -3,7 +3,7 @@
 import { useState } from "react";
 import TaskEditForm from "@/components/tasks/TaskEditForm";
 import { isOverdue } from "@/lib/tasks";
-import type { Task, TaskPriority } from "@/types/task";
+import type { Task, TaskCategory, TaskPriority } from "@/types/task";
 
 interface TaskItemProps {
   task: Task;
@@ -24,6 +24,7 @@ interface TaskItemProps {
       description: string;
       priority: TaskPriority;
       dueDate: string | null;
+      category?: TaskCategory | null;
     },
   ) => Promise<boolean>;
   onDelete: (task: Task) => Promise<boolean>;
@@ -41,6 +42,22 @@ const PRIORITY_CLASS: Record<TaskPriority, string> = {
   low: "bg-prio-low-bg text-prio-low border border-prio-low/20",
   medium: "bg-prio-medium-bg text-prio-medium border border-prio-medium/20",
   high: "bg-prio-high-bg text-prio-high border border-prio-high/20",
+};
+
+const CATEGORY_LABEL: Record<TaskCategory, string> = {
+  work: "Work",
+  personal: "Personal",
+  urgent: "Urgent",
+  study: "Study",
+  ideas: "Ideas",
+};
+
+const CATEGORY_CLASS: Record<TaskCategory, string> = {
+  work: "bg-sky-500/10 text-sky-400 border border-sky-500/20",
+  personal: "bg-purple-500/10 text-purple-400 border border-purple-500/20",
+  urgent: "bg-rose-500/10 text-rose-400 border border-rose-500/20",
+  study: "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20",
+  ideas: "bg-amber-500/10 text-amber-400 border border-amber-500/20",
 };
 
 function formatDue(iso: string): string {
@@ -222,6 +239,16 @@ export default function TaskItem({
             <span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden="true" />
             {PRIORITY_LABEL[task.priority]}
           </span>
+
+          {/* Category pill */}
+          {task.category !== null && task.category !== undefined && (
+            <span
+              className={`inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase ${CATEGORY_CLASS[task.category]}`}
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden="true" />
+              {CATEGORY_LABEL[task.category]}
+            </span>
+          )}
 
           {/* Due date badge */}
           {task.dueDate !== null &&

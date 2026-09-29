@@ -5,7 +5,7 @@ import {
   type TaskInput,
   type TaskPatch,
 } from "@/lib/validation";
-import type { Task, TaskPriority } from "@/types/task";
+import type { Task, TaskCategory, TaskPriority } from "@/types/task";
 
 export class TaskValidationError extends Error {
   constructor(message: string) {
@@ -43,6 +43,7 @@ export async function createTask(input: TaskInput): Promise<Task> {
     completed: false,
     priority: validation.value.priority,
     dueDate: validation.value.dueDate,
+    category: validation.value.category,
     createdAt: timestamp,
     updatedAt: timestamp,
     completedAt: null,
@@ -163,6 +164,18 @@ export function filterTasksByStatus(
     return tasks.filter((task) => task.completed);
   }
   return tasks;
+}
+
+export type TaskCategoryFilter = "all" | TaskCategory;
+
+export function filterTasksByCategory(
+  tasks: Task[],
+  category: TaskCategoryFilter,
+): Task[] {
+  if (category === "all") {
+    return tasks;
+  }
+  return tasks.filter((task) => task.category === category);
 }
 
 export function sortTasks(tasks: Task[], sort: TaskSortKey): Task[] {

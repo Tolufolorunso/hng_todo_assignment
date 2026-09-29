@@ -8,6 +8,7 @@ import TaskSidebar from "@/components/tasks/TaskSidebar";
 import {
   TaskNotFoundError,
   deleteTask,
+  filterTasksByCategory,
   filterTasksByStatus,
   listTasks,
   reorderTasks,
@@ -15,10 +16,11 @@ import {
   sortTasks,
   todayIsoDate,
   updateTask,
+  type TaskCategoryFilter,
   type TaskSortKey,
   type TaskStatusFilter,
 } from "@/lib/tasks";
-import type { Task, TaskPriority } from "@/types/task";
+import type { Task, TaskCategory, TaskPriority } from "@/types/task";
 
 type Status = "loading" | "ready" | "error";
 
@@ -32,6 +34,7 @@ export default function TasksScreen() {
   const [todayIso] = useState(() => todayIsoDate());
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<TaskStatusFilter>("all");
+  const [categoryFilter, setCategoryFilter] = useState<TaskCategoryFilter>("all");
   const [sort, setSort] = useState<TaskSortKey>("created");
 
   const load = useCallback(
@@ -81,6 +84,7 @@ export default function TasksScreen() {
       description: string;
       priority: TaskPriority;
       dueDate: string | null;
+      category?: TaskCategory | null;
     },
   ): Promise<boolean> {
     setMutationError(null);
@@ -117,7 +121,10 @@ export default function TasksScreen() {
   }
 
   const visibleTasks = sortTasks(
-    filterTasksByStatus(searchTasks(tasks, query), statusFilter),
+    filterTasksByCategory(
+      filterTasksByStatus(searchTasks(tasks, query), statusFilter),
+      categoryFilter,
+    ),
     sort,
   );
 
@@ -181,6 +188,7 @@ export default function TasksScreen() {
   function clearFilters() {
     setQuery("");
     setStatusFilter("all");
+    setCategoryFilter("all");
     setSort("created");
   }
 
@@ -252,10 +260,12 @@ export default function TasksScreen() {
               <TaskControls
                 query={query}
                 status={statusFilter}
+                category={categoryFilter}
                 sort={sort}
                 disabled={pendingId !== null}
                 onQueryChange={setQuery}
                 onStatusChange={setStatusFilter}
+                onCategoryChange={setCategoryFilter}
                 onSortChange={setSort}
               />
 
@@ -267,7 +277,9 @@ export default function TasksScreen() {
                   <p className="mt-1 text-xs text-muted">
                     {query.trim() !== ""
                       ? `Nothing matches "${query.trim()}".`
-                      : "No tasks in this status filter."}
+                      : categoryFilter !== "all"
+                      ? `No tasks found in the ${categoryFilter} category.`
+                      : "No tasks match the active filters."}
                   </p>
                   <button
                     type="button"

@@ -6,7 +6,7 @@ import {
   TITLE_MAX_LENGTH,
   validateTaskInput,
 } from "@/lib/validation";
-import type { Task, TaskPriority } from "@/types/task";
+import type { Task, TaskCategory, TaskPriority } from "@/types/task";
 
 interface TaskEditFormProps {
   task: Task;
@@ -16,13 +16,16 @@ interface TaskEditFormProps {
     description: string;
     priority: TaskPriority;
     dueDate: string | null;
+    category?: TaskCategory | null;
   }) => Promise<boolean>;
   onCancel: () => void;
 }
 
 const ERROR_ID = "task-edit-error";
 
-function focusFieldFor(error: string): "title" | "description" | "priority" | "dueDate" {
+function focusFieldFor(
+  error: string,
+): "title" | "description" | "priority" | "dueDate" | "category" {
   if (error.startsWith("Description")) {
     return "description";
   }
@@ -31,6 +34,9 @@ function focusFieldFor(error: string): "title" | "description" | "priority" | "d
   }
   if (error.startsWith("Due date")) {
     return "dueDate";
+  }
+  if (error.startsWith("Category")) {
+    return "category";
   }
   return "title";
 }
@@ -45,15 +51,17 @@ export default function TaskEditForm({
   const [description, setDescription] = useState(task.description);
   const [priority, setPriority] = useState<TaskPriority>(task.priority);
   const [dueDate, setDueDate] = useState(task.dueDate ?? "");
+  const [category, setCategory] = useState<TaskCategory | null>(task.category ?? null);
   const [error, setError] = useState<string | null>(null);
   const [errorField, setErrorField] = useState<
-    "title" | "description" | "priority" | "dueDate" | null
+    "title" | "description" | "priority" | "dueDate" | "category" | null
   >(null);
   const [saving, setSaving] = useState(false);
   const titleRef = useRef<HTMLInputElement>(null);
   const descriptionRef = useRef<HTMLTextAreaElement>(null);
   const priorityRef = useRef<HTMLSelectElement>(null);
   const dueDateRef = useRef<HTMLInputElement>(null);
+  const categoryRef = useRef<HTMLSelectElement>(null);
 
   useEffect(() => {
     titleRef.current?.focus();
@@ -62,7 +70,7 @@ export default function TaskEditForm({
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const validation = validateTaskInput({ title, description, priority, dueDate });
+    const validation = validateTaskInput({ title, description, priority, dueDate, category });
     if (!validation.ok) {
       const field = focusFieldFor(validation.error);
       setError(validation.error);
@@ -72,6 +80,7 @@ export default function TaskEditForm({
         description: descriptionRef,
         priority: priorityRef,
         dueDate: dueDateRef,
+        category: categoryRef,
       };
       refs[field].current?.focus();
       return;
@@ -166,6 +175,33 @@ export default function TaskEditForm({
             aria-describedby={errorField === "dueDate" ? ERROR_ID : undefined}
             className="rounded-xl border border-border bg-surface px-3 py-1.5 text-xs text-text outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft"
           />
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label
+            htmlFor="task-edit-category"
+            className="text-xs font-semibold text-muted"
+          >
+            Category
+          </label>
+          <select
+            id="task-edit-category"
+            ref={categoryRef}
+            value={category ?? ""}
+            onChange={(event) =>
+              setCategory((event.target.value as TaskCategory) || null)
+            }
+            aria-invalid={errorField === "category"}
+            aria-describedby={errorField === "category" ? ERROR_ID : undefined}
+            className="rounded-xl border border-border bg-surface px-3 py-1.5 text-xs font-medium text-text outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft"
+          >
+            <option value="">No Category</option>
+            <option value="work">Work</option>
+            <option value="personal">Personal</option>
+            <option value="urgent">Urgent</option>
+            <option value="study">Study</option>
+            <option value="ideas">Ideas</option>
+          </select>
         </div>
       </div>
 

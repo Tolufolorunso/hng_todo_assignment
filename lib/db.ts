@@ -3,13 +3,18 @@ import type { Note } from "@/types/note";
 import type { Task } from "@/types/task";
 
 export const DB_NAME = "taskflow";
-export const DB_VERSION = 2;
+export const DB_VERSION = 3;
 
 export interface TaskFlowDB extends DBSchema {
   tasks: {
     key: string;
     value: Task;
-    indexes: { completed: number; dueDate: string; updatedAt: string };
+    indexes: {
+      completed: number;
+      dueDate: string;
+      updatedAt: string;
+      category: string;
+    };
   };
   notes: {
     key: string;
@@ -49,6 +54,25 @@ export function getDb(): Promise<IDBPDatabase<TaskFlowDB>> {
           const tasks = transaction.objectStore("tasks");
           tasks.createIndex("completed", "completed");
           tasks.createIndex("dueDate", "dueDate");
+        }
+
+        if (oldVersion >= 1 && oldVersion < 3) {
+          // v1 and v2 tasks predate category, so backfill category: null
+          const tasks = transaction.objectStore("tasks");
+          let cursor = await tasks.openCursor();
+          while (cursor) {
+            if (cursor.value.category === undefined) {
+              await cursor.update({ ...cursor.value, category: null });
+            }
+            cursor = await cursor.continue();
+          }
+        }
+
+        if (oldVersion < 3) {
+          const tasks = transaction.objectStore("tasks");
+          if (!tasks.indexNames.contains("category")) {
+            tasks.createIndex("category", "category");
+          }
         }
       },
     });

@@ -1,4 +1,4 @@
-import type { TaskPriority } from "@/types/task";
+import type { TaskCategory, TaskPriority } from "@/types/task";
 
 export const TITLE_MAX_LENGTH = 200;
 export const DESCRIPTION_MAX_LENGTH = 2000;
@@ -6,6 +6,13 @@ export const DESCRIPTION_MAX_LENGTH = 2000;
 const TASK_PRIORITY_VALUES: readonly TaskPriority[] = ["low", "medium", "high"];
 const DEFAULT_TASK_PRIORITY: TaskPriority = "medium";
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+export const TASK_CATEGORY_VALUES: readonly TaskCategory[] = [
+  "work",
+  "personal",
+  "urgent",
+  "study",
+  "ideas",
+];
 
 export type ValidationResult<T> =
   | { ok: true; value: T }
@@ -16,6 +23,7 @@ export interface TaskInput {
   description?: string;
   priority?: TaskPriority;
   dueDate?: string | null;
+  category?: TaskCategory | null;
   order?: number;
 }
 
@@ -24,6 +32,7 @@ export interface ValidTaskInput {
   description: string;
   priority: TaskPriority;
   dueDate: string | null;
+  category: TaskCategory | null;
   order?: number;
 }
 
@@ -33,6 +42,7 @@ export interface TaskPatch {
   completed?: boolean;
   priority?: TaskPriority;
   dueDate?: string | null;
+  category?: TaskCategory | null;
   order?: number;
 }
 
@@ -42,6 +52,7 @@ export interface ValidTaskPatch {
   completed?: boolean;
   priority?: TaskPriority;
   dueDate?: string | null;
+  category?: TaskCategory | null;
   order?: number;
 }
 
@@ -103,6 +114,21 @@ function validateDueDate(
   return { ok: true, value: raw };
 }
 
+function validateCategory(
+  raw: TaskCategory | null | undefined,
+): ValidationResult<TaskCategory | null> {
+  if (raw === undefined || raw === null) {
+    return { ok: true, value: null };
+  }
+  if (typeof raw !== "string" || !TASK_CATEGORY_VALUES.includes(raw as TaskCategory)) {
+    return {
+      ok: false,
+      error: "Category must be work, personal, urgent, study, ideas, or null.",
+    };
+  }
+  return { ok: true, value: raw as TaskCategory };
+}
+
 export function validateTaskInput(input: TaskInput): ValidationResult<ValidTaskInput> {
   const title = validateTitle(input.title);
   if (!title.ok) {
@@ -120,6 +146,10 @@ export function validateTaskInput(input: TaskInput): ValidationResult<ValidTaskI
   if (!dueDate.ok) {
     return dueDate;
   }
+  const category = validateCategory(input.category);
+  if (!category.ok) {
+    return category;
+  }
   if (input.order !== undefined) {
     if (typeof input.order !== "number" || !Number.isFinite(input.order)) {
       return { ok: false, error: "Order must be a valid number." };
@@ -132,6 +162,7 @@ export function validateTaskInput(input: TaskInput): ValidationResult<ValidTaskI
       description: description.value,
       priority: priority.value,
       dueDate: dueDate.value,
+      category: category.value,
       ...(input.order !== undefined ? { order: input.order } : {}),
     },
   };
@@ -177,6 +208,14 @@ export function validateTaskPatch(patch: TaskPatch): ValidationResult<ValidTaskP
       return dueDate;
     }
     value.dueDate = dueDate.value;
+  }
+
+  if (patch.category !== undefined) {
+    const category = validateCategory(patch.category);
+    if (!category.ok) {
+      return category;
+    }
+    value.category = category.value;
   }
 
   if (patch.order !== undefined) {

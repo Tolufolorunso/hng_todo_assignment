@@ -1,13 +1,21 @@
 "use client";
 
 import { useMemo } from "react";
-import type { Task } from "@/types/task";
+import type { Task, TaskCategory } from "@/types/task";
 import { isOverdue } from "@/lib/tasks";
 
 interface TaskSidebarProps {
   tasks: Task[];
   todayIso: string;
 }
+
+const CATEGORY_ITEMS: { key: TaskCategory; label: string; dotClass: string }[] = [
+  { key: "work", label: "Work", dotClass: "bg-sky-400" },
+  { key: "personal", label: "Personal", dotClass: "bg-purple-400" },
+  { key: "urgent", label: "Urgent", dotClass: "bg-rose-400" },
+  { key: "study", label: "Study", dotClass: "bg-emerald-400" },
+  { key: "ideas", label: "Ideas", dotClass: "bg-amber-400" },
+];
 
 export default function TaskSidebar({ tasks, todayIso }: TaskSidebarProps) {
   const stats = useMemo(() => {
@@ -19,6 +27,22 @@ export default function TaskSidebar({ tasks, todayIso }: TaskSidebarProps) {
 
     return { total, completed, active, overdue, percent };
   }, [tasks, todayIso]);
+
+  const categoryCounts = useMemo(() => {
+    const counts: Record<TaskCategory, number> = {
+      work: 0,
+      personal: 0,
+      urgent: 0,
+      study: 0,
+      ideas: 0,
+    };
+    for (const t of tasks) {
+      if (t.category && t.category in counts) {
+        counts[t.category]++;
+      }
+    }
+    return counts;
+  }, [tasks]);
 
   const formattedDate = useMemo(() => {
     return new Date().toLocaleDateString(undefined, {
@@ -104,6 +128,35 @@ export default function TaskSidebar({ tasks, todayIso }: TaskSidebarProps) {
         </div>
       </div>
 
+      {/* Category Breakdown Card */}
+      <div className="rounded-2xl border border-border/80 bg-surface p-4 shadow-card">
+        <div className="flex items-center justify-between border-b border-border/60 pb-2">
+          <span className="text-xs font-semibold text-text">Categories</span>
+          <span className="font-mono text-[11px] text-faint">
+            {Object.values(categoryCounts).reduce((a, b) => a + b, 0)} tagged
+          </span>
+        </div>
+        <div className="mt-3 flex flex-col gap-2">
+          {CATEGORY_ITEMS.map((cat) => {
+            const count = categoryCounts[cat.key];
+            return (
+              <div
+                key={cat.key}
+                className="flex items-center justify-between text-xs"
+              >
+                <div className="flex items-center gap-2">
+                  <span className={`h-2 w-2 rounded-full ${cat.dotClass}`} aria-hidden="true" />
+                  <span className="font-medium text-text">{cat.label}</span>
+                </div>
+                <span className="font-mono text-xs font-semibold text-muted">
+                  {count}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Productivity Tip */}
       <div className="rounded-xl border border-border/60 bg-surface-muted/60 p-4 text-xs text-muted">
         <div className="flex items-center gap-1.5 font-semibold text-text">
@@ -126,7 +179,7 @@ export default function TaskSidebar({ tasks, todayIso }: TaskSidebarProps) {
           Quick Productivity Tip
         </div>
         <p className="mt-1.5 leading-relaxed text-muted">
-          Prioritize tasks as High, Medium, or Low to quickly spot urgent items. Use the status tabs to focus on what needs doing now.
+          Categorize tasks as Work, Personal, Urgent, Study, or Ideas to stay organized. Use the category pills to filter your view anytime.
         </p>
       </div>
     </aside>

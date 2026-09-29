@@ -20,6 +20,7 @@ describe("validateTaskInput", () => {
         description: "2 litres",
         priority: "medium",
         dueDate: null,
+        category: null,
       },
     });
   });
@@ -33,16 +34,42 @@ describe("validateTaskInput", () => {
         description: "",
         priority: "medium",
         dueDate: null,
+        category: null,
         order: 2,
       },
     });
+  });
+
+  it("accepts valid categories in input", () => {
+    const categories = ["work", "personal", "urgent", "study", "ideas"] as const;
+    for (const cat of categories) {
+      const result = validateTaskInput({ title: "Categorized", category: cat });
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.value.category).toBe(cat);
+      }
+    }
+  });
+
+  it("rejects an invalid category in input", () => {
+    const result = validateTaskInput({ title: "Invalid", category: "other" as never });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toContain("Category must be");
+    }
   });
 
   it("defaults a missing description to an empty string", () => {
     const result = validateTaskInput({ title: "Buy milk" });
     expect(result).toEqual({
       ok: true,
-      value: { title: "Buy milk", description: "", priority: "medium", dueDate: null },
+      value: {
+        title: "Buy milk",
+        description: "",
+        priority: "medium",
+        dueDate: null,
+        category: null,
+      },
     });
   });
 
@@ -85,7 +112,13 @@ describe("validateTaskInput", () => {
   it("defaults a missing priority to medium and a missing due date to null", () => {
     expect(validateTaskInput({ title: "Task" })).toEqual({
       ok: true,
-      value: { title: "Task", description: "", priority: "medium", dueDate: null },
+      value: {
+        title: "Task",
+        description: "",
+        priority: "medium",
+        dueDate: null,
+        category: null,
+      },
     });
   });
 
@@ -185,6 +218,18 @@ describe("validateTaskPatch", () => {
     });
     expect(validateTaskPatch({ order: "5" as never }).ok).toBe(false);
     expect(validateTaskPatch({ order: Number.NaN }).ok).toBe(false);
+  });
+
+  it("validates category in a patch", () => {
+    expect(validateTaskPatch({ category: "work" })).toEqual({
+      ok: true,
+      value: { category: "work" },
+    });
+    expect(validateTaskPatch({ category: null })).toEqual({
+      ok: true,
+      value: { category: null },
+    });
+    expect(validateTaskPatch({ category: "invalid" as never }).ok).toBe(false);
   });
 });
 

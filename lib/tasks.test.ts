@@ -5,6 +5,7 @@ import {
   TaskValidationError,
   createTask,
   deleteTask,
+  filterTasksByCategory,
   filterTasksByStatus,
   getTask,
   isOverdue,
@@ -42,6 +43,7 @@ describe("createTask", () => {
     expect(task.completed).toBe(false);
     expect(task.priority).toBe("medium");
     expect(task.dueDate).toBeNull();
+    expect(task.category).toBeNull();
     expect(task.completedAt).toBeNull();
     expect(task.createdAt).toBe("2026-01-01T00:00:00.000Z");
     expect(task.updatedAt).toBe(task.createdAt);
@@ -226,6 +228,26 @@ describe("createTask priority and due date", () => {
   });
 });
 
+describe("createTask and updateTask category", () => {
+  it("persists a category on creation", async () => {
+    const task = await createTask({
+      title: "Design logo",
+      category: "ideas",
+    });
+    expect(task.category).toBe("ideas");
+    expect((await getTask(task.id))?.category).toBe("ideas");
+  });
+
+  it("updates and clears category through a patch", async () => {
+    const task = await createTask({ title: "Write code", category: "work" });
+    const updated = await updateTask(task.id, { category: "urgent" });
+    expect(updated.category).toBe("urgent");
+
+    const cleared = await updateTask(task.id, { category: null });
+    expect(cleared.category).toBeNull();
+  });
+});
+
 describe("todayIsoDate", () => {
   it("formats a date as a zero-padded date-only string", () => {
     expect(todayIsoDate(new Date(2026, 0, 5))).toBe("2026-01-05");
@@ -242,6 +264,7 @@ describe("isOverdue", () => {
       completed: false,
       priority: "medium",
       dueDate: null,
+      category: null,
       createdAt: "2026-01-01T00:00:00.000Z",
       updatedAt: "2026-01-01T00:00:00.000Z",
       completedAt: null,
@@ -279,6 +302,7 @@ function makeTask(overrides: Partial<Task> & { id: string }): Task {
     completed: false,
     priority: "medium",
     dueDate: null,
+    category: null,
     createdAt: "2026-01-01T00:00:00.000Z",
     updatedAt: "2026-01-01T00:00:00.000Z",
     completedAt: null,
@@ -331,6 +355,28 @@ describe("filterTasksByStatus", () => {
 
   it("keeps completed tasks for completed", () => {
     expect(filterTasksByStatus(tasks, "completed").map((t) => t.id)).toEqual(["2"]);
+  });
+});
+
+describe("filterTasksByCategory", () => {
+  const tasks = [
+    makeTask({ id: "1", category: "work" }),
+    makeTask({ id: "2", category: "personal" }),
+    makeTask({ id: "3", category: "urgent" }),
+    makeTask({ id: "4", category: null }),
+  ];
+
+  it("returns the input for all", () => {
+    expect(filterTasksByCategory(tasks, "all")).toBe(tasks);
+  });
+
+  it("filters tasks matching the specified category", () => {
+    expect(filterTasksByCategory(tasks, "work").map((t) => t.id)).toEqual(["1"]);
+    expect(filterTasksByCategory(tasks, "urgent").map((t) => t.id)).toEqual(["3"]);
+  });
+
+  it("returns empty array when no tasks match the category", () => {
+    expect(filterTasksByCategory(tasks, "study")).toEqual([]);
   });
 });
 
