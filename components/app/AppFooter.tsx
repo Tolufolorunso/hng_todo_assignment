@@ -8,10 +8,10 @@ export default function AppFooter() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
-    <footer className="mt-auto border-t border-border bg-surface/30 backdrop-blur-xs py-6 px-6 text-xs text-muted transition-colors print:hidden">
-      <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-4 sm:flex-row">
+    <footer className="mt-auto border-t border-border bg-surface/30 backdrop-blur-xs py-6 px-4 text-xs text-muted transition-colors mb-16 sm:mb-0 sm:fixed sm:bottom-0 sm:left-0 sm:right-0 sm:z-20 sm:border-t sm:border-border sm:bg-bg/85 sm:backdrop-blur-md sm:py-2.5 sm:px-6 print:hidden">
+      <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-3 sm:flex-row sm:items-center">
         {/* Left: Brand & Architecture note */}
-        <div className="flex flex-col items-center gap-1.5 sm:items-start">
+        <div className="flex flex-col items-center gap-1 sm:flex-row sm:items-center sm:gap-2">
           <div className="flex items-center gap-2 text-text font-semibold">
             <TaskFlowLogo size={18} />
             <span>
@@ -22,7 +22,8 @@ export default function AppFooter() {
               Personal Productivity Suite
             </span>
           </div>
-          <p className="text-[11px] text-faint">
+          <span className="hidden lg:inline text-[10px] text-faint font-normal">•</span>
+          <p className="text-[11px] text-faint sm:hidden lg:block">
             Offline-first architecture with browser-persisted storage. No cloud required.
           </p>
         </div>

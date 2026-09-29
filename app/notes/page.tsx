@@ -16,7 +16,7 @@ export default function NotesPage() {
   return (
     <>
       <AppHeader active="notes" />
-      <Suspense fallback={<main className="mx-auto flex w-full max-w-6xl flex-1 px-4 py-8 pb-24 sm:px-6 sm:py-10 sm:pb-10" />}>
+      <Suspense fallback={<main className="mx-auto flex w-full max-w-6xl flex-1 px-4 py-8 pb-24 sm:px-6 sm:py-10 sm:pb-20" />}>
         <NotesScreen />
       </Suspense>
     </>

@@ -74,7 +74,7 @@ export default function StandaloneNoteView({ id }: StandaloneNoteViewProps) {
 
   if (status === "loading") {
     return (
-      <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-8 pb-24 sm:px-6 sm:py-12 sm:pb-12">
+      <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-8 pb-24 sm:px-6 sm:py-12 sm:pb-20">
         <div className="flex items-center gap-2 text-xs text-muted">
           <span className="h-4 w-4 animate-spin rounded-full border-2 border-accent border-t-transparent" />
           <span>Opening document...</span>
@@ -159,7 +159,7 @@ export default function StandaloneNoteView({ id }: StandaloneNoteViewProps) {
   const stats = calculateReadingStats(note.body);
 
   return (
-    <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-4 py-6 pb-24 sm:px-6 sm:py-12 sm:pb-12 print:max-w-full print:p-0">
+    <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-4 py-6 pb-24 sm:px-6 sm:py-12 sm:pb-20 print:max-w-full print:p-0">
       {/* Top Action Bar */}
       <nav
         aria-label="Document reader navigation"
