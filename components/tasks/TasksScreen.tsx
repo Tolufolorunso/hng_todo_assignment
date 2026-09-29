@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import TaskControls from "@/components/tasks/TaskControls";
 import TaskForm from "@/components/tasks/TaskForm";
 import TaskItem from "@/components/tasks/TaskItem";
@@ -30,12 +30,33 @@ export default function TasksScreen() {
   const [mutationError, setMutationError] = useState<string | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
-  const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const [dropIndicator, setDropIndicator] = useState<{
+    id: string;
+    edge: "top" | "bottom";
+  } | null>(null);
+  const draggingIdRef = useRef<string | null>(null);
   const [todayIso] = useState(() => todayIsoDate());
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<TaskStatusFilter>("all");
   const [categoryFilter, setCategoryFilter] = useState<TaskCategoryFilter>("all");
-  const [sort, setSort] = useState<TaskSortKey>("created");
+  const [sort, setSort] = useState<TaskSortKey>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("taskflow:sort-preference");
+        if (
+          saved === "manual" ||
+          saved === "created" ||
+          saved === "dueDate" ||
+          saved === "priority"
+        ) {
+          return saved;
+        }
+      } catch {
+        // ignore
+      }
+    }
+    return "manual";
+  });
 
   const load = useCallback(
     () =>
@@ -128,23 +149,60 @@ export default function TasksScreen() {
     sort,
   );
 
+  function handleSortChange(newSort: TaskSortKey) {
+    setSort(newSort);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("taskflow:sort-preference", newSort);
+      } catch {
+        // ignore
+      }
+    }
+  }
+
   function handleDragStart(event: React.DragEvent<HTMLLIElement>, task: Task) {
+    draggingIdRef.current = task.id;
     event.dataTransfer.setData("text/plain", task.id);
     event.dataTransfer.effectAllowed = "move";
-    setDraggingId(task.id);
+    requestAnimationFrame(() => {
+      setDraggingId(task.id);
+    });
   }
 
   function handleDragOver(event: React.DragEvent<HTMLLIElement>, task: Task) {
     event.preventDefault();
     event.dataTransfer.dropEffect = "move";
-    if (dragOverId !== task.id) {
-      setDragOverId(task.id);
+
+    const sourceId = draggingIdRef.current || draggingId;
+    if (sourceId === task.id) {
+      if (dropIndicator !== null) {
+        setDropIndicator(null);
+      }
+      return;
+    }
+
+    const rect = event.currentTarget.getBoundingClientRect();
+    const midpoint = rect.top + rect.height / 2;
+    const edge: "top" | "bottom" = event.clientY < midpoint ? "top" : "bottom";
+
+    if (dropIndicator?.id !== task.id || dropIndicator?.edge !== edge) {
+      setDropIndicator({ id: task.id, edge });
+    }
+  }
+
+  function handleDragLeave(event: React.DragEvent<HTMLLIElement>, task: Task) {
+    const related = event.relatedTarget as Node | null;
+    if (!related || !event.currentTarget.contains(related)) {
+      if (dropIndicator?.id === task.id) {
+        setDropIndicator(null);
+      }
     }
   }
 
   function handleDragEnd() {
+    draggingIdRef.current = null;
     setDraggingId(null);
-    setDragOverId(null);
+    setDropIndicator(null);
   }
 
   async function handleDrop(
@@ -152,30 +210,50 @@ export default function TasksScreen() {
     targetTask: Task,
   ) {
     event.preventDefault();
-    setDragOverId(null);
-    const sourceId = draggingId || event.dataTransfer.getData("text/plain");
+    const sourceId = draggingIdRef.current || draggingId || event.dataTransfer.getData("text/plain");
+    const currentIndicator = dropIndicator;
+
+    draggingIdRef.current = null;
     setDraggingId(null);
+    setDropIndicator(null);
 
     if (!sourceId || sourceId === targetTask.id) {
       return;
     }
 
     const fromIndex = visibleTasks.findIndex((t) => t.id === sourceId);
-    const toIndex = visibleTasks.findIndex((t) => t.id === targetTask.id);
-    if (fromIndex === -1 || toIndex === -1 || fromIndex === toIndex) {
+    const targetIndex = visibleTasks.findIndex((t) => t.id === targetTask.id);
+    if (fromIndex === -1 || targetIndex === -1) {
       return;
     }
 
+    const edge = currentIndicator?.id === targetTask.id ? currentIndicator.edge : "top";
+
     const reorderedVisible = [...visibleTasks];
     const [moved] = reorderedVisible.splice(fromIndex, 1);
-    reorderedVisible.splice(toIndex, 0, moved);
+    const newTargetIndex = reorderedVisible.findIndex((t) => t.id === targetTask.id);
+    const insertIndex = edge === "top" ? newTargetIndex : newTargetIndex + 1;
+    reorderedVisible.splice(insertIndex, 0, moved);
 
     const visibleIdSet = new Set(reorderedVisible.map((t) => t.id));
     const remainingTasks = tasks.filter((t) => !visibleIdSet.has(t.id));
-    const updatedTasks = [...reorderedVisible, ...remainingTasks];
+    const combined = [...reorderedVisible, ...remainingTasks];
+
+    // Synchronize order index directly in memory so UI never snaps back
+    const updatedTasks = combined.map((task, index) => ({
+      ...task,
+      order: index,
+    }));
 
     setTasks(updatedTasks);
     setSort("manual");
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("taskflow:sort-preference", "manual");
+      } catch {
+        // ignore
+      }
+    }
 
     try {
       await reorderTasks(updatedTasks.map((t) => t.id));
@@ -189,7 +267,7 @@ export default function TasksScreen() {
     setQuery("");
     setStatusFilter("all");
     setCategoryFilter("all");
-    setSort("created");
+    handleSortChange("manual");
   }
 
   return (
@@ -266,7 +344,7 @@ export default function TasksScreen() {
                 onQueryChange={setQuery}
                 onStatusChange={setStatusFilter}
                 onCategoryChange={setCategoryFilter}
-                onSortChange={setSort}
+                onSortChange={handleSortChange}
               />
 
               {visibleTasks.length === 0 ? (
@@ -298,9 +376,14 @@ export default function TasksScreen() {
                       todayIso={todayIso}
                       disabled={pendingId !== null}
                       isDragging={draggingId === task.id}
-                      isDragOver={dragOverId === task.id && draggingId !== task.id}
+                      dropEdge={
+                        dropIndicator?.id === task.id && draggingId !== task.id
+                          ? dropIndicator.edge
+                          : null
+                      }
                       onDragStart={handleDragStart}
                       onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
                       onDrop={handleDrop}
                       onDragEnd={handleDragEnd}
                       onToggle={handleToggle}

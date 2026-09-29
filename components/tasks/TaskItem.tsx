@@ -10,10 +10,10 @@ interface TaskItemProps {
   todayIso: string;
   disabled: boolean;
   isDragging?: boolean;
-  isDragOver?: boolean;
+  dropEdge?: "top" | "bottom" | null;
   onDragStart?: (event: React.DragEvent<HTMLLIElement>, task: Task) => void;
   onDragOver?: (event: React.DragEvent<HTMLLIElement>, task: Task) => void;
-  onDragLeave?: (event: React.DragEvent<HTMLLIElement>) => void;
+  onDragLeave?: (event: React.DragEvent<HTMLLIElement>, task: Task) => void;
   onDrop?: (event: React.DragEvent<HTMLLIElement>, task: Task) => void;
   onDragEnd?: (event: React.DragEvent<HTMLLIElement>) => void;
   onToggle: (task: Task, completed: boolean) => void;
@@ -74,7 +74,7 @@ export default function TaskItem({
   todayIso,
   disabled,
   isDragging = false,
-  isDragOver = false,
+  dropEdge = null,
   onDragStart,
   onDragOver,
   onDragLeave,
@@ -163,17 +163,40 @@ export default function TaskItem({
       draggable={!disabled && mode === "view"}
       onDragStart={(event) => onDragStart?.(event, task)}
       onDragOver={(event) => onDragOver?.(event, task)}
-      onDragLeave={onDragLeave}
+      onDragLeave={(event) => onDragLeave?.(event, task)}
       onDrop={(event) => onDrop?.(event, task)}
       onDragEnd={onDragEnd}
       className={`group relative flex items-start gap-3 rounded-2xl border bg-surface p-4 shadow-card transition-all ${
         isDragging
           ? "opacity-30 scale-[0.99] border-dashed border-accent/60 bg-surface-muted/50"
-          : isDragOver
-          ? "border-accent ring-2 ring-accent/30 bg-surface-muted/30"
+          : dropEdge
+          ? "border-accent/40 bg-surface-muted/20"
           : "border-border/80 hover:border-border-strong hover:shadow-card-hover"
       }`}
     >
+      {/* In-between insertion indicator for TOP edge */}
+      {dropEdge === "top" && (
+        <div
+          className="pointer-events-none absolute -top-1.5 left-0 right-0 z-20 flex items-center"
+          aria-hidden="true"
+        >
+          <div className="h-2.5 w-2.5 -ml-1 rounded-full bg-accent ring-2 ring-surface shadow-[0_0_8px_var(--color-accent)]" />
+          <div className="h-1 flex-1 rounded-full bg-accent shadow-[0_0_8px_var(--color-accent)]" />
+          <div className="h-2.5 w-2.5 -mr-1 rounded-full bg-accent ring-2 ring-surface shadow-[0_0_8px_var(--color-accent)]" />
+        </div>
+      )}
+
+      {/* In-between insertion indicator for BOTTOM edge */}
+      {dropEdge === "bottom" && (
+        <div
+          className="pointer-events-none absolute -bottom-1.5 left-0 right-0 z-20 flex items-center"
+          aria-hidden="true"
+        >
+          <div className="h-2.5 w-2.5 -ml-1 rounded-full bg-accent ring-2 ring-surface shadow-[0_0_8px_var(--color-accent)]" />
+          <div className="h-1 flex-1 rounded-full bg-accent shadow-[0_0_8px_var(--color-accent)]" />
+          <div className="h-2.5 w-2.5 -mr-1 rounded-full bg-accent ring-2 ring-surface shadow-[0_0_8px_var(--color-accent)]" />
+        </div>
+      )}
       {/* Drag Grip Handle */}
       <div
         className="flex items-center pt-1 text-faint opacity-35 transition-opacity group-hover:opacity-90 hover:text-text cursor-grab active:cursor-grabbing select-none"
