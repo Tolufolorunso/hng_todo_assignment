@@ -1,4 +1,5 @@
 import Link from "next/link";
+import OfflineIndicator from "@/components/app/OfflineIndicator";
 
 interface AppHeaderProps {
   active: "tasks" | "notes";
@@ -55,6 +56,8 @@ export default function AppHeader({ active }: AppHeaderProps) {
             Notes
           </Link>
         </nav>
+
+        <OfflineIndicator />
       </div>
     </header>
   );
