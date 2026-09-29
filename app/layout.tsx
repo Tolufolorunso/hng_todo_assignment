@@ -20,16 +20,29 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#4f46e5",
+  themeColor: "#09090b",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+const themeInitializerScript = `(function(){try{var s=localStorage.getItem('taskflow_theme');var t=s==='light'?'light':'dark';var d=document.documentElement;d.classList.remove('dark','light');d.classList.add(t);d.setAttribute('data-theme',t);d.style.colorScheme=t;}catch(e){document.documentElement.classList.add('dark');document.documentElement.setAttribute('data-theme','dark');document.documentElement.style.colorScheme='dark';}})();`;
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      data-theme="dark"
+      className={`${geistSans.variable} ${geistMono.variable} dark h-full antialiased`}
+      suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{ __html: themeInitializerScript }}
+        />
+      </head>
+      <body className="min-h-full flex flex-col bg-bg text-text transition-colors duration-150">
         <ServiceWorkerRegistrar />
         {children}
       </body>

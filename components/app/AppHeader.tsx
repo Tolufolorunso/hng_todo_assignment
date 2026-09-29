@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import OfflineIndicator from "@/components/app/OfflineIndicator";
 import BackupModal from "@/components/backup/BackupModal";
+import ThemeToggle from "@/components/app/ThemeToggle";
 
 interface AppHeaderProps {
   active: "tasks" | "notes" | "calendar" | "analytics";
@@ -157,7 +158,8 @@ export default function AppHeader({ active }: AppHeaderProps) {
         </nav>
 
         {/* Header Right Utilities */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
+          <ThemeToggle />
           <button
             type="button"
             onClick={() => setIsBackupOpen(true)}
