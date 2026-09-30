@@ -3,14 +3,13 @@ import type { Note } from "@/types/note";
 import type { Task } from "@/types/task";
 
 export const DB_NAME = "taskflow";
-export const DB_VERSION = 3;
+export const DB_VERSION = 4;
 
 export interface TaskFlowDB extends DBSchema {
   tasks: {
     key: string;
     value: Task;
     indexes: {
-      completed: number;
       dueDate: string;
       updatedAt: string;
       category: string;
@@ -52,7 +51,6 @@ export function getDb(): Promise<IDBPDatabase<TaskFlowDB>> {
 
         if (oldVersion < 2) {
           const tasks = transaction.objectStore("tasks");
-          tasks.createIndex("completed", "completed");
           tasks.createIndex("dueDate", "dueDate");
         }
 
@@ -72,6 +70,13 @@ export function getDb(): Promise<IDBPDatabase<TaskFlowDB>> {
           const tasks = transaction.objectStore("tasks");
           if (!tasks.indexNames.contains("category")) {
             tasks.createIndex("category", "category");
+          }
+        }
+
+        if (oldVersion < 4) {
+          const tasks = transaction.objectStore("tasks");
+          if ((tasks.indexNames as unknown as DOMStringList).contains("completed")) {
+            (tasks as unknown as IDBObjectStore).deleteIndex("completed");
           }
         }
       },

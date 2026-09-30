@@ -1,6 +1,6 @@
 # TaskFlow - Project Overview
 
-<!-- blueprint:source-hash 016663fcc4523bec9f2e8141cc118ff4b17ba619017f5aa4851d54b4557f6bc2 -->
+<!-- blueprint:source-hash 31705689240fb39bda4ef6ac17188c2fb860475aaeb7211c0c79854fee279291 -->
 
 > A single-user, offline-capable productivity suite with tasks, notes, interactive calendar, and analytics; all data lives in the browser.
 
@@ -148,7 +148,7 @@ existing version 1 databases migrate without data loss.
 - `createdAt`, `updatedAt` (string) - ISO datetime
 - `completedAt` (string | null) - ISO datetime
 
-Indexed on `completed`, `dueDate`, `updatedAt`, `category`, and `order`.
+Indexed on `dueDate`, `updatedAt`, and `category`.
 
 ### Note
 

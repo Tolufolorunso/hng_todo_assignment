@@ -164,7 +164,7 @@ database, no accounts.
 - `createdAt`, `updatedAt`: string (ISO datetime)
 
 Object stores: `tasks` and `notes`.
-Indexes on `tasks`: `completed`, `dueDate`, `updatedAt`, `category`, `order`.
+Indexes on `tasks`: `dueDate`, `updatedAt`, `category`.
 Indexes on `notes`: `updatedAt`.
 Schema version 2 upgrade handler provides automated migration from version 1,
 assigning default orders and null categories to existing records.

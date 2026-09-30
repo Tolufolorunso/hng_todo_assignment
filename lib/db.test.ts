@@ -34,12 +34,13 @@ describe("getDb", () => {
     await tx.done;
   });
 
-  it("creates the completed, dueDate, and category indexes on tasks", async () => {
+  it("creates the dueDate, updatedAt, and category indexes on tasks", async () => {
     const db = await getDb();
     const tx = db.transaction("tasks");
-    expect(tx.objectStore("tasks").indexNames.contains("completed")).toBe(true);
     expect(tx.objectStore("tasks").indexNames.contains("dueDate")).toBe(true);
+    expect(tx.objectStore("tasks").indexNames.contains("updatedAt")).toBe(true);
     expect(tx.objectStore("tasks").indexNames.contains("category")).toBe(true);
+    expect((tx.objectStore("tasks").indexNames as unknown as DOMStringList).contains("completed")).toBe(false);
     await tx.done;
   });
 
@@ -126,7 +127,7 @@ describe("version upgrades", () => {
     });
 
     const db = await getDb();
-    expect(db.version).toBe(3);
+    expect(db.version).toBe(4);
 
     const migrated = await db.get("tasks", "legacy-v1");
     expect(migrated?.priority).toBe("medium");
@@ -134,13 +135,13 @@ describe("version upgrades", () => {
     expect(migrated?.category).toBeNull();
 
     const tx = db.transaction("tasks");
-    expect(tx.objectStore("tasks").indexNames.contains("completed")).toBe(true);
+    expect((tx.objectStore("tasks").indexNames as unknown as DOMStringList).contains("completed")).toBe(false);
     expect(tx.objectStore("tasks").indexNames.contains("dueDate")).toBe(true);
     expect(tx.objectStore("tasks").indexNames.contains("category")).toBe(true);
     await tx.done;
   });
 
-  it("upgrades version 2 databases, backfilling category and adding category index", async () => {
+  it("upgrades version 2 databases, backfilling category, adding category index, and removing completed index", async () => {
     // Create a v2 database
     await new Promise<void>((resolve, reject) => {
       const request = indexedDB.open(DB_NAME, 2);
@@ -177,7 +178,7 @@ describe("version upgrades", () => {
     });
 
     const db = await getDb();
-    expect(db.version).toBe(3);
+    expect(db.version).toBe(4);
 
     const migrated = await db.get("tasks", "legacy-v2");
     expect(migrated?.priority).toBe("high");
@@ -185,6 +186,39 @@ describe("version upgrades", () => {
     expect(migrated?.category).toBeNull();
 
     const tx = db.transaction("tasks");
+    expect((tx.objectStore("tasks").indexNames as unknown as DOMStringList).contains("completed")).toBe(false);
+    expect(tx.objectStore("tasks").indexNames.contains("category")).toBe(true);
+    await tx.done;
+  });
+
+  it("upgrades version 3 databases, removing the completed index", async () => {
+    // Create a v3 database
+    await new Promise<void>((resolve, reject) => {
+      const request = indexedDB.open(DB_NAME, 3);
+      request.onupgradeneeded = () => {
+        const database = request.result;
+        const tasks = database.createObjectStore("tasks", { keyPath: "id" });
+        tasks.createIndex("updatedAt", "updatedAt");
+        tasks.createIndex("completed", "completed");
+        tasks.createIndex("dueDate", "dueDate");
+        tasks.createIndex("category", "category");
+        const notes = database.createObjectStore("notes", { keyPath: "id" });
+        notes.createIndex("updatedAt", "updatedAt");
+      };
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        const database = request.result;
+        database.close();
+        resolve();
+      };
+    });
+
+    const db = await getDb();
+    expect(db.version).toBe(4);
+
+    const tx = db.transaction("tasks");
+    expect((tx.objectStore("tasks").indexNames as unknown as DOMStringList).contains("completed")).toBe(false);
+    expect(tx.objectStore("tasks").indexNames.contains("dueDate")).toBe(true);
     expect(tx.objectStore("tasks").indexNames.contains("category")).toBe(true);
     await tx.done;
   });
