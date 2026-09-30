@@ -1,6 +1,6 @@
 # TaskFlow - Project Overview
 
-<!-- blueprint:source-hash ec7d9696cdda34991a9065bac121d50670d18272544a8d5f4f58bf654775eed7 -->
+<!-- blueprint:source-hash 016663fcc4523bec9f2e8141cc118ff4b17ba619017f5aa4851d54b4557f6bc2 -->
 
 > A single-user, offline-capable productivity suite with tasks, notes, interactive calendar, and analytics; all data lives in the browser.
 

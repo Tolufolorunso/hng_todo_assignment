@@ -166,15 +166,38 @@ export default function DayInspector({
                   >
                     {task.title}
                   </span>
-                  {task.description !== "" && (
-                    <p
-                      className={`mt-0.5 text-[11px] leading-relaxed ${
-                        task.completed ? "text-faint line-through" : "text-muted"
-                      }`}
-                    >
-                      {task.description}
-                    </p>
-                  )}
+                  {task.description !== "" && (() => {
+                    const hasHtml = /<[a-z][\s\S]*>/i.test(task.description);
+
+                    return (
+                      <div
+                        className={`mt-1 text-[11px] leading-relaxed transition-all
+                          [&_h1]:text-xs [&_h1]:font-bold [&_h1]:my-1
+                          [&_h2]:text-[11px] [&_h2]:font-bold [&_h2]:my-0.5
+                          [&_h3]:text-[11px] [&_h3]:font-semibold [&_h3]:my-0.5
+                          [&_b]:font-semibold [&_strong]:font-semibold
+                          [&_i]:italic [&_em]:italic
+                          [&_u]:underline
+                          [&_s]:line-through
+                          [&_blockquote]:border-l-2 [&_blockquote]:border-accent/60 [&_blockquote]:pl-2 [&_blockquote]:italic [&_blockquote]:my-0.5
+                          [&_ul]:list-disc [&_ul]:pl-4 [&_ul]:my-0.5
+                          [&_ol]:list-decimal [&_ol]:pl-4 [&_ol]:my-0.5
+                          [&_li]:my-0.5
+                          [&_p]:my-0.5
+                          ${
+                            task.completed
+                              ? "text-faint line-through opacity-60"
+                              : "text-muted"
+                          }`}
+                      >
+                        {hasHtml ? (
+                          <div dangerouslySetInnerHTML={{ __html: task.description }} />
+                        ) : (
+                          <p className="whitespace-pre-wrap">{task.description}</p>
+                        )}
+                      </div>
+                    );
+                  })()}
                   {/* Badges row */}
                   <div className="mt-2 flex flex-wrap items-center gap-1.5">
                     <span
