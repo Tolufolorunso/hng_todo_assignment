@@ -206,5 +206,36 @@ describe("backup and restore logic", () => {
       expect(allNotes).toHaveLength(1);
       expect(allNotes[0].id).toBe("fresh-note");
     });
+
+    it("sanitizes dangerous HTML in tasks and notes on restore", async () => {
+      const db = await getDb();
+      const backup: BackupPayload = {
+        version: 1,
+        app: "TaskFlow",
+        exportedAt: new Date().toISOString(),
+        data: {
+          tasks: [
+            mockTask({
+              id: "xss-task",
+              description: '<p>Task detail</p><script>alert("xss")</script><img src="x" onerror="steal()">',
+            }),
+          ],
+          notes: [
+            mockNote({
+              id: "xss-note",
+              body: '<h1>Heading</h1><iframe src="evil.com"></iframe><a href="javascript:alert(1)">Click</a>',
+            }),
+          ],
+        },
+      };
+
+      await restoreDatabaseBackup(backup, "replace");
+
+      const savedTask = await db.get("tasks", "xss-task");
+      const savedNote = await db.get("notes", "xss-note");
+
+      expect(savedTask?.description).toBe("<p>Task detail</p>");
+      expect(savedNote?.body).toBe("<h1>Heading</h1><a>Click</a>");
+    });
   });
 });

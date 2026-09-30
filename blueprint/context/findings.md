@@ -31,12 +31,13 @@
 **Suggested fix:** Render the plain-text form (`stripHtmlToText(task.description)`, matching the excerpt pattern used elsewhere) or reuse the TaskItem hasHtml/dangerouslySetInnerHTML rendering so the inspector matches the task list.
 **Resolution:** Fixed in fix/calendar-inspector-wysiwyg-html. Added regex HTML detection (`/<[a-z][\s\S]*>/i.test(task.description)`) and rendered formatted rich text via `dangerouslySetInnerHTML` with scoped typography styling (`text-[11px]`, lists, emphasis, headings, and paragraphs) matching TaskItem, with whitespace-preserving plain-text fallback.
 
-### F-04 [P2] open - Stored WYSIWYG HTML is injected into the DOM without sanitization
+### F-04 [P2] fixed - Stored WYSIWYG HTML is injected into the DOM without sanitization
 
 **File:** components/tasks/TaskItem.tsx:273, components/notes/StandaloneNoteView.tsx:346
 **Found:** 2026-09-30 by /audit (scope: full; lens: security)
 **Why it matters:** Note bodies and task descriptions are rendered with `dangerouslySetInnerHTML` and nothing validates or sanitizes the stored HTML (lib/validation.ts checks only length; lib/backup.ts checks only field shapes). The editor is self-XSS-safe, but the backup restore path is a real trust boundary: any `.json` backup file can be imported (merge or replace), and its `description`/`body` strings are then executed as HTML in the page origin, so a backup shared by someone else can inject script via event-handler attributes (e.g. an `onerror` handler) on any load. Vercel headers include no CSP to mitigate this. Single-user product, so severity stays P2, but the import feature makes the boundary reachable.
 **Suggested fix:** Sanitize once on save (restore/import and the editor save path) to a whitelist matching the tags the editor actually produces (p, h1-h3, blockquote, ul, ol, li, b/strong, i/em, u, s, span/font with style color) and drop event-handler attributes and script/style/iframe/link tags. A tiny inline sanitizer avoids adding a dependency; a CSP header in vercel.json is a cheap second layer.
+**Resolution:** Fixed in fix/sanitize-stored-wysiwyg-html. Added `sanitizeHtml` in `lib/html.ts` with tag/attribute whitelisting and recursive script/iframe/style/event-handler stripping; sanitized descriptions and bodies on input and patch in `lib/validation.ts`, and on database restore in `lib/backup.ts`; added CSP security header in `vercel.json`; verified via 193 passing tests in unit test suite.
 
 ### F-05 [P3] open - Drag reorder with an active filter silently reshuffles hidden tasks
 

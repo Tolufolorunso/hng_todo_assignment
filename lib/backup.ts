@@ -1,4 +1,5 @@
 import { getDb } from "@/lib/db";
+import { sanitizeHtml } from "@/lib/html";
 import type { Note } from "@/types/note";
 import type { Task, TaskCategory, TaskPriority } from "@/types/task";
 
@@ -208,11 +209,17 @@ export async function restoreDatabaseBackup(
   }
 
   for (const task of payload.data.tasks) {
-    await taskStore.put(task);
+    await taskStore.put({
+      ...task,
+      description: sanitizeHtml(task.description),
+    });
   }
 
   for (const note of payload.data.notes) {
-    await noteStore.put(note);
+    await noteStore.put({
+      ...note,
+      body: sanitizeHtml(note.body),
+    });
   }
 
   await tx.done;

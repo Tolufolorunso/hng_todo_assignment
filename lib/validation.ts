@@ -1,4 +1,5 @@
 import type { TaskCategory, TaskPriority } from "@/types/task";
+import { sanitizeHtml } from "@/lib/html";
 
 export const TITLE_MAX_LENGTH = 200;
 export const DESCRIPTION_MAX_LENGTH = 20000;
@@ -83,15 +84,15 @@ function validateTitle(raw: string): ValidationResult<string, TaskField> {
 }
 
 function validateDescription(raw: string): ValidationResult<string, TaskField> {
-  const description = raw.trim();
-  if (description.length > DESCRIPTION_MAX_LENGTH) {
+  const sanitized = sanitizeHtml(raw.trim());
+  if (sanitized.length > DESCRIPTION_MAX_LENGTH) {
     return {
       ok: false,
       error: `Description must be ${DESCRIPTION_MAX_LENGTH} characters or fewer.`,
       field: "description",
     };
   }
-  return { ok: true, value: description };
+  return { ok: true, value: sanitized };
 }
 
 function validatePriority(
@@ -285,15 +286,15 @@ function validateNoteTitle(raw: string): ValidationResult<string, NoteField> {
 }
 
 function validateNoteBody(raw: string): ValidationResult<string, NoteField> {
-  const body = raw.trim();
-  if (body.length > NOTE_BODY_MAX_LENGTH) {
+  const sanitized = sanitizeHtml(raw.trim());
+  if (sanitized.length > NOTE_BODY_MAX_LENGTH) {
     return {
       ok: false,
       error: `Body must be ${NOTE_BODY_MAX_LENGTH} characters or fewer.`,
       field: "body",
     };
   }
-  return { ok: true, value: body };
+  return { ok: true, value: sanitized };
 }
 
 export function validateNoteInput(input: NoteInput): ValidationResult<ValidNoteInput, NoteField> {

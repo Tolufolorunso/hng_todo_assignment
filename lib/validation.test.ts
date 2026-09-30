@@ -129,6 +129,18 @@ describe("validateTaskInput", () => {
     }
   });
 
+  it("sanitizes dangerous HTML markup in task description", () => {
+    const dangerousHtml = '<p>Safe</p><script>alert("xss")</script><img src="x" onerror="alert(1)">';
+    const result = validateTaskInput({
+      title: "Task with dangerous HTML",
+      description: dangerousHtml,
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.description).toBe("<p>Safe</p>");
+    }
+  });
+
   it("defaults a missing priority to medium and a missing due date to null", () => {
     expect(validateTaskInput({ title: "Task" })).toEqual({
       ok: true,
@@ -209,6 +221,16 @@ describe("validateTaskPatch", () => {
     expect(result).toEqual({
       ok: true,
       value: { title: "New title", description: "body" },
+    });
+  });
+
+  it("sanitizes dangerous HTML markup in task patch description", () => {
+    const result = validateTaskPatch({
+      description: '<b>Important</b><iframe src="https://evil.com"></iframe>',
+    });
+    expect(result).toEqual({
+      ok: true,
+      value: { description: "<b>Important</b>" },
     });
   });
 
@@ -372,6 +394,20 @@ describe("validateNoteInput", () => {
       field: "body",
     });
   });
+
+  it("sanitizes dangerous HTML markup in note body", () => {
+    const result = validateNoteInput({
+      title: "Note",
+      body: '<p>Note text</p><script>alert(1)</script><a href="javascript:alert(2)">Link</a>',
+    });
+    expect(result).toEqual({
+      ok: true,
+      value: {
+        title: "Note",
+        body: "<p>Note text</p><a>Link</a>",
+      },
+    });
+  });
 });
 
 describe("validateNotePatch", () => {
@@ -399,6 +435,13 @@ describe("validateNotePatch", () => {
       ok: false,
       error: `Body must be ${NOTE_BODY_MAX_LENGTH} characters or fewer.`,
       field: "body",
+    });
+  });
+
+  it("sanitizes dangerous HTML markup in note patch body", () => {
+    expect(validateNotePatch({ body: "<b>Note</b><script>alert(1)</script>" })).toEqual({
+      ok: true,
+      value: { body: "<b>Note</b>" },
     });
   });
 
