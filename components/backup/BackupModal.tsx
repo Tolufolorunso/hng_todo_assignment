@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   exportDatabaseBackup,
   parseAndValidateBackup,
@@ -31,6 +31,7 @@ export default function BackupModal({
     notes: 0,
   });
   const [exportSuccess, setExportSuccess] = useState<string | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   // Restore State
   const [file, setFile] = useState<File | null>(null);
@@ -59,29 +60,38 @@ export default function BackupModal({
     };
   }, [isOpen]);
 
+  const handleClose = useCallback(() => {
+    setExportError(null);
+    setExportSuccess(null);
+    setValidationError(null);
+    setRestoreSuccess(null);
+    onClose();
+  }, [onClose]);
+
   // Handle escape key
   useEffect(() => {
     if (!isOpen) return;
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
-        onClose();
+        handleClose();
       }
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen, handleClose]);
 
   if (!isOpen) return null;
 
   async function handleExport() {
     setIsExporting(true);
     setExportSuccess(null);
+    setExportError(null);
     try {
       const { jsonString, filename } = await exportDatabaseBackup();
       triggerDownload(jsonString, filename);
       setExportSuccess(`Backup saved as ${filename}`);
     } catch {
-      setValidationError("Failed to generate backup export. Please try again.");
+      setExportError("Failed to generate backup export. Please try again.");
     } finally {
       setIsExporting(false);
     }
@@ -141,7 +151,7 @@ export default function BackupModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="backup-modal-title"
-      onClick={onClose}
+      onClick={handleClose}
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg/80 backdrop-blur-sm animate-in fade-in duration-200 cursor-pointer"
     >
       <div
@@ -178,7 +188,7 @@ export default function BackupModal({
 
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             aria-label="Close modal"
             title="Close dialog"
             className="flex h-8 w-8 items-center justify-center rounded-xl border border-border/80 bg-surface-muted/60 text-muted transition-all hover:border-border hover:bg-surface-muted hover:text-text focus-visible:ring-2 focus-visible:ring-accent"
@@ -250,6 +260,15 @@ export default function BackupModal({
               </p>
             </div>
 
+            {exportError && (
+              <div
+                role="alert"
+                className="rounded-xl border border-danger/30 bg-danger-soft p-3 text-xs font-medium text-danger"
+              >
+                {exportError}
+              </div>
+            )}
+
             {exportSuccess && (
               <div
                 role="status"
@@ -262,7 +281,7 @@ export default function BackupModal({
             <div className="flex items-center gap-3 pt-1">
               <button
                 type="button"
-                onClick={onClose}
+                onClick={handleClose}
                 className="flex-1 rounded-xl border border-border bg-surface py-2.5 text-xs font-semibold text-text shadow-sm transition-all hover:border-border-strong hover:bg-surface-muted"
               >
                 Close
@@ -475,7 +494,7 @@ export default function BackupModal({
               <div className="flex justify-end pt-1">
                 <button
                   type="button"
-                  onClick={onClose}
+                  onClick={handleClose}
                   className="rounded-xl border border-border bg-surface px-5 py-2.5 text-xs font-semibold text-text shadow-sm transition-all hover:border-border-strong hover:bg-surface-muted"
                 >
                   Close

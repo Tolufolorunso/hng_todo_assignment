@@ -47,9 +47,11 @@
 **Suggested fix:** When filters are active, either disable dragging, or persist only relative order among visible tasks and keep hidden tasks' positions (interleave using their previous order values).
 **Resolution:** Fixed in fix/preserve-hidden-task-order. Added `interleaveReorderedTasks` helper in `lib/tasks.ts` to preserve hidden task slot positions while applying the new visible task sequence, updated `TasksScreen.tsx`'s `handleDrop` to use `interleaveReorderedTasks(tasks, reorderedVisible)`, and verified with 5 unit tests in `lib/tasks.test.ts` plus full regression suite passing (198 tests).
 
-### F-06 [P3] open - Export failure shows no user feedback
+### F-06 [P3] fixed - Export failure shows no user feedback
 
 **File:** components/backup/BackupModal.tsx:84
 **Found:** 2026-09-30 by /audit (scope: full; lens: quality)
 **Why it matters:** `handleExport`'s catch writes to `validationError`, but that state is only rendered inside the Restore tab panel. If `exportDatabaseBackup` or `triggerDownload` fails while the Export tab is open, the spinner stops and the UI silently returns to idle with no error message.
 **Suggested fix:** Add an `exportError` state rendered in the Export panel (or surface a shared error banner), and stop writing export failures into the restore-only validation state.
+**Resolution:** Fixed in fix/backup-export-error-feedback. Added `exportError` state in `BackupModal.tsx`, rendered an accessible alert banner (`role="alert"`) inside the Export tab panel, updated `handleExport`'s catch handler to set `exportError` instead of `validationError`, and ensured clean state dismissal via `handleClose`. Verified via full regression suite passing (198 tests), clean lint, and production build.
+
