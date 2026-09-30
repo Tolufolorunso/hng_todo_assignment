@@ -112,6 +112,38 @@ export async function reorderTasks(orderedIds: string[]): Promise<void> {
   await tx.done;
 }
 
+/**
+ * Interleaves reordered visible tasks with existing hidden tasks, preserving
+ * the original slot positions occupied by hidden tasks rather than pushing them
+ * to the end of the manual order.
+ */
+export function interleaveReorderedTasks(
+  allTasks: Task[],
+  reorderedVisible: Task[],
+): Task[] {
+  const visibleIdSet = new Set(reorderedVisible.map((t) => t.id));
+  let visibleIndex = 0;
+  const result: Task[] = [];
+
+  for (const task of allTasks) {
+    if (visibleIdSet.has(task.id)) {
+      if (visibleIndex < reorderedVisible.length) {
+        result.push(reorderedVisible[visibleIndex]);
+        visibleIndex++;
+      }
+    } else {
+      result.push(task);
+    }
+  }
+
+  while (visibleIndex < reorderedVisible.length) {
+    result.push(reorderedVisible[visibleIndex]);
+    visibleIndex++;
+  }
+
+  return result;
+}
+
 export function todayIsoDate(now: Date = new Date()): string {
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, "0");

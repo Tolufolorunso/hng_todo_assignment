@@ -10,6 +10,7 @@ import {
   deleteTask,
   filterTasksByCategory,
   filterTasksByStatus,
+  interleaveReorderedTasks,
   listTasks,
   reorderTasks,
   searchTasks,
@@ -235,9 +236,7 @@ export default function TasksScreen() {
     const insertIndex = edge === "top" ? newTargetIndex : newTargetIndex + 1;
     reorderedVisible.splice(insertIndex, 0, moved);
 
-    const visibleIdSet = new Set(reorderedVisible.map((t) => t.id));
-    const remainingTasks = tasks.filter((t) => !visibleIdSet.has(t.id));
-    const combined = [...reorderedVisible, ...remainingTasks];
+    const combined = interleaveReorderedTasks(tasks, reorderedVisible);
 
     // Synchronize order index directly in memory so UI never snaps back
     const updatedTasks = combined.map((task, index) => ({

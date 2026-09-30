@@ -39,12 +39,13 @@
 **Suggested fix:** Sanitize once on save (restore/import and the editor save path) to a whitelist matching the tags the editor actually produces (p, h1-h3, blockquote, ul, ol, li, b/strong, i/em, u, s, span/font with style color) and drop event-handler attributes and script/style/iframe/link tags. A tiny inline sanitizer avoids adding a dependency; a CSP header in vercel.json is a cheap second layer.
 **Resolution:** Fixed in fix/sanitize-stored-wysiwyg-html. Added `sanitizeHtml` in `lib/html.ts` with tag/attribute whitelisting and recursive script/iframe/style/event-handler stripping; sanitized descriptions and bodies on input and patch in `lib/validation.ts`, and on database restore in `lib/backup.ts`; added CSP security header in `vercel.json`; verified via 193 passing tests in unit test suite.
 
-### F-05 [P3] open - Drag reorder with an active filter silently reshuffles hidden tasks
+### F-05 [P3] fixed - Drag reorder with an active filter silently reshuffles hidden tasks
 
 **File:** components/tasks/TasksScreen.tsx:238-248
 **Found:** 2026-09-30 by /audit (scope: full; lens: quality)
 **Why it matters:** When a search or filter is active, `handleDrop` builds `combined = reorderedVisible + remainingTasks` and persists `order` indices for every task, so all filtered-out (hidden) tasks are moved to the end of the manual ordering. After clearing the filter, the user's curated order of those hidden tasks has been silently rearranged. No data is lost, but the persisted order no longer reflects what the user arranged.
 **Suggested fix:** When filters are active, either disable dragging, or persist only relative order among visible tasks and keep hidden tasks' positions (interleave using their previous order values).
+**Resolution:** Fixed in fix/preserve-hidden-task-order. Added `interleaveReorderedTasks` helper in `lib/tasks.ts` to preserve hidden task slot positions while applying the new visible task sequence, updated `TasksScreen.tsx`'s `handleDrop` to use `interleaveReorderedTasks(tasks, reorderedVisible)`, and verified with 5 unit tests in `lib/tasks.test.ts` plus full regression suite passing (198 tests).
 
 ### F-06 [P3] open - Export failure shows no user feedback
 

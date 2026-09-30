@@ -11,6 +11,7 @@ import {
   isOverdue,
   listTasks,
   reorderTasks,
+  interleaveReorderedTasks,
   searchTasks,
   sortTasks,
   todayIsoDate,
@@ -462,5 +463,62 @@ describe("sortTasks", () => {
     const before = tasks.map((t) => t.id);
     sortTasks(tasks, "priority");
     expect(tasks.map((t) => t.id)).toEqual(before);
+  });
+});
+
+describe("interleaveReorderedTasks", () => {
+  it("returns reordered array when all tasks are visible", () => {
+    const all = [makeTask({ id: "1" }), makeTask({ id: "2" }), makeTask({ id: "3" })];
+    const reordered = [all[2], all[0], all[1]];
+    const result = interleaveReorderedTasks(all, reordered);
+    expect(result.map((t) => t.id)).toEqual(["3", "1", "2"]);
+  });
+
+  it("preserves hidden tasks positions when middle tasks are filtered out", () => {
+    const t1 = makeTask({ id: "1" }); // visible
+    const t2 = makeTask({ id: "2" }); // hidden
+    const t3 = makeTask({ id: "3" }); // visible
+    const t4 = makeTask({ id: "4" }); // hidden
+    const t5 = makeTask({ id: "5" }); // visible
+
+    const all = [t1, t2, t3, t4, t5];
+    // visible was [1, 3, 5], user drags 5 to top: [5, 1, 3]
+    const reordered = [t5, t1, t3];
+
+    const result = interleaveReorderedTasks(all, reordered);
+    expect(result.map((t) => t.id)).toEqual(["5", "2", "1", "4", "3"]);
+  });
+
+  it("preserves hidden tasks when prefix and suffix tasks are filtered out", () => {
+    const t1 = makeTask({ id: "1" }); // hidden prefix
+    const t2 = makeTask({ id: "2" }); // visible
+    const t3 = makeTask({ id: "3" }); // visible
+    const t4 = makeTask({ id: "4" }); // hidden suffix
+
+    const all = [t1, t2, t3, t4];
+    // user swaps visible [2, 3] -> [3, 2]
+    const reordered = [t3, t2];
+
+    const result = interleaveReorderedTasks(all, reordered);
+    expect(result.map((t) => t.id)).toEqual(["1", "3", "2", "4"]);
+  });
+
+  it("handles single visible task without altering the list", () => {
+    const all = [makeTask({ id: "1" }), makeTask({ id: "2" }), makeTask({ id: "3" })];
+    const reordered = [all[1]];
+    const result = interleaveReorderedTasks(all, reordered);
+    expect(result.map((t) => t.id)).toEqual(["1", "2", "3"]);
+  });
+
+  it("does not mutate original allTasks or reorderedVisible arrays", () => {
+    const all = [makeTask({ id: "1" }), makeTask({ id: "2" }), makeTask({ id: "3" })];
+    const reordered = [all[2], all[0]];
+    const allBefore = all.map((t) => t.id);
+    const reorderedBefore = reordered.map((t) => t.id);
+
+    interleaveReorderedTasks(all, reordered);
+
+    expect(all.map((t) => t.id)).toEqual(allBefore);
+    expect(reordered.map((t) => t.id)).toEqual(reorderedBefore);
   });
 });
