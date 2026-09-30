@@ -24,23 +24,7 @@ interface TaskEditFormProps {
 
 const ERROR_ID = "task-edit-error";
 
-function focusFieldFor(
-  error: string,
-): "title" | "description" | "priority" | "dueDate" | "category" {
-  if (error.startsWith("Description")) {
-    return "description";
-  }
-  if (error.startsWith("Priority")) {
-    return "priority";
-  }
-  if (error.startsWith("Due date")) {
-    return "dueDate";
-  }
-  if (error.startsWith("Category")) {
-    return "category";
-  }
-  return "title";
-}
+type TaskEditField = "title" | "description" | "priority" | "dueDate" | "category";
 
 export default function TaskEditForm({
   task,
@@ -54,9 +38,7 @@ export default function TaskEditForm({
   const [dueDate, setDueDate] = useState(task.dueDate ?? "");
   const [category, setCategory] = useState<TaskCategory | null>(task.category ?? null);
   const [error, setError] = useState<string | null>(null);
-  const [errorField, setErrorField] = useState<
-    "title" | "description" | "priority" | "dueDate" | "category" | null
-  >(null);
+  const [errorField, setErrorField] = useState<TaskEditField | null>(null);
   const [saving, setSaving] = useState(false);
   const titleRef = useRef<HTMLInputElement>(null);
   const priorityRef = useRef<HTMLSelectElement>(null);
@@ -72,7 +54,13 @@ export default function TaskEditForm({
 
     const validation = validateTaskInput({ title, description, priority, dueDate, category });
     if (!validation.ok) {
-      const field = focusFieldFor(validation.error);
+      const field: TaskEditField =
+        validation.field === "description" ||
+        validation.field === "priority" ||
+        validation.field === "dueDate" ||
+        validation.field === "category"
+          ? validation.field
+          : "title";
       setError(validation.error);
       setErrorField(field);
       if (field === "title") titleRef.current?.focus();

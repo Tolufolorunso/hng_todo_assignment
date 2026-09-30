@@ -25,10 +25,6 @@ function formatStamp(iso: string): string {
   });
 }
 
-function focusFieldFor(error: string): "title" | "body" {
-  return error.startsWith("Body") ? "body" : "title";
-}
-
 export default function NoteEditor({
   note,
   disabled,
@@ -49,7 +45,7 @@ export default function NoteEditor({
 
     const validation = validateNoteInput({ title, body });
     if (!validation.ok) {
-      const field = focusFieldFor(validation.error);
+      const field = validation.field ?? "title";
       setError(validation.error);
       setErrorField(field);
       if (field === "title") {

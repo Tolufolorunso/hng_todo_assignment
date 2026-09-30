@@ -15,13 +15,13 @@
 **Suggested fix:** Either drop the `completed` index and filter in memory (`listTasks` already reads all tasks and sorts in memory), or, only if Feature 6 needs an indexed status query, keep an indexable derived field such as a numeric or string status. Removing the index loses only the literal plan contract "indexed on completed"; no current behavior depends on it.
 **Resolution:** Fixed in fix/remove-completed-index. Upgraded DB_VERSION to 4, removed `completed` from `TaskFlowDB['tasks']['indexes']`, removed index creation on new databases, and deleted legacy `completed` index in upgrade handler. Verified via 11 passing tests in `lib/db.test.ts`.
 
-### F-02 [P3] open - Edit-form focus targets are coupled to validation message wording
+### F-02 [P3] fixed - Edit-form focus targets are coupled to validation message wording
 
 **File:** components/tasks/TaskEditForm.tsx:25
 **Found:** 2026-09-29 by /audit independent (scope: current; lens: tests)
 **Why it matters:** `focusFieldFor` chooses which control to focus by matching the leading words of the validator's human-readable error ("Description...", "Priority...", "Due date..."), falling back to Title otherwise. Any wording change in lib/validation.ts silently reroutes focus to Title, breaking the spec's "focus on the offending control" done-when, and there is no component test guarding that coupling.
 **Suggested fix:** Return a stable field identifier or code from the validators, or map the attempted field directly in the submit handler, so focus behavior does not depend on message copy.
-**Resolution:** Re-examined 2026-09-30 by /audit (scope: full). Still present at components/tasks/TaskEditForm.tsx:27-43 and unrepaired; the same message-prefix coupling also exists in components/notes/NoteEditor.tsx:28-30. Remains open.
+**Resolution:** Fixed in fix/decouple-validation-focus-targets. Added stable `field` property to `ValidationResult` in `lib/validation.ts`, returned `field` on every sub-validator failure, removed `focusFieldFor` from `TaskEditForm.tsx` and `NoteEditor.tsx` in favor of reading `validation.field` directly, and covered all field error return paths with 45 passing unit tests in `lib/validation.test.ts`.
 
 ### F-03 [P2] fixed - Calendar day inspector renders WYSIWYG HTML as literal text
 

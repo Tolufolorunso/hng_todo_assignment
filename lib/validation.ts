@@ -14,9 +14,20 @@ export const TASK_CATEGORY_VALUES: readonly TaskCategory[] = [
   "ideas",
 ];
 
-export type ValidationResult<T> =
+export type TaskField =
+  | "title"
+  | "description"
+  | "completed"
+  | "priority"
+  | "dueDate"
+  | "category"
+  | "order";
+
+export type NoteField = "title" | "body";
+
+export type ValidationResult<T, F extends string = string> =
   | { ok: true; value: T }
-  | { ok: false; error: string };
+  | { ok: false; error: string; field?: F };
 
 export interface TaskInput {
   title: string;
@@ -56,26 +67,28 @@ export interface ValidTaskPatch {
   order?: number;
 }
 
-function validateTitle(raw: string): ValidationResult<string> {
+function validateTitle(raw: string): ValidationResult<string, TaskField> {
   const title = raw.trim();
   if (title.length === 0) {
-    return { ok: false, error: "Title is required." };
+    return { ok: false, error: "Title is required.", field: "title" };
   }
   if (title.length > TITLE_MAX_LENGTH) {
     return {
       ok: false,
       error: `Title must be ${TITLE_MAX_LENGTH} characters or fewer.`,
+      field: "title",
     };
   }
   return { ok: true, value: title };
 }
 
-function validateDescription(raw: string): ValidationResult<string> {
+function validateDescription(raw: string): ValidationResult<string, TaskField> {
   const description = raw.trim();
   if (description.length > DESCRIPTION_MAX_LENGTH) {
     return {
       ok: false,
       error: `Description must be ${DESCRIPTION_MAX_LENGTH} characters or fewer.`,
+      field: "description",
     };
   }
   return { ok: true, value: description };
@@ -83,24 +96,28 @@ function validateDescription(raw: string): ValidationResult<string> {
 
 function validatePriority(
   raw: TaskPriority | undefined,
-): ValidationResult<TaskPriority> {
+): ValidationResult<TaskPriority, TaskField> {
   if (raw === undefined) {
     return { ok: true, value: DEFAULT_TASK_PRIORITY };
   }
   if (typeof raw !== "string" || !TASK_PRIORITY_VALUES.includes(raw)) {
-    return { ok: false, error: "Priority must be low, medium, or high." };
+    return {
+      ok: false,
+      error: "Priority must be low, medium, or high.",
+      field: "priority",
+    };
   }
   return { ok: true, value: raw };
 }
 
 function validateDueDate(
   raw: string | null | undefined,
-): ValidationResult<string | null> {
+): ValidationResult<string | null, TaskField> {
   if (raw === undefined || raw === null || raw === "") {
     return { ok: true, value: null };
   }
   if (typeof raw !== "string" || !DATE_ONLY_PATTERN.test(raw)) {
-    return { ok: false, error: "Due date must be a valid date." };
+    return { ok: false, error: "Due date must be a valid date.", field: "dueDate" };
   }
   const [year, month, day] = raw.split("-").map(Number);
   const parsed = new Date(Date.UTC(year, month - 1, day));
@@ -109,14 +126,14 @@ function validateDueDate(
     parsed.getUTCMonth() === month - 1 &&
     parsed.getUTCDate() === day;
   if (!isRealDate) {
-    return { ok: false, error: "Due date must be a valid date." };
+    return { ok: false, error: "Due date must be a valid date.", field: "dueDate" };
   }
   return { ok: true, value: raw };
 }
 
 function validateCategory(
   raw: TaskCategory | null | undefined,
-): ValidationResult<TaskCategory | null> {
+): ValidationResult<TaskCategory | null, TaskField> {
   if (raw === undefined || raw === null) {
     return { ok: true, value: null };
   }
@@ -124,12 +141,13 @@ function validateCategory(
     return {
       ok: false,
       error: "Category must be work, personal, urgent, study, ideas, or null.",
+      field: "category",
     };
   }
   return { ok: true, value: raw as TaskCategory };
 }
 
-export function validateTaskInput(input: TaskInput): ValidationResult<ValidTaskInput> {
+export function validateTaskInput(input: TaskInput): ValidationResult<ValidTaskInput, TaskField> {
   const title = validateTitle(input.title);
   if (!title.ok) {
     return title;
@@ -152,7 +170,7 @@ export function validateTaskInput(input: TaskInput): ValidationResult<ValidTaskI
   }
   if (input.order !== undefined) {
     if (typeof input.order !== "number" || !Number.isFinite(input.order)) {
-      return { ok: false, error: "Order must be a valid number." };
+      return { ok: false, error: "Order must be a valid number.", field: "order" };
     }
   }
   return {
@@ -168,7 +186,7 @@ export function validateTaskInput(input: TaskInput): ValidationResult<ValidTaskI
   };
 }
 
-export function validateTaskPatch(patch: TaskPatch): ValidationResult<ValidTaskPatch> {
+export function validateTaskPatch(patch: TaskPatch): ValidationResult<ValidTaskPatch, TaskField> {
   const value: ValidTaskPatch = {};
 
   if (patch.title !== undefined) {
@@ -189,7 +207,7 @@ export function validateTaskPatch(patch: TaskPatch): ValidationResult<ValidTaskP
 
   if (patch.completed !== undefined) {
     if (typeof patch.completed !== "boolean") {
-      return { ok: false, error: "Completed must be a boolean." };
+      return { ok: false, error: "Completed must be a boolean.", field: "completed" };
     }
     value.completed = patch.completed;
   }
@@ -220,7 +238,7 @@ export function validateTaskPatch(patch: TaskPatch): ValidationResult<ValidTaskP
 
   if (patch.order !== undefined) {
     if (typeof patch.order !== "number" || !Number.isFinite(patch.order)) {
-      return { ok: false, error: "Order must be a valid number." };
+      return { ok: false, error: "Order must be a valid number.", field: "order" };
     }
     value.order = patch.order;
   }
@@ -251,32 +269,34 @@ export interface ValidNotePatch {
   body?: string;
 }
 
-function validateNoteTitle(raw: string): ValidationResult<string> {
+function validateNoteTitle(raw: string): ValidationResult<string, NoteField> {
   const title = raw.trim();
   if (title.length === 0) {
-    return { ok: false, error: "Title is required." };
+    return { ok: false, error: "Title is required.", field: "title" };
   }
   if (title.length > NOTE_TITLE_MAX_LENGTH) {
     return {
       ok: false,
       error: `Title must be ${NOTE_TITLE_MAX_LENGTH} characters or fewer.`,
+      field: "title",
     };
   }
   return { ok: true, value: title };
 }
 
-function validateNoteBody(raw: string): ValidationResult<string> {
+function validateNoteBody(raw: string): ValidationResult<string, NoteField> {
   const body = raw.trim();
   if (body.length > NOTE_BODY_MAX_LENGTH) {
     return {
       ok: false,
       error: `Body must be ${NOTE_BODY_MAX_LENGTH} characters or fewer.`,
+      field: "body",
     };
   }
   return { ok: true, value: body };
 }
 
-export function validateNoteInput(input: NoteInput): ValidationResult<ValidNoteInput> {
+export function validateNoteInput(input: NoteInput): ValidationResult<ValidNoteInput, NoteField> {
   const title = validateNoteTitle(input.title);
   if (!title.ok) {
     return title;
@@ -288,7 +308,7 @@ export function validateNoteInput(input: NoteInput): ValidationResult<ValidNoteI
   return { ok: true, value: { title: title.value, body: body.value } };
 }
 
-export function validateNotePatch(patch: NotePatch): ValidationResult<ValidNotePatch> {
+export function validateNotePatch(patch: NotePatch): ValidationResult<ValidNotePatch, NoteField> {
   const value: ValidNotePatch = {};
 
   if (patch.title !== undefined) {

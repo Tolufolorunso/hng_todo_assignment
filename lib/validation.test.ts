@@ -75,12 +75,12 @@ describe("validateTaskInput", () => {
 
   it("rejects a whitespace-only title", () => {
     const result = validateTaskInput({ title: "   " });
-    expect(result.ok).toBe(false);
+    expect(result).toEqual({ ok: false, error: "Title is required.", field: "title" });
   });
 
   it("rejects an empty title", () => {
     const result = validateTaskInput({ title: "" });
-    expect(result).toEqual({ ok: false, error: "Title is required." });
+    expect(result).toEqual({ ok: false, error: "Title is required.", field: "title" });
   });
 
   it("accepts a title exactly at the limit", () => {
@@ -90,7 +90,11 @@ describe("validateTaskInput", () => {
 
   it("rejects a title over the limit", () => {
     const result = validateTaskInput({ title: "a".repeat(TITLE_MAX_LENGTH + 1) });
-    expect(result.ok).toBe(false);
+    expect(result).toEqual({
+      ok: false,
+      error: `Title must be ${TITLE_MAX_LENGTH} characters or fewer.`,
+      field: "title",
+    });
   });
 
   it("accepts a description exactly at the limit", () => {
@@ -106,7 +110,11 @@ describe("validateTaskInput", () => {
       title: "Task",
       description: "a".repeat(DESCRIPTION_MAX_LENGTH + 1),
     });
-    expect(result.ok).toBe(false);
+    expect(result).toEqual({
+      ok: false,
+      error: `Description must be ${DESCRIPTION_MAX_LENGTH} characters or fewer.`,
+      field: "description",
+    });
   });
 
   it("accepts rich HTML markup in task description up to the limit", () => {
@@ -142,9 +150,12 @@ describe("validateTaskInput", () => {
   });
 
   it("rejects an unknown priority", () => {
-    expect(validateTaskInput({ title: "Task", priority: "urgent" as never }).ok).toBe(
-      false,
-    );
+    const result = validateTaskInput({ title: "Task", priority: "urgent" as never });
+    expect(result).toEqual({
+      ok: false,
+      error: "Priority must be low, medium, or high.",
+      field: "priority",
+    });
   });
 
   it("accepts a real date-only due date", () => {
@@ -159,8 +170,31 @@ describe("validateTaskInput", () => {
 
   it("rejects malformed and impossible due dates", () => {
     for (const dueDate of ["2026-2-3", "2026-13-01", "2026-02-30", "nope", "2026/02/03"]) {
-      expect(validateTaskInput({ title: "Task", dueDate }).ok).toBe(false);
+      const result = validateTaskInput({ title: "Task", dueDate });
+      expect(result).toEqual({
+        ok: false,
+        error: "Due date must be a valid date.",
+        field: "dueDate",
+      });
     }
+  });
+
+  it("rejects an invalid category", () => {
+    const result = validateTaskInput({ title: "Task", category: "invalid" as never });
+    expect(result).toEqual({
+      ok: false,
+      error: "Category must be work, personal, urgent, study, ideas, or null.",
+      field: "category",
+    });
+  });
+
+  it("rejects an invalid order", () => {
+    const result = validateTaskInput({ title: "Task", order: "invalid" as never });
+    expect(result).toEqual({
+      ok: false,
+      error: "Order must be a valid number.",
+      field: "order",
+    });
   });
 });
 
@@ -180,7 +214,11 @@ describe("validateTaskPatch", () => {
 
   it("rejects an empty title in a patch", () => {
     const result = validateTaskPatch({ title: "  " });
-    expect(result.ok).toBe(false);
+    expect(result).toEqual({
+      ok: false,
+      error: "Title is required.",
+      field: "title",
+    });
   });
 
   it("passes a boolean completed through", () => {
@@ -219,8 +257,16 @@ describe("validateTaskPatch", () => {
   });
 
   it("rejects an unknown priority and a malformed due date in a patch", () => {
-    expect(validateTaskPatch({ priority: "urgent" as never }).ok).toBe(false);
-    expect(validateTaskPatch({ dueDate: "2026-13-01" }).ok).toBe(false);
+    expect(validateTaskPatch({ priority: "urgent" as never })).toEqual({
+      ok: false,
+      error: "Priority must be low, medium, or high.",
+      field: "priority",
+    });
+    expect(validateTaskPatch({ dueDate: "2026-13-01" })).toEqual({
+      ok: false,
+      error: "Due date must be a valid date.",
+      field: "dueDate",
+    });
   });
 
   it("validates order in a patch", () => {
@@ -228,8 +274,16 @@ describe("validateTaskPatch", () => {
       ok: true,
       value: { order: 5 },
     });
-    expect(validateTaskPatch({ order: "5" as never }).ok).toBe(false);
-    expect(validateTaskPatch({ order: Number.NaN }).ok).toBe(false);
+    expect(validateTaskPatch({ order: "5" as never })).toEqual({
+      ok: false,
+      error: "Order must be a valid number.",
+      field: "order",
+    });
+    expect(validateTaskPatch({ order: Number.NaN })).toEqual({
+      ok: false,
+      error: "Order must be a valid number.",
+      field: "order",
+    });
   });
 
   it("validates category in a patch", () => {
@@ -241,7 +295,19 @@ describe("validateTaskPatch", () => {
       ok: true,
       value: { category: null },
     });
-    expect(validateTaskPatch({ category: "invalid" as never }).ok).toBe(false);
+    expect(validateTaskPatch({ category: "invalid" as never })).toEqual({
+      ok: false,
+      error: "Category must be work, personal, urgent, study, ideas, or null.",
+      field: "category",
+    });
+  });
+
+  it("validates completed in a patch", () => {
+    expect(validateTaskPatch({ completed: "true" as never })).toEqual({
+      ok: false,
+      error: "Completed must be a boolean.",
+      field: "completed",
+    });
   });
 });
 
@@ -260,12 +326,17 @@ describe("validateNoteInput", () => {
     expect(validateNoteInput({ title: "" })).toEqual({
       ok: false,
       error: "Title is required.",
+      field: "title",
     });
   });
 
   it("rejects a whitespace-only title", () => {
     const result = validateNoteInput({ title: "   " });
-    expect(result.ok).toBe(false);
+    expect(result).toEqual({
+      ok: false,
+      error: "Title is required.",
+      field: "title",
+    });
   });
 
   it("accepts a title exactly at the limit", () => {
@@ -275,7 +346,11 @@ describe("validateNoteInput", () => {
 
   it("rejects a title over the limit", () => {
     const result = validateNoteInput({ title: "a".repeat(NOTE_TITLE_MAX_LENGTH + 1) });
-    expect(result.ok).toBe(false);
+    expect(result).toEqual({
+      ok: false,
+      error: `Title must be ${NOTE_TITLE_MAX_LENGTH} characters or fewer.`,
+      field: "title",
+    });
   });
 
   it("accepts a body exactly at the limit", () => {
@@ -291,7 +366,11 @@ describe("validateNoteInput", () => {
       title: "Note",
       body: "a".repeat(NOTE_BODY_MAX_LENGTH + 1),
     });
-    expect(result.ok).toBe(false);
+    expect(result).toEqual({
+      ok: false,
+      error: `Body must be ${NOTE_BODY_MAX_LENGTH} characters or fewer.`,
+      field: "body",
+    });
   });
 });
 
@@ -308,7 +387,19 @@ describe("validateNotePatch", () => {
   });
 
   it("rejects an empty title in a patch", () => {
-    expect(validateNotePatch({ title: "  " }).ok).toBe(false);
+    expect(validateNotePatch({ title: "  " })).toEqual({
+      ok: false,
+      error: "Title is required.",
+      field: "title",
+    });
+  });
+
+  it("rejects a body over the limit in a patch", () => {
+    expect(validateNotePatch({ body: "a".repeat(NOTE_BODY_MAX_LENGTH + 1) })).toEqual({
+      ok: false,
+      error: `Body must be ${NOTE_BODY_MAX_LENGTH} characters or fewer.`,
+      field: "body",
+    });
   });
 
   it("accepts a body-only patch", () => {
