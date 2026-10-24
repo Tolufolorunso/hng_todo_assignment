@@ -1,230 +1,256 @@
 # TaskFlow - Project Overview
 
-<!-- blueprint:source-hash 31705689240fb39bda4ef6ac17188c2fb860475aaeb7211c0c79854fee279291 -->
+<!-- blueprint:source-hash a9fa5adaec4b9bf305999e0e412b09e51d19d56294a2193087d65f2c2d93ede3 -->
 
-> A single-user, offline-capable productivity suite with tasks, notes, interactive calendar, and analytics; all data lives in the browser.
+> A differentiated local-first personal productivity suite for web, Android/iOS, and Windows, with optional synchronization and proactive Follow Up reminders.
 
 ## Problem
 
-The HNG assignment requires a working To-Do application with full task management,
-a notes feature, and at least one additional feature, using a browser database,
-built entirely with AI, and deployed to a public URL. The product problem behind
-it: people lose track of small tasks and the context around them, while existing
-tools force a choice between a bare checklist and a heavyweight project tool. This
-app bridges that gap with a fast, offline-capable productivity suite featuring
-tasks, notes, interactive scheduling, and productivity analytics.
-
-Milestone E elevates the experience into a widescreen, multi-page desktop
-workspace with a modern SaaS aesthetic (Linear and Raycast style), drag-and-drop
-reordering, curated categories, calendar scheduling, and data portability.
-
-Milestone F adds theme toggle controls (dark mode default with light mode option),
-bespoke TaskFlow vector branding, clean starter asset pruning, a site-wide footer
-with an interactive developer showcase modal (honoring Tolulope Folorunso), and a
-Microsoft Word-style WYSIWYG rich text notes editor.
-
-Milestone G brings Microsoft Word-style rich text formatting to task descriptions,
-adds a dedicated distraction-free standalone note reader route (`/notes/[id]`), and
-delivers complete production SEO, Open Graph preview metadata, and Vercel deployment
-configuration.
-
-Milestone H delivers an ergonomic mobile-first app navigation experience and a
-fixed bottom dock: a streamlined mobile top bar (<640px) eliminating tab overflow,
-a dedicated thumb-friendly bottom navigation tab bar on mobile viewports, and a
-pinned glassmorphic bottom dock footer across all pages with dedicated page scroll
-clearance.
+TaskFlow helps people capture work, plan a realistic day, remember commitments, and turn notes into action. The shipped offline browser app remains isolated to one profile. Next come the four differentiating capabilities and independent mobile and Windows clients with optional synchronization.
 
 ## Users
 
-- **Individual on one device** - manages personal tasks, notes, and schedules;
-  wants speed, zero sign-up, offline availability, and an attractive desktop
-  workspace.
-- **Assignment reviewer** - must confirm every mandated rubric item and
-  experience a high-scoring, feature-complete product from the live URL.
-- **Not for** - teams, shared lists, or cross-device cloud sync. There are no
-  accounts, so a user is whoever opened this browser profile.
+- **Local-only individual** - wants full productivity workflows without registration or upload.
+- **Multi-device individual** - optionally syncs and recovers data across platforms.
+- **Student or knowledge worker** - turns a large backlog into an achievable day.
+- **Customer-facing individual** - remembers customer or personal commitments without a full CRM.
+- **Mobile user** - needs touch-friendly capture, reminders, and actions.
+- **Windows user** - needs an installed, keyboard-friendly, accessible app.
+- **Not served** - teams, collaborative editors, enterprise administrators, marketing automation, or users requiring end-to-end encrypted cloud sync.
 
 ## Usage model
 
-- **Scale:** one browser profile, estimated up to several thousand tasks and
-  notes; all filtering, sorting, and aggregations run in-memory.
-- **Reachability:** internet-facing app with no server, so no server-side input,
-  secret, or remote data store is reachable by anyone else.
-- **Trust:** single trusted actor (the user). Untrusted text inputs are strictly
-  validated client-side (non-empty titles, length limits, valid ISO dates, and safe
-  JSON import validation).
-- **Data ownership:** data is confined to the browser. While clearing site data
-  resets the app, data loss is mitigated by the JSON export/backup feature.
-- **Privacy:** 100% private; nothing leaves the device (no analytics, telemetry,
-  or third-party network calls).
-- **Non-requirements:** no auth, no multi-tenancy, no compliance regime, no
-  availability SLA, no audit logging, no server API, no cloud database.
+- **Tenancy:** one personal workspace per local scope or account; no shared workspaces.
+- **Scale:** several thousand tasks, notes, captures, follow-ups, and history entries per user; planning and analytics stay local.
+- **Connectivity:** intermittent. Every client writes locally first and survives offline restarts.
+- **Reachability:** the Next.js API is public; local databases stay device-bound and never connect directly to PostgreSQL.
+- **Trust:** client, capture, backup, rich-text, contact, and launcher data is untrusted. The API authenticates, authorizes, validates, and sanitizes cloud mutations.
+- **Privacy:** local-only content is never uploaded. Synchronized content, including contact details, is stored in PostgreSQL without end-to-end encryption. Notification previews are generic unless details are enabled.
+- **Notifications:** mobile and Windows schedule local reminders without an account or network. Closed-app web reminders require an account, push subscription, connectivity, and browser support. Delivery is best effort.
+- **Availability:** background execution is not required for sync correctness. Opening a client catches up with due and overdue follow-ups.
+- **Compatibility:** API v1 supports at least the previous supported native release; shared fixtures protect recurrence behavior.
+- **Non-requirements:** no collaboration, attachments, shared contacts, bulk communication, autonomous sending, general reminders, enterprise controls, behavioral telemetry, compliance regime, audit product, or service-level agreement.
 
 ## Features
 
-Built in this order (from `build-plan.md`). Headline: task management with
-advanced productivity tools.
+Features 1 through 23 are shipped; Feature 24 is next. The headline capabilities are Follow Up, Plan My Day, actionable notes, and fast capture.
 
-1. **Task data layer and persistence** - typed repository over IndexedDB (`idb`):
-   schema v1 with `tasks` and `notes` stores, indexes, and task CRUD.
-2. **Task list: create, view, and complete** - first user-visible slice: render
-   stored tasks, add by title, toggle complete, empty state.
-3. **Edit and delete tasks** - edit title and description; delete with
-   confirmation.
-4. **Notes** - standalone notes section: list, create, edit, delete (title +
-   body), with search across notes.
-5. **Due dates and priorities** - task `dueDate` and `priority` (low/medium/high),
-   controls to set them, overdue highlighting, priority styling.
-6. **Search, filter, and sort for tasks** - sticky control bar: text search, status
-   filter (all / active / completed), sort by due date, priority, or creation date.
-7. **Offline-first PWA** - web manifest, icons, versioned service worker so the app
-   installs and works offline after first load, with an offline indicator.
-8. **Deployment readiness and live URL** - production build verified, real README,
-   Vercel config, public URL confirmed and smoke-tested.
-9. **Modern SaaS design system and widescreen desktop layout** - revamp theme
-   tokens, typography, elevated card surfaces, and introduce the responsive 2-column
-   desktop workspace (`max-w-6xl`) with the updated 4-page navigation header.
-10. **Drag-and-drop task reordering and custom positioning** - native HTML5
-    drag-and-drop reordering with visual grab handles and drop indicators, persisting
-    an `order` index to IndexedDB.
-11. **Curated task categories and category filtering** - schema v2 upgrade
-    adding `category` (Work, Personal, Urgent, Study, Ideas), category pill badges,
-    and category filter controls.
-12. **Calendar and schedule view (`/calendar`)** - interactive monthly calendar
-    grid mapping tasks to due dates, with overdue highlights and date-based task
-    inspection.
-13. **Analytics and productivity insights (`/analytics`)** - dedicated metrics
-    page showing task completion rate, category distribution breakdowns, priority
-    splits, and productivity stats.
-14. **Data backup and restore** - timestamped JSON export and validated JSON
-    import to ensure offline data durability.
-15. **Theme toggle: dark mode default with light mode option** - obsidian dark
-    mode by default, sun/moon toggle beside the Data button in the header, inline
-    anti-flash script, and localStorage persistence.
-16. **TaskFlow vector branding and Next.js starter asset cleanup** - bespoke SVG
-    brand logo placed before "TaskFlow" in the header and set as browser favicon,
-    removing unused boilerplate Next.js SVG files from `public/`.
-17. **Site-wide footer and interactive developer showcase modal** - responsive
-    footer across all pages with creator attribution and a dedicated modal
-    highlighting Tolulope Folorunso (AI Product Engineer, HNG Intern) with social
-    links and bio.
-18. **Microsoft Word-style WYSIWYG rich text notes editor** - rich text
-    formatting ribbon (bold, italic, underline, strikethrough, alignment, text
-    color, highlight, font size, headings, lists, icons, super/subscript) saving
-    clean HTML with tag-free excerpts in the note list.
-19. **Microsoft Word-style rich text formatting for task descriptions** - integrate
-    the formatting ribbon into task creation and editing, expanding description limits,
-    rendering rich HTML in task view, and extracting clean excerpts in task cards.
-20. **Standalone note document reader (`/notes/[id]`)** - dedicated distraction-free
-    reading route for notes with document typography, word count, reading time,
-    print/PDF export, and quick-launch links from the note list.
-21. **Search engine optimization (SEO), Open Graph & Vercel deployment** - full
-    page-level metadata, Open Graph and Twitter preview cards, JSON-LD structured
-    data, dynamic sitemap and robots.txt, and vercel.json deployment configuration.
-22. **Professional mobile header and responsive bottom navigation tab bar** - streamline
-    top header on mobile (<640px) to brand and utility actions, introducing a fixed
-    thumb-friendly bottom navigation bar for Tasks, Notes, Calendar, and Analytics.
-23. **Fixed bottom dock footer and page scroll clearance** - pin the site-wide
-    footer to the bottom of the viewport with glassmorphic backdrop blur and responsive
-    layout, ensuring proper bottom scroll padding across all pages so content never
-    clips behind the dock.
+### Shipped web product
+
+1. **Task data layer and persistence** - stores typed tasks and notes in IndexedDB with validation and tests.
+2. **Task list: create, view, and complete** - provides the first complete local task workflow.
+3. **Edit and delete tasks** - supports updates and confirmed deletion.
+4. **Notes** - provides standalone note CRUD and search.
+5. **Due dates and priorities** - adds scheduling, urgency, and overdue states.
+6. **Search, filter, and sort for tasks** - makes local task collections manageable.
+7. **Offline-first PWA** - adds installation, cached operation, and connectivity feedback.
+8. **Deployment readiness and live URL** - verifies and documents the public Vercel release.
+9. **Modern SaaS design and widescreen layout** - establishes the responsive dark/light workspace and navigation.
+10. **Drag-and-drop task reordering** - persists a user-defined task sequence.
+11. **Task categories and filtering** - adds Work, Personal, Urgent, Study, and Ideas organization.
+12. **Calendar view** - maps due tasks into an interactive monthly schedule.
+13. **Analytics** - derives completion, category, priority, and productivity insights.
+14. **Data backup and restore** - exports and validates portable JSON snapshots.
+15. **Theme toggle** - persists dark-default or light presentation without theme flash.
+16. **TaskFlow branding** - adds the product logo and favicon and removes starter assets.
+17. **Footer and developer showcase** - adds attribution, social links, and developer information.
+18. **Rich-text notes editor** - persists sanitized formatted note HTML and plain-text excerpts.
+19. **Rich-text task descriptions** - adds formatted task content with safe rendering and excerpts.
+20. **Standalone note reader** - adds focused reading, metrics, copying, printing, and PDF export.
+21. **SEO, social previews, and Vercel configuration** - prepares metadata, discovery files, and deployment headers.
+22. **Mobile header and bottom navigation** - makes web navigation usable on narrow touch screens.
+23. **Fixed footer and scroll clearance** - prevents content from colliding with docked controls.
+
+### Product direction and web differentiation
+
+24. **Product, notification, and privacy realignment** - documents the three clients, optional accounts, contact-data privacy, notification limits, support policy, and non-goals.
+25. **Follow Up commitments and recurrence** - adds one-time and recurring commitments, history, overdue handling, snooze, rescheduling, in-app reminders, and communication launchers.
+26. **Plan My Day** - proposes an explained capacity-aware day from tasks, due follow-ups, available time, and optional effort estimates.
+27. **Actionable notes** - creates tasks or follow-ups from selected note content while preserving source context.
+28. **Fast capture inbox** - saves text and links offline with minimal friction, then processes them into tasks, notes, or follow-ups.
+
+### Product and service foundation
+
+29. **Isolated monorepo layout** - moves the web app into `apps/web` and establishes independent mobile and Windows roots.
+30. **Web API and PostgreSQL foundation** - adds `/api/v1`, migrations, validation, OpenAPI, health, capabilities, limits, and server security.
+31. **Optional accounts and sessions** - adds email OTP, secure refresh, revocation, logout, account inspection, and deletion.
+32. **Cloud productivity persistence** - stores account-owned product entities with validation, sanitization, recurrence checks, and change sequencing.
+33. **Synchronization and conflicts** - adds idempotent push/pull, revisions, cursors, tombstones, stable occurrences, pagination, and recoverable conflicts.
+
+### Synchronized web client
+
+34. **Web local-first storage upgrade** - migrates current data into workspace-aware IndexedDB with sync metadata and backup v2 support.
+35. **Web accounts and synchronization** - adds explicit local-data adoption, sync status, retries, conflicts, multi-tab coordination, and safe service-worker behavior.
+36. **Closed-app web Follow Up notifications** - adds push subscriptions, privacy controls, durable dispatch, deduplication, routing, and overdue catch-up.
+
+### React Native Android and iOS
+
+37. **React Native offline foundation** - creates independent task and note workflows on SQLite with backup and offline restart support.
+38. **React Native product and differentiated parity** - implements core parity plus Plan My Day, actionable notes, recurring Follow Up, local notifications, launchers, and fast capture.
+39. **React Native API integration and release** - adds auth, sync, secure sessions, conflicts, lifecycle recovery, signed builds, and store readiness.
+
+### Native Windows application
+
+40. **WPF offline foundation** - creates the independent .NET WPF task and note application on SQLite with backup and keyboard use.
+41. **WPF product and differentiated parity** - implements core parity plus Plan My Day, actionable notes, recurring Follow Up, notifications, launchers, fast capture, and accessibility.
+42. **WPF API integration and release** - adds auth, sync, DPAPI-protected sessions, recovery, signed MSIX packaging, and Store readiness.
+
+### Cross-platform hardening
+
+43. **Compatibility and operational hardening** - verifies migration, recurrence, convergence, notification failure, deletion, abuse controls, accessibility, privacy, portability, monitoring, and rollback.
+
+## Architecture boundaries
+
+```text
+apps/
+  web/       Next.js browser client and /api/v1 backend
+  mobile/    Independent React Native Android/iOS client
+  windows/   Independent C#/.NET WPF client
+```
+
+- The web UI and API build and deploy together from `apps/web`; there is no separate API application.
+- Clients share no runtime source, models, validators, repositories, sync code, generated SDK, or UI.
+- Each app owns dependencies, lockfile, local schema, migrations, tests, version, and release process.
+- OpenAPI and behavior fixtures define contracts without shared runtime packages.
+- CI rejects cross-app source imports and filters unrelated paths.
 
 ## Data model
 
-Everything is stored client-side in IndexedDB through `idb`. No server database.
-Two object stores, upgraded to schema version 2 in an `upgrade` handler so
-existing version 1 databases migrate without data loss.
+### Task
 
-### Task (Schema Version 2)
-
-- `id` (string) - uuid, primary key
-- `title` (string) - required
-- `description` (string) - optional, stores formatted HTML produced by the WYSIWYG editor (up to 20,000 characters)
-- `completed` (boolean)
-- `priority` (`"low" | "medium" | "high"`)
-- `dueDate` (string | null) - ISO date, date-only
-- `category` (`"work" | "personal" | "urgent" | "study" | "ideas" | null`)
-- `order` (number) - for drag-and-drop custom sequence
-- `createdAt`, `updatedAt` (string) - ISO datetime
-- `completedAt` (string | null) - ISO datetime
-
-Indexed on `dueDate`, `updatedAt`, and `category`.
+- `id` (`string`) - stable identifier.
+- `title` (`string`, 1 to 200 characters) - required task name.
+- `description` (`taskflow-html-v1`, up to 20,000 characters) - optional sanitized content.
+- `completed` (`boolean`), `completedAt` (`RFC 3339 UTC | null`) - state and analytics timestamp.
+- `priority` (`low | medium | high`), `dueDate` (`YYYY-MM-DD | null`), `category` (`work | personal | urgent | study | ideas | null`).
+- `estimatedMinutes` (`positive integer | null`) - optional Plan My Day capacity input.
+- `sourceNoteId` (`string | null`), `sourceExcerpt` (`string | null`) - actionable-note link and durable context.
+- `createdAt`, `updatedAt` (`RFC 3339 UTC`) - display timestamps, never conflict winners.
 
 ### Note
 
-- `id` (string) - uuid, primary key
-- `title` (string) - required
-- `body` (string) - formatted HTML produced by the WYSIWYG editor
-- `createdAt`, `updatedAt` (string) - ISO datetime
+- `id` (`string`), `title` (`string`, 1 to 200 characters), `body` (`taskflow-html-v1`, up to 50,000 characters).
+- `createdAt`, `updatedAt` (`RFC 3339 UTC`).
+- Backlinks are derived from tasks and follow-ups whose `sourceNoteId` matches. Deleting a note does not delete those actions.
 
-Indexed on `updatedAt`. Notes are standalone without relationship to Task.
+### FollowUp
 
-**Derived, never stored:** overdue status, filtered/sorted lists, calendar date
-mappings, and analytics aggregates.
+- `id` (`string`) - stable series or one-time commitment identifier.
+- `personName` (`string`, up to 200 characters), `commitment` (`string`), `details` (`string | null`).
+- `dueAt` (`RFC 3339 UTC`), `timeZone` (`canonical identifier`) - current occurrence and calendar recurrence context.
+- `emailAddress`, `phoneNumber`, `whatsAppNumber` (`string | null`) - validated launcher targets.
+- `preferredAction` (`email | whatsapp | phone | null`).
+- `recurrence` (`RecurrenceRule | null`), `status` (`open | completed | archived`).
+- `sourceNoteId`, `sourceExcerpt` (`string | null`) - optional actionable-note context.
+- `createdAt`, `updatedAt` (`RFC 3339 UTC`).
+- Contact targets belong to the follow-up; there is no separate address book in this phase.
 
-> The store shapes and indexes are a contract later features depend on. Schema
-> migrations must increment the database version and supply an upgrade handler.
+### RecurrenceRule and FollowUpOccurrence
+
+- `RecurrenceRule` records `mode` (`calendarAnchored | completionRelative`), frequency, interval, relevant weekday or month-day fields, local wall-clock time, canonical time zone, and optional end condition.
+- Calendar-anchored recurrence preserves calendar slots across late completion and daylight-saving changes.
+- Completion-relative recurrence calculates the next due time from actual completion.
+- Each occurrence has a stable ID, parent Follow Up ID, scheduled due time, outcome (`completed | skipped | missed | unresolved`), resolution time, and calculated next due time.
+- Snooze affects one occurrence; rescheduling explicitly targets one occurrence or the series. One unresolved occurrence remains overdue instead of generating an unbounded stack.
+
+### DailyPlan
+
+- `id` (`string`), `localDate` (`YYYY-MM-DD`), `timeZone` (`string`), `availableMinutes` (`positive integer`).
+- `items` (ordered task and Follow Up occurrence references), `acceptedAt`, `updatedAt` (`RFC 3339 UTC`).
+- Recommendation scores and explanations are derived; accepted selection and order are user-owned synchronized data.
+
+### InboxCapture
+
+- `id` (`string`), `text` (`string`), `sharedUrl` (`URL | null`), `sourceAppLabel` (`string | null`).
+- `capturedAt` (`RFC 3339 UTC`), `state` (`pending | processed | discarded`).
+- Optional resulting task, note, or Follow Up reference plus processed/discarded time.
+- Processing and target creation are idempotent.
+
+### TaskOrder
+
+- `id` (`"default"`), `orderedIds` (`string[]`).
+- Unknown or deleted IDs are ignored; missing tasks append deterministically. One reorder creates one mutation.
+
+### Workspace and synchronization
+
+- A device has one local-only workspace plus separate account caches. Signing in never merges or uploads local content automatically.
+- A workspace owns tasks, notes, follow-ups, occurrence history, daily plans, inbox captures, task order, preferences, outbox, cursor, revisions, tombstones, and conflicts.
+- An `OutboxMutation` has `mutationId`, protocol version, entity type/id, `put | delete`, opaque base revision, and optional payload. It is committed atomically with the local write.
+- A `Conflict` retains the attempted local value and current server value or tombstone until the user resolves it.
+- Cloud revisions control concurrency. Opaque change cursors, tombstones, and mutation receipts provide pagination, deletion safety, and idempotency.
+
+### Notifications and backup
+
+- Native permission, presentation settings, and scheduled-notification IDs remain device-local.
+- An authenticated `PushSubscription` is account-owned server data; a dispatch receipt deduplicates an occurrence per device but cannot prove display.
+- Backup v1 contains existing tasks and notes and remains importable everywhere.
+- Backup v2 contains live product entities, history, plans, pending captures, task order, source-note relationships, format/version metadata, and origin metadata.
+- Backups exclude credentials, account IDs, subscriptions, notification schedule IDs, outbox, cursors, revisions, receipts, tombstones, and internal auth state.
+
+## API contract
+
+The API lives under `apps/web/app/api/v1/`:
+
+- Auth: `POST /auth/otp/request`, `/auth/otp/verify`, `/auth/refresh`, and `/auth/logout`.
+- Account: `GET /account` and `DELETE /account`.
+- Data: `POST /sync` pushes bounded mutations before pulling paginated changes.
+- Push: `POST /push/subscriptions` and `DELETE /push/subscriptions/{id}`.
+- Contract and operations: `GET /capabilities`, `/health`, and `/openapi.json`.
+
+Sync returns `applied`, `duplicate`, `conflict`, or `invalid` per mutation. Server revisions, not client clocks, choose winners. Stable occurrence IDs prevent two devices from silently advancing one recurring follow-up twice. Private responses use `Cache-Control: no-store`; the service worker bypasses private API and auth responses.
 
 ## Tech stack
 
-- **Next.js 16 (App Router)** - framework and page routing
-- **React 19 + TypeScript (strict)** - UI and typing; interactive screens are client
-  components (`'use client'`) since all state is browser-local
-- **Tailwind CSS v4** - styling with CSS-first design tokens in `app/globals.css`
-- **IndexedDB via `idb`** - browser database and typed repository wrapper
-- **HTML5 Drag and Drop API** - native browser drag-and-drop for task reordering
-- **Rich Text / WYSIWYG** - Microsoft Word-style contenteditable architecture with
-  custom styling, semantic HTML output, and tag-free plain text excerpts for
-  notes and task descriptions
-- **SEO & Meta** - Next.js App Router Metadata API, JSON-LD structured schema,
-  dynamic `sitemap.ts` and `robots.ts`
-- **Vitest + `fake-indexeddb`** - unit tests for data layer, sorting, and logic
-- **npm** - package manager
-- **Vercel** - hosting with `vercel.json` caching and security headers
-- No backend, no API routes, no remote database, no auth provider.
+- **Web and API:** Next.js App Router, React, strict TypeScript, Tailwind CSS v4, and Route Handlers.
+- **Web local data:** IndexedDB through `idb`; version 4 precedes tested product and workspace migrations.
+- **Cloud:** PostgreSQL accessed only by server code inside `apps/web`.
+- **Auth:** API-owned passwordless email OTP with rotating, revocable sessions; provider is unresolved.
+- **Web notifications:** standard Web Push plus a durable scheduled dispatcher; implementation is unresolved.
+- **Mobile:** independent React Native Android/iOS app with Expo development builds unless a native dependency requires bare React Native.
+- **Mobile data and reminders:** SQLite, mobile-owned migrations, recurrence, local notifications, secure credential storage, share-sheet capture, and app shortcuts.
+- **Windows:** C# WPF on .NET 10 LTS, MVVM, `Microsoft.Data.Sqlite`, DPAPI, Windows notifications, and URI launchers.
+- **Rich text:** independently implemented clients conforming to `taskflow-html-v1`, with final API sanitization.
+- **Testing:** Vitest/browser tests for web, mobile unit/device tests, xUnit/UI Automation for Windows, and shared contract fixtures.
 
 ## Monetization
 
-None. An assignment deliverable; monetization is explicitly out of scope.
+None is planned. TaskFlow remains a personal productivity and portfolio product. Database, email, push, scheduling, domain, signing, and store-account costs still require budgeting.
 
 ## UI/UX
 
-Modern Dark/Light SaaS design inspired by Linear and Raycast: obsidian dark
-surfaces, glowing indigo and violet accents, crisp micro-borders, and elevated
-cards. Dark mode active by default, switchable via header toggle. Clean
-high-contrast light mode. Responsive widescreen layout (`max-w-6xl`): a balanced
-two-column workspace on desktop, collapsing to a single column on mobile.
-
-Primary routes linked through a unified navigation header:
-
-- `/` - **Tasks:** task creator with Word-style ribbon, search/filter/category controls,
-  drag-and-drop reorderable list, and desktop productivity sidebar.
-- `/notes` - **Notes:** standalone notes grid, search, and Word-style WYSIWYG
-  rich text editor.
-- `/notes/[id]` - **Standalone Note Reader:** distraction-free full document view with
-  typography, word count, reading time, print/PDF export, and edit shortcut.
-- `/calendar` - **Calendar:** interactive monthly calendar view, due date mapping,
-  and date inspector.
-- `/analytics` - **Analytics:** completion rate gauges, category distribution
-  breakdown, priority distribution, and productivity stats.
-
-Site-wide elements:
-- AppHeader featuring the TaskFlow vector logo, nav links, Data button, and
-  theme toggle button, streamlined on mobile viewports.
-- Responsive mobile bottom navigation tab bar docked at the bottom of mobile screens
-  for ergonomic thumb access to all workspaces.
-- AppFooter pinned as a fixed glassmorphic dock across the bottom of the viewport
-  with creator attribution, developer showcase modal trigger, and social links,
-  paired with generous bottom scroll clearance across all pages.
+- **Web:** retain the dark-default Linear/Raycast-inspired responsive app at `/`, `/notes`, `/notes/[id]`, `/calendar`, and `/analytics`; add Follow Up, Plan My Day, inbox, actionable-note, account, sync, notification, and conflict experiences.
+- **Plan My Day:** show capacity, reasons, and editable selection/order before acceptance; never silently change backlog data.
+- **Follow Up:** show who, what, when, and how; keep due items visible without permission; separate completion, skip, snooze, reschedule, and launch actions.
+- **Fast capture:** open quickly, save locally with minimal input, confirm success, and preserve original text.
+- **Mobile:** use native phone/tablet navigation, safe areas, dynamic text, VoiceOver/TalkBack, accessible ordering, share capture, and local notifications.
+- **Windows:** use native WPF controls, keyboard navigation, visible focus, Narrator/UI Automation, contrast themes, DPI scaling, fast capture, and accessible notifications.
+- **Consistency:** terminology, enums, dates, recurrence, planning rules, sync states, backups, privacy, and rich content match across clients; layouts need not be identical.
 
 ## Deployment
 
-- **Host:** Vercel, deployed from the GitHub repository (`*.vercel.app`)
-- **App type:** Next.js App Router; no server data
-- **Build:** `npm run build`; local preview: `npm run start`
-- **Output:** Next.js default (`.next`); `vercel.json` with security headers
-- **Env vars:** none
-- **Storage:** none server-side; per-browser IndexedDB
-- **Background work / cron:** none
-- **Health path:** `/`
-- **Domain:** default Vercel domain
+- **Web/API host:** one Vercel project rooted at `apps/web`, preserving the current production origin and PWA identity unless durable reminder dispatch proves incompatible with the selected plan.
+- **Health:** `/api/v1/health`; web and API deploy together.
+- **Commands after the move:** `npm run dev`, `npm run build`, `npm run start`, `npm run lint`, and `npm run test` within `apps/web`.
+- **Server dependencies:** managed PostgreSQL, transactional email/auth, Web Push signing, and a durable scheduler or protected dispatcher.
+- **Environment:** server credentials remain deployment secrets and never use `NEXT_PUBLIC_*` unless genuinely public.
+- **Reminder operations:** dispatch is idempotent with content-free logs; failed delivery may invalidate a subscription without deleting its Follow Up.
+- **Mobile:** signed Android App Bundle and iOS TestFlight/App Store builds with notification declarations and physical-device checks.
+- **Windows:** signed self-contained x64 and Arm64 MSIX packages, preferably through Microsoft Store, with toast activation tested on supported Windows versions.
+- **Compatibility:** database changes precede dependent clients; additive API fields remain optional; breaking behavior uses a new versioned route.
+- **Windows support:** current Windows 11 and in-support Windows 10 Enterprise/IoT LTSC build 17763 or newer; unsupported consumer Windows 10 is best effort.
+
+## Open questions
+
+These approved TODOs do not change the build order but must be resolved before dependent features:
+
+- Managed PostgreSQL, authentication, transactional email, Web Push, and durable reminder-dispatch providers or implementations.
+- Whether the selected Vercel plan can run the required reminder cadence.
+- Permanent production domain and Apple, Google Play, and Microsoft Store developer-account access.
+- Platform rich-text editors and the exact `taskflow-html-v1` allowlist.
+- Exact recurrence grammar, limits, end conditions, daylight-saving behavior, and Windows time-zone mapping.
+- Default snooze choices, repeat policy, and detailed notification-preview defaults.
+- Supported email, WhatsApp, and telephone URI behavior per platform.
+- Exact Windows fast-capture entry point and whether tray behavior is justified.
+- Retention and account-deletion completion windows, API rate limits, sync batch sizes, and push dispatch limits.
+
+The plans have no contradictions.

@@ -3,7 +3,7 @@
 import Link from "next/link";
 
 interface MobileNavBarProps {
-  active: "tasks" | "notes" | "calendar" | "analytics";
+  active?: "tasks" | "notes" | "calendar" | "analytics" | "privacy";
 }
 
 const MOBILE_NAV_ITEMS = [

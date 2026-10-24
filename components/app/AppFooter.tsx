@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import TaskFlowLogo from "@/components/brand/TaskFlowLogo";
 import AboutDeveloperModal from "@/components/app/AboutDeveloperModal";
 
@@ -26,6 +27,13 @@ export default function AppFooter() {
           <p className="text-[11px] text-faint sm:hidden lg:block">
             Offline-first architecture with browser-persisted storage. No cloud required.
           </p>
+          <span className="hidden sm:inline text-[10px] text-faint font-normal">•</span>
+          <Link
+            href="/privacy"
+            className="text-[11px] font-medium text-muted transition-colors hover:text-accent hover:underline decoration-accent/60 underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-xs"
+          >
+            Privacy & Architecture
+          </Link>
         </div>
 
         {/* Right: Creator Attribution & Modal Trigger */}

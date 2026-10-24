@@ -9,7 +9,7 @@ import TaskFlowLogo from "@/components/brand/TaskFlowLogo";
 import MobileNavBar from "@/components/app/MobileNavBar";
 
 interface AppHeaderProps {
-  active: "tasks" | "notes" | "calendar" | "analytics";
+  active?: "tasks" | "notes" | "calendar" | "analytics" | "privacy";
 }
 
 const NAV_ITEMS = [
