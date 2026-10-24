@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import TaskControls from "@/components/tasks/TaskControls";
 import TaskForm from "@/components/tasks/TaskForm";
 import TaskItem from "@/components/tasks/TaskItem";
@@ -278,6 +279,28 @@ export default function TasksScreen() {
           <p className="mt-1 text-sm text-muted">
             Track daily tasks, deadlines, and priorities with browser-local privacy.
           </p>
+        </div>
+        <div className="pt-2 sm:pt-0">
+          <Link
+            href="/plan"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-accent/15 px-3.5 py-2 text-xs font-semibold text-accent shadow-xs transition-all hover:bg-accent hover:text-accent-ink"
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+            <span>Plan My Day</span>
+          </Link>
         </div>
       </div>
 

@@ -208,6 +208,29 @@ describe("validateTaskInput", () => {
       field: "order",
     });
   });
+
+  it("accepts valid estimatedMinutes", () => {
+    const res1 = validateTaskInput({ title: "Task", estimatedMinutes: 45 });
+    expect(res1.ok && res1.value.estimatedMinutes).toBe(45);
+
+    const res2 = validateTaskInput({ title: "Task", estimatedMinutes: null });
+    expect(res2.ok && res2.value.estimatedMinutes).toBeNull();
+  });
+
+  it("rejects invalid estimatedMinutes", () => {
+    const errZero = validateTaskInput({ title: "Task", estimatedMinutes: 0 });
+    expect(errZero).toEqual({
+      ok: false,
+      error: "Estimated minutes must be a whole number between 1 and 1440.",
+      field: "estimatedMinutes",
+    });
+
+    const errOver = validateTaskInput({ title: "Task", estimatedMinutes: 1441 });
+    expect(errOver.ok).toBe(false);
+
+    const errFloat = validateTaskInput({ title: "Task", estimatedMinutes: 15.5 });
+    expect(errFloat.ok).toBe(false);
+  });
 });
 
 describe("validateTaskPatch", () => {

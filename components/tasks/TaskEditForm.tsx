@@ -18,13 +18,20 @@ interface TaskEditFormProps {
     priority: TaskPriority;
     dueDate: string | null;
     category?: TaskCategory | null;
+    estimatedMinutes?: number | null;
   }) => Promise<boolean>;
   onCancel: () => void;
 }
 
 const ERROR_ID = "task-edit-error";
 
-type TaskEditField = "title" | "description" | "priority" | "dueDate" | "category";
+type TaskEditField =
+  | "title"
+  | "description"
+  | "priority"
+  | "dueDate"
+  | "category"
+  | "estimatedMinutes";
 
 export default function TaskEditForm({
   task,
@@ -37,6 +44,9 @@ export default function TaskEditForm({
   const [priority, setPriority] = useState<TaskPriority>(task.priority);
   const [dueDate, setDueDate] = useState(task.dueDate ?? "");
   const [category, setCategory] = useState<TaskCategory | null>(task.category ?? null);
+  const [estimatedMinutes, setEstimatedMinutes] = useState(
+    task.estimatedMinutes ? String(task.estimatedMinutes) : ""
+  );
   const [error, setError] = useState<string | null>(null);
   const [errorField, setErrorField] = useState<TaskEditField | null>(null);
   const [saving, setSaving] = useState(false);
@@ -44,6 +54,7 @@ export default function TaskEditForm({
   const priorityRef = useRef<HTMLSelectElement>(null);
   const dueDateRef = useRef<HTMLInputElement>(null);
   const categoryRef = useRef<HTMLSelectElement>(null);
+  const estimatedMinutesRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     titleRef.current?.focus();
@@ -52,13 +63,23 @@ export default function TaskEditForm({
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const validation = validateTaskInput({ title, description, priority, dueDate, category });
+    const parsedMinutes = estimatedMinutes.trim() ? Number(estimatedMinutes.trim()) : null;
+
+    const validation = validateTaskInput({
+      title,
+      description,
+      priority,
+      dueDate,
+      category,
+      estimatedMinutes: parsedMinutes,
+    });
     if (!validation.ok) {
       const field: TaskEditField =
         validation.field === "description" ||
         validation.field === "priority" ||
         validation.field === "dueDate" ||
-        validation.field === "category"
+        validation.field === "category" ||
+        validation.field === "estimatedMinutes"
           ? validation.field
           : "title";
       setError(validation.error);
@@ -67,6 +88,7 @@ export default function TaskEditForm({
       else if (field === "priority") priorityRef.current?.focus();
       else if (field === "dueDate") dueDateRef.current?.focus();
       else if (field === "category") categoryRef.current?.focus();
+      else if (field === "estimatedMinutes") estimatedMinutesRef.current?.focus();
       return;
     }
 
@@ -186,6 +208,28 @@ export default function TaskEditForm({
             <option value="study">Study</option>
             <option value="ideas">Ideas</option>
           </select>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label
+            htmlFor="task-edit-estimate"
+            className="text-xs font-semibold text-muted"
+          >
+            Estimate (mins)
+          </label>
+          <input
+            id="task-edit-estimate"
+            ref={estimatedMinutesRef}
+            type="number"
+            min={1}
+            max={1440}
+            placeholder="e.g. 30"
+            value={estimatedMinutes}
+            onChange={(event) => setEstimatedMinutes(event.target.value)}
+            aria-invalid={errorField === "estimatedMinutes"}
+            aria-describedby={errorField === "estimatedMinutes" ? ERROR_ID : undefined}
+            className="w-24 rounded-xl border border-border bg-surface px-3 py-1.5 text-xs text-text outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft"
+          />
         </div>
       </div>
 

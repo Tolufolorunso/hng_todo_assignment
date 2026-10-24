@@ -20,12 +20,13 @@ describe("getDb", () => {
     expect(db.version).toBe(DB_VERSION);
   });
 
-  it("creates the tasks, notes, followups, and followup_occurrences object stores", async () => {
+  it("creates the tasks, notes, followups, followup_occurrences, and daily_plans object stores", async () => {
     const db = await getDb();
     expect(db.objectStoreNames.contains("tasks")).toBe(true);
     expect(db.objectStoreNames.contains("notes")).toBe(true);
     expect(db.objectStoreNames.contains("followups")).toBe(true);
     expect(db.objectStoreNames.contains("followup_occurrences")).toBe(true);
+    expect(db.objectStoreNames.contains("daily_plans")).toBe(true);
   });
 
   it("creates the updatedAt index on both stores", async () => {
@@ -43,6 +44,14 @@ describe("getDb", () => {
     expect(tx.objectStore("tasks").indexNames.contains("updatedAt")).toBe(true);
     expect(tx.objectStore("tasks").indexNames.contains("category")).toBe(true);
     expect((tx.objectStore("tasks").indexNames as unknown as DOMStringList).contains("completed")).toBe(false);
+    await tx.done;
+  });
+
+  it("creates the date and updatedAt indexes on daily_plans", async () => {
+    const db = await getDb();
+    const tx = db.transaction("daily_plans");
+    expect(tx.objectStore("daily_plans").indexNames.contains("date")).toBe(true);
+    expect(tx.objectStore("daily_plans").indexNames.contains("updatedAt")).toBe(true);
     await tx.done;
   });
 

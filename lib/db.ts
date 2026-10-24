@@ -2,9 +2,10 @@ import { openDB, type DBSchema, type IDBPDatabase } from "idb";
 import type { Note } from "@/types/note";
 import type { Task } from "@/types/task";
 import type { FollowUp, FollowUpOccurrence } from "@/types/followup";
+import type { DailyPlan } from "@/types/plan";
 
 export const DB_NAME = "taskflow";
-export const DB_VERSION = 5;
+export const DB_VERSION = 6;
 
 export interface TaskFlowDB extends DBSchema {
   tasks: {
@@ -37,6 +38,14 @@ export interface TaskFlowDB extends DBSchema {
       followUpId: string;
       dueAt: string;
       outcome: string;
+    };
+  };
+  daily_plans: {
+    key: string;
+    value: DailyPlan;
+    indexes: {
+      date: string;
+      updatedAt: string;
     };
   };
 }
@@ -111,6 +120,14 @@ export function getDb(): Promise<IDBPDatabase<TaskFlowDB>> {
             occurrences.createIndex("followUpId", "followUpId");
             occurrences.createIndex("dueAt", "dueAt");
             occurrences.createIndex("outcome", "outcome");
+          }
+        }
+
+        if (oldVersion < 6) {
+          if (!db.objectStoreNames.contains("daily_plans")) {
+            const dailyPlans = db.createObjectStore("daily_plans", { keyPath: "id" });
+            dailyPlans.createIndex("date", "date");
+            dailyPlans.createIndex("updatedAt", "updatedAt");
           }
         }
       },

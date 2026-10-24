@@ -104,7 +104,7 @@ The Blueprint overlay, `AGENTS.md`, and onboarding setup are already present.
   snoozing, scoped rescheduling, in-app reminders, and email, WhatsApp, and
   phone launchers. Closed-app web push is completed after account
   infrastructure in Feature 36.
-- [ ] 26. **Plan My Day** - add optional effort estimates, available-time entry,
+- [x] 26. **Plan My Day** - add optional effort estimates, available-time entry,
   explained capacity-aware recommendations across tasks and due follow-ups,
   user-controlled daily plans, and safe handling of unfinished work.
 - [ ] 27. **Actionable notes** - create tasks or follow-ups from selected note

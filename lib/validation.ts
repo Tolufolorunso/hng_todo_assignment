@@ -22,6 +22,7 @@ export type TaskField =
   | "priority"
   | "dueDate"
   | "category"
+  | "estimatedMinutes"
   | "order";
 
 export type NoteField = "title" | "body";
@@ -30,12 +31,16 @@ export type ValidationResult<T, F extends string = string> =
   | { ok: true; value: T }
   | { ok: false; error: string; field?: F };
 
+export const ESTIMATED_MINUTES_MIN = 1;
+export const ESTIMATED_MINUTES_MAX = 1440;
+
 export interface TaskInput {
   title: string;
   description?: string;
   priority?: TaskPriority;
   dueDate?: string | null;
   category?: TaskCategory | null;
+  estimatedMinutes?: number | null;
   order?: number;
 }
 
@@ -45,6 +50,7 @@ export interface ValidTaskInput {
   priority: TaskPriority;
   dueDate: string | null;
   category: TaskCategory | null;
+  estimatedMinutes?: number | null;
   order?: number;
 }
 
@@ -55,6 +61,7 @@ export interface TaskPatch {
   priority?: TaskPriority;
   dueDate?: string | null;
   category?: TaskCategory | null;
+  estimatedMinutes?: number | null;
   order?: number;
 }
 
@@ -65,6 +72,7 @@ export interface ValidTaskPatch {
   priority?: TaskPriority;
   dueDate?: string | null;
   category?: TaskCategory | null;
+  estimatedMinutes?: number | null;
   order?: number;
 }
 
@@ -148,6 +156,27 @@ function validateCategory(
   return { ok: true, value: raw as TaskCategory };
 }
 
+function validateEstimatedMinutes(
+  raw: number | null | undefined,
+): ValidationResult<number | null, TaskField> {
+  if (raw === undefined || raw === null) {
+    return { ok: true, value: null };
+  }
+  if (
+    typeof raw !== "number" ||
+    !Number.isInteger(raw) ||
+    raw < ESTIMATED_MINUTES_MIN ||
+    raw > ESTIMATED_MINUTES_MAX
+  ) {
+    return {
+      ok: false,
+      error: `Estimated minutes must be a whole number between ${ESTIMATED_MINUTES_MIN} and ${ESTIMATED_MINUTES_MAX}.`,
+      field: "estimatedMinutes",
+    };
+  }
+  return { ok: true, value: raw };
+}
+
 export function validateTaskInput(input: TaskInput): ValidationResult<ValidTaskInput, TaskField> {
   const title = validateTitle(input.title);
   if (!title.ok) {
@@ -169,6 +198,10 @@ export function validateTaskInput(input: TaskInput): ValidationResult<ValidTaskI
   if (!category.ok) {
     return category;
   }
+  const estimatedMinutes = validateEstimatedMinutes(input.estimatedMinutes);
+  if (!estimatedMinutes.ok) {
+    return estimatedMinutes;
+  }
   if (input.order !== undefined) {
     if (typeof input.order !== "number" || !Number.isFinite(input.order)) {
       return { ok: false, error: "Order must be a valid number.", field: "order" };
@@ -182,6 +215,7 @@ export function validateTaskInput(input: TaskInput): ValidationResult<ValidTaskI
       priority: priority.value,
       dueDate: dueDate.value,
       category: category.value,
+      ...(input.estimatedMinutes !== undefined ? { estimatedMinutes: estimatedMinutes.value } : {}),
       ...(input.order !== undefined ? { order: input.order } : {}),
     },
   };
@@ -235,6 +269,14 @@ export function validateTaskPatch(patch: TaskPatch): ValidationResult<ValidTaskP
       return category;
     }
     value.category = category.value;
+  }
+
+  if (patch.estimatedMinutes !== undefined) {
+    const estimatedMinutes = validateEstimatedMinutes(patch.estimatedMinutes);
+    if (!estimatedMinutes.ok) {
+      return estimatedMinutes;
+    }
+    value.estimatedMinutes = estimatedMinutes.value;
   }
 
   if (patch.order !== undefined) {

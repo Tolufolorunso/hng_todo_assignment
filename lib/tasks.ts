@@ -45,6 +45,7 @@ export async function createTask(input: TaskInput): Promise<Task> {
     priority: validation.value.priority,
     dueDate: validation.value.dueDate,
     category: validation.value.category,
+    estimatedMinutes: validation.value.estimatedMinutes ?? null,
     createdAt: timestamp,
     updatedAt: timestamp,
     completedAt: null,

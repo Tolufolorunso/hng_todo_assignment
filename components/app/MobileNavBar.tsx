@@ -3,7 +3,7 @@
 import Link from "next/link";
 
 interface MobileNavBarProps {
-  active?: "tasks" | "notes" | "calendar" | "analytics" | "privacy" | "followups";
+  active?: "tasks" | "notes" | "calendar" | "analytics" | "privacy" | "followups" | "plan";
   dueCount?: number;
 }
 
@@ -68,6 +68,27 @@ const MOBILE_NAV_ITEMS = [
         <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
         <circle cx="9" cy="7" r="4" />
         <polyline points="16 11 18 13 22 9" />
+      </svg>
+    ),
+  },
+  {
+    key: "plan",
+    href: "/plan",
+    label: "Plan",
+    icon: (
+      <svg
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <circle cx="12" cy="12" r="10" />
+        <polyline points="12 6 12 12 16 14" />
       </svg>
     ),
   },

@@ -106,6 +106,28 @@ export default function DayInspector({
                     tasks.length - incompleteCount
                   } completed)`}
             </p>
+            <div className="mt-2.5 flex items-center gap-2">
+              <Link
+                href="/plan"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface-muted/50 px-2.5 py-1 text-[11px] font-semibold text-text transition-all hover:border-border-strong hover:bg-surface"
+              >
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+                <span>Plan My Day</span>
+              </Link>
+            </div>
           </div>
         </div>
 

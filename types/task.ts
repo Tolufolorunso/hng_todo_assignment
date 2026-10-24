@@ -9,6 +9,7 @@ export interface Task {
   priority: TaskPriority;
   dueDate: string | null;
   category: TaskCategory | null;
+  estimatedMinutes?: number | null;
   order?: number;
   createdAt: string;
   updatedAt: string;

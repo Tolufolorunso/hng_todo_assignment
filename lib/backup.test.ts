@@ -293,6 +293,45 @@ describe("backup and restore logic", () => {
       expect(restoredOccurrences).toHaveLength(1);
       expect(restoredOccurrences[0].id).toBe("occ-1");
     });
+
+    it("round-trips daily plans through export and restore", async () => {
+      const db = await getDb();
+      const samplePlan = {
+        id: "plan-1",
+        date: "2026-10-25",
+        timeZone: "UTC",
+        availableMinutes: 240,
+        items: [
+          {
+            id: "it-1",
+            type: "task" as const,
+            targetId: "t-1",
+            title: "Task 1",
+            estimatedMinutes: 60,
+            completed: false,
+            recommendationReason: "Due today",
+            order: 0,
+          },
+        ],
+        acceptedAt: "2026-10-25T08:00:00.000Z",
+        createdAt: "2026-10-25T08:00:00.000Z",
+        updatedAt: "2026-10-25T08:00:00.000Z",
+      };
+
+      await db.put("daily_plans", samplePlan);
+
+      const exported = await exportDatabaseBackup();
+      expect(exported.payload.data.dailyPlans).toHaveLength(1);
+
+      await db.clear("daily_plans");
+      expect(await db.getAll("daily_plans")).toHaveLength(0);
+
+      const restoreResult = await restoreDatabaseBackup(exported.payload, "replace");
+      expect(restoreResult.plansCount).toBe(1);
+
+      const restoredPlan = await db.get("daily_plans", "plan-1");
+      expect(restoredPlan).toEqual(samplePlan);
+    });
   });
 });
 

@@ -3,6 +3,7 @@ import { sanitizeHtml } from "@/lib/html";
 import type { Note } from "@/types/note";
 import type { Task, TaskCategory, TaskPriority } from "@/types/task";
 import type { FollowUp, FollowUpOccurrence } from "@/types/followup";
+import type { DailyPlan } from "@/types/plan";
 
 export interface BackupPayload {
   version: 1;
@@ -13,6 +14,7 @@ export interface BackupPayload {
     notes: Note[];
     followups?: FollowUp[];
     followupOccurrences?: FollowUpOccurrence[];
+    dailyPlans?: DailyPlan[];
   };
 }
 
@@ -35,6 +37,7 @@ export interface RestoreResult {
   notesCount: number;
   followupsCount?: number;
   occurrencesCount?: number;
+  plansCount?: number;
 }
 
 const VALID_PRIORITIES = new Set<TaskPriority>(["low", "medium", "high"]);
@@ -147,11 +150,27 @@ export function isValidFollowUpOccurrence(item: unknown): item is FollowUpOccurr
   return true;
 }
 
+export function isValidDailyPlan(item: unknown): item is DailyPlan {
+  if (typeof item !== "object" || item === null) return false;
+  const candidate = item as Record<string, unknown>;
+
+  if (typeof candidate.id !== "string" || !candidate.id) return false;
+  if (typeof candidate.date !== "string" || !candidate.date) return false;
+  if (typeof candidate.timeZone !== "string") return false;
+  if (typeof candidate.availableMinutes !== "number" || candidate.availableMinutes < 0) return false;
+  if (!Array.isArray(candidate.items)) return false;
+  if (candidate.acceptedAt !== null && typeof candidate.acceptedAt !== "string") return false;
+  if (typeof candidate.createdAt !== "string" || typeof candidate.updatedAt !== "string") return false;
+
+  return true;
+}
+
 export function buildBackupPayload(
   tasks: Task[],
   notes: Note[],
   followups?: FollowUp[],
-  followupOccurrences?: FollowUpOccurrence[]
+  followupOccurrences?: FollowUpOccurrence[],
+  dailyPlans?: DailyPlan[]
 ): BackupPayload {
   return {
     version: 1,
@@ -162,6 +181,7 @@ export function buildBackupPayload(
       notes,
       followups: followups || [],
       followupOccurrences: followupOccurrences || [],
+      dailyPlans: dailyPlans || [],
     },
   };
 }
@@ -261,6 +281,20 @@ export function parseAndValidateBackup(jsonString: string): BackupValidationResu
     }
   }
 
+  if (data.dailyPlans !== undefined) {
+    if (!Array.isArray(data.dailyPlans)) {
+      return { ok: false, error: "Backup daily plans list is malformed." };
+    }
+    for (let i = 0; i < data.dailyPlans.length; i++) {
+      if (!isValidDailyPlan(data.dailyPlans[i])) {
+        return {
+          ok: false,
+          error: `Daily plan at position ${i + 1} is corrupted or missing required fields.`,
+        };
+      }
+    }
+  }
+
   return { ok: true, value: parsed as BackupPayload };
 }
 
@@ -274,8 +308,9 @@ export async function exportDatabaseBackup(): Promise<{
   const notes = await db.getAll("notes");
   const followups = await db.getAll("followups");
   const followupOccurrences = await db.getAll("followup_occurrences");
+  const dailyPlans = await db.getAll("daily_plans");
 
-  const payload = buildBackupPayload(tasks, notes, followups, followupOccurrences);
+  const payload = buildBackupPayload(tasks, notes, followups, followupOccurrences, dailyPlans);
   const jsonString = JSON.stringify(payload, null, 2);
   const filename = generateBackupFilename();
 
@@ -288,7 +323,7 @@ export async function restoreDatabaseBackup(
 ): Promise<RestoreResult> {
   const db = await getDb();
   const tx = db.transaction(
-    ["tasks", "notes", "followups", "followup_occurrences"],
+    ["tasks", "notes", "followups", "followup_occurrences", "daily_plans"],
     "readwrite"
   );
 
@@ -296,12 +331,14 @@ export async function restoreDatabaseBackup(
   const noteStore = tx.objectStore("notes");
   const followupStore = tx.objectStore("followups");
   const occurrenceStore = tx.objectStore("followup_occurrences");
+  const dailyPlanStore = tx.objectStore("daily_plans");
 
   if (mode === "replace") {
     await taskStore.clear();
     await noteStore.clear();
     await followupStore.clear();
     await occurrenceStore.clear();
+    await dailyPlanStore.clear();
   }
 
   for (const task of payload.data.tasks) {
@@ -330,6 +367,12 @@ export async function restoreDatabaseBackup(
     }
   }
 
+  if (payload.data.dailyPlans) {
+    for (const plan of payload.data.dailyPlans) {
+      await dailyPlanStore.put(plan);
+    }
+  }
+
   await tx.done;
 
   return {
@@ -337,6 +380,7 @@ export async function restoreDatabaseBackup(
     notesCount: payload.data.notes.length,
     followupsCount: payload.data.followups?.length ?? 0,
     occurrencesCount: payload.data.followupOccurrences?.length ?? 0,
+    plansCount: payload.data.dailyPlans?.length ?? 0,
   };
 }
 
