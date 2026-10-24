@@ -2,6 +2,7 @@ import { getDb } from "@/lib/db";
 import { sanitizeHtml } from "@/lib/html";
 import type { Note } from "@/types/note";
 import type { Task, TaskCategory, TaskPriority } from "@/types/task";
+import type { FollowUp, FollowUpOccurrence } from "@/types/followup";
 
 export interface BackupPayload {
   version: 1;
@@ -10,6 +11,8 @@ export interface BackupPayload {
   data: {
     tasks: Task[];
     notes: Note[];
+    followups?: FollowUp[];
+    followupOccurrences?: FollowUpOccurrence[];
   };
 }
 
@@ -30,6 +33,8 @@ export type BackupValidationResult = ValidationSuccess | ValidationFailure;
 export interface RestoreResult {
   tasksCount: number;
   notesCount: number;
+  followupsCount?: number;
+  occurrencesCount?: number;
 }
 
 const VALID_PRIORITIES = new Set<TaskPriority>(["low", "medium", "high"]);
@@ -95,7 +100,59 @@ export function isValidNote(item: unknown): item is Note {
   return true;
 }
 
-export function buildBackupPayload(tasks: Task[], notes: Note[]): BackupPayload {
+export function isValidFollowUp(item: unknown): item is FollowUp {
+  if (typeof item !== "object" || item === null) return false;
+  const candidate = item as Record<string, unknown>;
+
+  if (typeof candidate.id !== "string" || !candidate.id) return false;
+  if (typeof candidate.personName !== "string" || !candidate.personName.trim()) return false;
+  if (typeof candidate.commitment !== "string" || !candidate.commitment.trim()) return false;
+  if (
+    candidate.details !== null &&
+    candidate.details !== undefined &&
+    typeof candidate.details !== "string"
+  ) {
+    return false;
+  }
+  if (typeof candidate.dueAt !== "string") return false;
+  if (
+    candidate.status !== "open" &&
+    candidate.status !== "completed" &&
+    candidate.status !== "archived"
+  ) {
+    return false;
+  }
+  if (typeof candidate.createdAt !== "string") return false;
+  if (typeof candidate.updatedAt !== "string") return false;
+
+  return true;
+}
+
+export function isValidFollowUpOccurrence(item: unknown): item is FollowUpOccurrence {
+  if (typeof item !== "object" || item === null) return false;
+  const candidate = item as Record<string, unknown>;
+
+  if (typeof candidate.id !== "string" || !candidate.id) return false;
+  if (typeof candidate.followUpId !== "string" || !candidate.followUpId) return false;
+  if (typeof candidate.dueAt !== "string") return false;
+  if (
+    candidate.outcome !== "completed" &&
+    candidate.outcome !== "skipped" &&
+    candidate.outcome !== "missed" &&
+    candidate.outcome !== "unresolved"
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
+export function buildBackupPayload(
+  tasks: Task[],
+  notes: Note[],
+  followups?: FollowUp[],
+  followupOccurrences?: FollowUpOccurrence[]
+): BackupPayload {
   return {
     version: 1,
     app: "TaskFlow",
@@ -103,6 +160,8 @@ export function buildBackupPayload(tasks: Task[], notes: Note[]): BackupPayload 
     data: {
       tasks,
       notes,
+      followups: followups || [],
+      followupOccurrences: followupOccurrences || [],
     },
   };
 }
@@ -174,6 +233,34 @@ export function parseAndValidateBackup(jsonString: string): BackupValidationResu
     }
   }
 
+  if (data.followups !== undefined) {
+    if (!Array.isArray(data.followups)) {
+      return { ok: false, error: "Backup followups list is malformed." };
+    }
+    for (let i = 0; i < data.followups.length; i++) {
+      if (!isValidFollowUp(data.followups[i])) {
+        return {
+          ok: false,
+          error: `FollowUp at position ${i + 1} is corrupted or missing required fields.`,
+        };
+      }
+    }
+  }
+
+  if (data.followupOccurrences !== undefined) {
+    if (!Array.isArray(data.followupOccurrences)) {
+      return { ok: false, error: "Backup followup occurrences list is malformed." };
+    }
+    for (let i = 0; i < data.followupOccurrences.length; i++) {
+      if (!isValidFollowUpOccurrence(data.followupOccurrences[i])) {
+        return {
+          ok: false,
+          error: `FollowUp occurrence at position ${i + 1} is corrupted or missing required fields.`,
+        };
+      }
+    }
+  }
+
   return { ok: true, value: parsed as BackupPayload };
 }
 
@@ -185,8 +272,10 @@ export async function exportDatabaseBackup(): Promise<{
   const db = await getDb();
   const tasks = await db.getAll("tasks");
   const notes = await db.getAll("notes");
+  const followups = await db.getAll("followups");
+  const followupOccurrences = await db.getAll("followup_occurrences");
 
-  const payload = buildBackupPayload(tasks, notes);
+  const payload = buildBackupPayload(tasks, notes, followups, followupOccurrences);
   const jsonString = JSON.stringify(payload, null, 2);
   const filename = generateBackupFilename();
 
@@ -198,14 +287,21 @@ export async function restoreDatabaseBackup(
   mode: RestoreMode,
 ): Promise<RestoreResult> {
   const db = await getDb();
-  const tx = db.transaction(["tasks", "notes"], "readwrite");
+  const tx = db.transaction(
+    ["tasks", "notes", "followups", "followup_occurrences"],
+    "readwrite"
+  );
 
   const taskStore = tx.objectStore("tasks");
   const noteStore = tx.objectStore("notes");
+  const followupStore = tx.objectStore("followups");
+  const occurrenceStore = tx.objectStore("followup_occurrences");
 
   if (mode === "replace") {
     await taskStore.clear();
     await noteStore.clear();
+    await followupStore.clear();
+    await occurrenceStore.clear();
   }
 
   for (const task of payload.data.tasks) {
@@ -222,11 +318,25 @@ export async function restoreDatabaseBackup(
     });
   }
 
+  if (payload.data.followups) {
+    for (const followup of payload.data.followups) {
+      await followupStore.put(followup);
+    }
+  }
+
+  if (payload.data.followupOccurrences) {
+    for (const occurrence of payload.data.followupOccurrences) {
+      await occurrenceStore.put(occurrence);
+    }
+  }
+
   await tx.done;
 
   return {
     tasksCount: payload.data.tasks.length,
     notesCount: payload.data.notes.length,
+    followupsCount: payload.data.followups?.length ?? 0,
+    occurrencesCount: payload.data.followupOccurrences?.length ?? 0,
   };
 }
 

@@ -1,13 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { formatSelectedDateHeading } from "@/lib/calendar";
 import type { Task, TaskCategory, TaskPriority } from "@/types/task";
+import type { FollowUp } from "@/types/followup";
 
 interface DayInspectorProps {
   selectedDate: string;
   tasks: Task[];
   unscheduledTasks: Task[];
+  followUps?: FollowUp[];
   todayIso: string;
   onToggleTask: (task: Task, completed: boolean) => void;
   onQuickAddTask: (title: string, date: string) => Promise<boolean>;
@@ -46,6 +49,7 @@ export default function DayInspector({
   selectedDate,
   tasks,
   unscheduledTasks,
+  followUps,
   todayIso,
   onToggleTask,
   onQuickAddTask,
@@ -246,6 +250,46 @@ export default function DayInspector({
           </ul>
         )}
       </div>
+
+      {/* Scheduled Follow Ups for this day */}
+      {followUps && followUps.length > 0 && (
+        <div className="rounded-2xl border border-accent/30 bg-surface p-5 shadow-card">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-accent">
+              Follow Ups for This Day ({followUps.length})
+            </h3>
+            <Link
+              href="/followups"
+              className="text-[11px] font-medium text-accent hover:underline"
+            >
+              View All
+            </Link>
+          </div>
+
+          <ul className="mt-3 flex flex-col gap-2.5">
+            {followUps.map((fu) => (
+              <li
+                key={fu.id}
+                className="flex flex-col gap-1 rounded-xl border border-border/80 bg-surface-muted/30 p-3"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-text">{fu.personName}</span>
+                  <span
+                    className={`rounded-md px-1.5 py-0.5 text-[10px] font-medium uppercase ${
+                      fu.status === "completed"
+                        ? "bg-emerald-500/15 text-emerald-400"
+                        : "bg-accent/15 text-accent"
+                    }`}
+                  >
+                    {fu.status}
+                  </span>
+                </div>
+                <p className="text-xs text-muted">{fu.commitment}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Unscheduled Backlog Section */}
       <div className="rounded-2xl border border-border/80 bg-surface p-5 shadow-card">

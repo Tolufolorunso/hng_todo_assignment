@@ -2,10 +2,12 @@
 
 import { WEEKDAYS, type CalendarDay } from "@/lib/calendar";
 import type { Task, TaskCategory } from "@/types/task";
+import type { FollowUp } from "@/types/followup";
 
 interface CalendarGridProps {
   days: CalendarDay[];
   tasksByDate: Record<string, Task[]>;
+  followUpsByDate?: Record<string, FollowUp[]>;
   selectedDate: string | null;
   onSelectDate: (isoDate: string) => void;
 }
@@ -21,6 +23,7 @@ const CATEGORY_DOT: Record<TaskCategory, string> = {
 export default function CalendarGrid({
   days,
   tasksByDate,
+  followUpsByDate,
   selectedDate,
   onSelectDate,
 }: CalendarGridProps) {
@@ -50,11 +53,15 @@ export default function CalendarGrid({
       <div className="grid grid-cols-7 gap-px bg-border/60">
         {days.map((day) => {
           const dayTasks = tasksByDate[day.isoDate] || [];
+          const dayFollowUps = followUpsByDate?.[day.isoDate] || [];
           const isSelected = selectedDate === day.isoDate;
           const incompleteCount = dayTasks.filter((t) => !t.completed).length;
-          const hasOverdue = day.isPast && incompleteCount > 0;
+          const incompleteFollowUpsCount = dayFollowUps.filter((f) => f.status === "open").length;
+          const totalIncomplete = incompleteCount + incompleteFollowUpsCount;
+          const hasOverdue = day.isPast && totalIncomplete > 0;
           const maxVisible = 2;
-          const overflowCount = dayTasks.length - maxVisible;
+          const totalItems = dayTasks.length + dayFollowUps.length;
+          const overflowCount = totalItems - maxVisible;
 
           return (
             <button
@@ -62,8 +69,8 @@ export default function CalendarGrid({
               type="button"
               role="gridcell"
               aria-selected={isSelected}
-              aria-label={`${day.isoDate}, ${dayTasks.length} ${
-                dayTasks.length === 1 ? "task" : "tasks"
+              aria-label={`${day.isoDate}, ${totalItems} ${
+                totalItems === 1 ? "item" : "items"
               }`}
               onClick={() => onSelectDate(day.isoDate)}
               className={`group relative flex min-h-[6.5rem] flex-col p-2 text-left transition-all outline-none focus-visible:ring-2 focus-visible:ring-accent ${
@@ -143,6 +150,17 @@ export default function CalendarGrid({
                     </div>
                   );
                 })}
+
+                {dayFollowUps.slice(0, Math.max(0, maxVisible - dayTasks.length)).map((fu) => (
+                  <div
+                    key={fu.id}
+                    className="flex items-center gap-1 rounded border border-accent/40 bg-accent/10 px-1.5 py-0.5 text-[10px] leading-tight text-accent shadow-xs"
+                    title={`Follow Up: ${fu.personName} - ${fu.commitment}`}
+                  >
+                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent" aria-hidden="true" />
+                    <span className="truncate font-semibold">{fu.personName}</span>
+                  </div>
+                ))}
 
                 {/* Overflow count badge */}
                 {overflowCount > 0 && (

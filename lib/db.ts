@@ -1,9 +1,10 @@
 import { openDB, type DBSchema, type IDBPDatabase } from "idb";
 import type { Note } from "@/types/note";
 import type { Task } from "@/types/task";
+import type { FollowUp, FollowUpOccurrence } from "@/types/followup";
 
 export const DB_NAME = "taskflow";
-export const DB_VERSION = 4;
+export const DB_VERSION = 5;
 
 export interface TaskFlowDB extends DBSchema {
   tasks: {
@@ -19,6 +20,24 @@ export interface TaskFlowDB extends DBSchema {
     key: string;
     value: Note;
     indexes: { updatedAt: string };
+  };
+  followups: {
+    key: string;
+    value: FollowUp;
+    indexes: {
+      dueAt: string;
+      status: string;
+      updatedAt: string;
+    };
+  };
+  followup_occurrences: {
+    key: string;
+    value: FollowUpOccurrence;
+    indexes: {
+      followUpId: string;
+      dueAt: string;
+      outcome: string;
+    };
   };
 }
 
@@ -77,6 +96,21 @@ export function getDb(): Promise<IDBPDatabase<TaskFlowDB>> {
           const tasks = transaction.objectStore("tasks");
           if ((tasks.indexNames as unknown as DOMStringList).contains("completed")) {
             (tasks as unknown as IDBObjectStore).deleteIndex("completed");
+          }
+        }
+
+        if (oldVersion < 5) {
+          if (!db.objectStoreNames.contains("followups")) {
+            const followups = db.createObjectStore("followups", { keyPath: "id" });
+            followups.createIndex("dueAt", "dueAt");
+            followups.createIndex("status", "status");
+            followups.createIndex("updatedAt", "updatedAt");
+          }
+          if (!db.objectStoreNames.contains("followup_occurrences")) {
+            const occurrences = db.createObjectStore("followup_occurrences", { keyPath: "id" });
+            occurrences.createIndex("followUpId", "followUpId");
+            occurrences.createIndex("dueAt", "dueAt");
+            occurrences.createIndex("outcome", "outcome");
           }
         }
       },

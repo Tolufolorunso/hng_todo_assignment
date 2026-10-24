@@ -98,7 +98,7 @@ The Blueprint overlay, `AGENTS.md`, and onboarding setup are already present.
   document the three independently maintained clients, optional accounts,
   local-only and synchronized privacy, Follow Up contact data, notification
   limitations, platform support policy, and explicit non-goals.
-- [ ] 25. **Follow Up commitments and recurring workflow** - add local web
+- [x] 25. **Follow Up commitments and recurring workflow** - add local web
   follow-ups with one-time and recurring commitments, calendar-anchored and
   completion-relative schedules, completion history, overdue visibility,
   snoozing, scoped rescheduling, in-app reminders, and email, WhatsApp, and

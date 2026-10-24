@@ -17,12 +17,15 @@ import {
   todayIsoDate,
   updateTask,
 } from "@/lib/tasks";
+import { listFollowUps } from "@/lib/followups";
 import type { Task } from "@/types/task";
+import type { FollowUp } from "@/types/followup";
 
 type LoadingStatus = "loading" | "ready" | "error";
 
 export default function CalendarScreen() {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [followUps, setFollowUps] = useState<FollowUp[]>([]);
   const [status, setStatus] = useState<LoadingStatus>("loading");
   const [mutationError, setMutationError] = useState<string | null>(null);
 
@@ -35,9 +38,10 @@ export default function CalendarScreen() {
 
   const load = useCallback(
     () =>
-      listTasks().then(
-        (loaded) => {
-          setTasks(loaded);
+      Promise.all([listTasks(), listFollowUps()]).then(
+        ([loadedTasks, loadedFollowUps]) => {
+          setTasks(loadedTasks);
+          setFollowUps(loadedFollowUps);
           setStatus("ready");
         },
         () => {
@@ -58,6 +62,24 @@ export default function CalendarScreen() {
 
   const grouped = useMemo(() => groupTasksByDate(tasks), [tasks]);
   const selectedDateTasks = grouped.byDate[selectedDate] || [];
+
+  const followUpsByDate = useMemo(() => {
+    const map: Record<string, FollowUp[]> = {};
+    for (const item of followUps) {
+      const d = new Date(item.dueAt);
+      if (!Number.isNaN(d.getTime())) {
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        const dateKey = `${year}-${month}-${day}`;
+        if (!map[dateKey]) map[dateKey] = [];
+        map[dateKey].push(item);
+      }
+    }
+    return map;
+  }, [followUps]);
+
+  const selectedDateFollowUps = followUpsByDate[selectedDate] || [];
 
   function handlePrevMonth() {
     setCurrentMonth((curr) => getPrevMonth(curr.year, curr.monthIndex));
@@ -206,6 +228,7 @@ export default function CalendarScreen() {
             <CalendarGrid
               days={days}
               tasksByDate={grouped.byDate}
+              followUpsByDate={followUpsByDate}
               selectedDate={selectedDate}
               onSelectDate={setSelectedDate}
             />
@@ -217,6 +240,7 @@ export default function CalendarScreen() {
               selectedDate={selectedDate}
               tasks={selectedDateTasks}
               unscheduledTasks={grouped.unscheduled}
+              followUps={selectedDateFollowUps}
               todayIso={todayIso}
               onToggleTask={handleToggleTask}
               onQuickAddTask={handleQuickAddTask}

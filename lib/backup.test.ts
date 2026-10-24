@@ -237,5 +237,62 @@ describe("backup and restore logic", () => {
       expect(savedTask?.description).toBe("<p>Task detail</p>");
       expect(savedNote?.body).toBe("<h1>Heading</h1><a>Click</a>");
     });
+
+    it("exports and restores followups and occurrences round-trip", async () => {
+      const db = await getDb();
+      const sampleFollowUp = {
+        id: "fu-1",
+        personName: "Bob Ross",
+        commitment: "Send painting guide",
+        details: "Oil on canvas techniques",
+        dueAt: "2026-11-10T15:00:00.000Z",
+        timeZone: "UTC",
+        emailAddress: "bob@example.com",
+        phoneNumber: null,
+        whatsAppNumber: null,
+        preferredAction: "email" as const,
+        recurrence: null,
+        status: "open" as const,
+        sourceNoteId: null,
+        sourceExcerpt: null,
+        createdAt: "2026-10-24T12:00:00.000Z",
+        updatedAt: "2026-10-24T12:00:00.000Z",
+      };
+
+      const sampleOccurrence = {
+        id: "occ-1",
+        followUpId: "fu-1",
+        dueAt: "2026-11-10T15:00:00.000Z",
+        outcome: "completed" as const,
+        resolvedAt: "2026-11-10T15:30:00.000Z",
+        nextDueAt: null,
+        notes: null,
+      };
+
+      await db.put("followups", sampleFollowUp);
+      await db.put("followup_occurrences", sampleOccurrence);
+
+      const exported = await exportDatabaseBackup();
+      expect(exported.payload.data.followups).toHaveLength(1);
+      expect(exported.payload.data.followupOccurrences).toHaveLength(1);
+
+      // Clear db
+      await db.clear("followups");
+      await db.clear("followup_occurrences");
+      expect(await db.getAll("followups")).toHaveLength(0);
+
+      // Restore
+      const restoreResult = await restoreDatabaseBackup(exported.payload, "replace");
+      expect(restoreResult.followupsCount).toBe(1);
+      expect(restoreResult.occurrencesCount).toBe(1);
+
+      const restoredFollowUp = await db.get("followups", "fu-1");
+      expect(restoredFollowUp).toEqual(sampleFollowUp);
+
+      const restoredOccurrences = await db.getAll("followup_occurrences");
+      expect(restoredOccurrences).toHaveLength(1);
+      expect(restoredOccurrences[0].id).toBe("occ-1");
+    });
   });
 });
+

@@ -20,10 +20,12 @@ describe("getDb", () => {
     expect(db.version).toBe(DB_VERSION);
   });
 
-  it("creates the tasks and notes object stores", async () => {
+  it("creates the tasks, notes, followups, and followup_occurrences object stores", async () => {
     const db = await getDb();
     expect(db.objectStoreNames.contains("tasks")).toBe(true);
     expect(db.objectStoreNames.contains("notes")).toBe(true);
+    expect(db.objectStoreNames.contains("followups")).toBe(true);
+    expect(db.objectStoreNames.contains("followup_occurrences")).toBe(true);
   });
 
   it("creates the updatedAt index on both stores", async () => {
@@ -127,7 +129,8 @@ describe("version upgrades", () => {
     });
 
     const db = await getDb();
-    expect(db.version).toBe(4);
+    expect(db.version).toBe(DB_VERSION);
+    expect(db.objectStoreNames.contains("followups")).toBe(true);
 
     const migrated = await db.get("tasks", "legacy-v1");
     expect(migrated?.priority).toBe("medium");
@@ -178,7 +181,8 @@ describe("version upgrades", () => {
     });
 
     const db = await getDb();
-    expect(db.version).toBe(4);
+    expect(db.version).toBe(DB_VERSION);
+    expect(db.objectStoreNames.contains("followups")).toBe(true);
 
     const migrated = await db.get("tasks", "legacy-v2");
     expect(migrated?.priority).toBe("high");
@@ -214,7 +218,8 @@ describe("version upgrades", () => {
     });
 
     const db = await getDb();
-    expect(db.version).toBe(4);
+    expect(db.version).toBe(DB_VERSION);
+    expect(db.objectStoreNames.contains("followups")).toBe(true);
 
     const tx = db.transaction("tasks");
     expect((tx.objectStore("tasks").indexNames as unknown as DOMStringList).contains("completed")).toBe(false);

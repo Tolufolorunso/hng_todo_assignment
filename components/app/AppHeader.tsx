@@ -1,15 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import OfflineIndicator from "@/components/app/OfflineIndicator";
 import BackupModal from "@/components/backup/BackupModal";
 import ThemeToggle from "@/components/app/ThemeToggle";
 import TaskFlowLogo from "@/components/brand/TaskFlowLogo";
 import MobileNavBar from "@/components/app/MobileNavBar";
+import { getDueFollowUpsCount } from "@/lib/followups";
 
 interface AppHeaderProps {
-  active?: "tasks" | "notes" | "calendar" | "analytics" | "privacy";
+  active?: "tasks" | "notes" | "calendar" | "analytics" | "privacy" | "followups";
 }
 
 const NAV_ITEMS = [
@@ -51,6 +52,28 @@ const NAV_ITEMS = [
       >
         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
         <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
+      </svg>
+    ),
+  },
+  {
+    key: "followups",
+    href: "/followups",
+    label: "Follow Ups",
+    icon: (
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <polyline points="16 11 18 13 22 9" />
       </svg>
     ),
   },
@@ -102,6 +125,20 @@ const NAV_ITEMS = [
 
 export default function AppHeader({ active }: AppHeaderProps) {
   const [isBackupOpen, setIsBackupOpen] = useState(false);
+  const [dueFollowUpsCount, setDueFollowUpsCount] = useState<number>(0);
+
+  useEffect(() => {
+    let mounted = true;
+    getDueFollowUpsCount()
+      .then((count) => {
+        if (mounted) setDueFollowUpsCount(count);
+      })
+      .catch(() => {});
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   return (
     <>
@@ -128,6 +165,8 @@ export default function AppHeader({ active }: AppHeaderProps) {
           >
             {NAV_ITEMS.map((item) => {
               const isActive = active === item.key;
+              const hasDueBadge = item.key === "followups" && dueFollowUpsCount > 0;
+
               return (
                 <Link
                   key={item.key}
@@ -143,6 +182,11 @@ export default function AppHeader({ active }: AppHeaderProps) {
                     {item.icon}
                   </span>
                   <span>{item.label}</span>
+                  {hasDueBadge && (
+                    <span className="rounded-full bg-rose-500/20 px-1.5 py-0.2 text-[10px] font-bold text-rose-500">
+                      {dueFollowUpsCount}
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -185,7 +229,7 @@ export default function AppHeader({ active }: AppHeaderProps) {
       </header>
 
       {/* Mobile Bottom Navigation Bar */}
-      <MobileNavBar active={active} />
+      <MobileNavBar active={active} dueCount={dueFollowUpsCount} />
     </>
   );
 }

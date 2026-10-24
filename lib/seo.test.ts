@@ -6,11 +6,12 @@ describe("SEO Routes", () => {
   describe("sitemap()", () => {
     it("returns all primary workspace routes with correct priorities", () => {
       const items = sitemap();
-      expect(items).toHaveLength(5);
+      expect(items).toHaveLength(6);
 
       const urls = items.map((item) => item.url);
       expect(urls).toContain(`${SITEMAP_BASE}/`);
       expect(urls).toContain(`${SITEMAP_BASE}/notes`);
+      expect(urls).toContain(`${SITEMAP_BASE}/followups`);
       expect(urls).toContain(`${SITEMAP_BASE}/calendar`);
       expect(urls).toContain(`${SITEMAP_BASE}/analytics`);
       expect(urls).toContain(`${SITEMAP_BASE}/privacy`);
@@ -19,6 +20,10 @@ describe("SEO Routes", () => {
       expect(rootItem?.priority).toBe(1.0);
       expect(rootItem?.changeFrequency).toBe("daily");
       expect(rootItem?.lastModified).toBeInstanceOf(Date);
+
+      const followupsItem = items.find((item) => item.url === `${SITEMAP_BASE}/followups`);
+      expect(followupsItem?.priority).toBe(0.8);
+      expect(followupsItem?.changeFrequency).toBe("daily");
 
       const analyticsItem = items.find((item) => item.url === `${SITEMAP_BASE}/analytics`);
       expect(analyticsItem?.priority).toBe(0.7);

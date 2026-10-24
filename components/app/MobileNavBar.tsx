@@ -3,7 +3,8 @@
 import Link from "next/link";
 
 interface MobileNavBarProps {
-  active?: "tasks" | "notes" | "calendar" | "analytics" | "privacy";
+  active?: "tasks" | "notes" | "calendar" | "analytics" | "privacy" | "followups";
+  dueCount?: number;
 }
 
 const MOBILE_NAV_ITEMS = [
@@ -45,6 +46,28 @@ const MOBILE_NAV_ITEMS = [
       >
         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
         <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
+      </svg>
+    ),
+  },
+  {
+    key: "followups",
+    href: "/followups",
+    label: "Follow Ups",
+    icon: (
+      <svg
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <polyline points="16 11 18 13 22 9" />
       </svg>
     ),
   },
@@ -94,15 +117,17 @@ const MOBILE_NAV_ITEMS = [
   },
 ];
 
-export default function MobileNavBar({ active }: MobileNavBarProps) {
+export default function MobileNavBar({ active, dueCount }: MobileNavBarProps) {
   return (
     <nav
       aria-label="Mobile Bottom Navigation"
       className="fixed bottom-0 left-0 right-0 z-30 border-t border-border bg-bg/95 backdrop-blur-lg transition-colors sm:hidden print:hidden"
     >
-      <div className="mx-auto flex max-w-md items-center justify-around px-3 py-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+      <div className="mx-auto flex max-w-md items-center justify-around px-2 py-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
         {MOBILE_NAV_ITEMS.map((item) => {
           const isActive = active === item.key;
+          const hasDueBadge = item.key === "followups" && Boolean(dueCount && dueCount > 0);
+
           return (
             <Link
               key={item.key}
@@ -115,11 +140,16 @@ export default function MobileNavBar({ active }: MobileNavBarProps) {
               }`}
             >
               <div
-                className={`flex h-6 w-6 items-center justify-center transition-transform ${
+                className={`relative flex h-6 w-6 items-center justify-center transition-transform ${
                   isActive ? "scale-105" : ""
                 }`}
               >
                 {item.icon}
+                {hasDueBadge && (
+                  <span className="absolute -top-1.5 -right-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-bold text-white shadow-xs">
+                    {(dueCount ?? 0) > 9 ? "9+" : dueCount}
+                  </span>
+                )}
               </div>
               <span className="text-[11px] leading-tight tracking-tight">
                 {item.label}
@@ -131,3 +161,4 @@ export default function MobileNavBar({ active }: MobileNavBarProps) {
     </nav>
   );
 }
+
