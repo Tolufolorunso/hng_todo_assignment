@@ -8,7 +8,8 @@
     "start": "npm --prefix apps/web run start",
     "lint": "npm --prefix apps/web run lint",
     "test": "npm --prefix apps/web run test",
-    "verify": "npm run check:boundaries && npm --prefix apps/web run lint && npm --prefix apps/web run test && npm --prefix apps/web run build",
+    "test:mobile": "npm --prefix apps/mobile run test",
+    "verify": "npm run check:boundaries && npm --prefix apps/mobile run typecheck && npm --prefix apps/mobile run test && npm --prefix apps/web run lint && npm --prefix apps/web run test && npm --prefix apps/web run build",
     "check:boundaries": "node scripts/check-boundaries.mjs",
     "db:migrate": "npm --prefix apps/web run db:migrate"
   }

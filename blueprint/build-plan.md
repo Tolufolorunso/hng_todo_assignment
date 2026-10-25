@@ -154,7 +154,7 @@ The Blueprint overlay, `AGENTS.md`, and onboarding setup are already present.
 
 ## Milestone L: React Native Android and iOS
 
-- [ ] 37. **React Native offline foundation** - create the independent mobile
+- [x] 37. **React Native offline foundation** - create the independent mobile
   application with native navigation, mobile-owned SQLite migrations, task and
   note CRUD, search, backup import and export, accessible touch interaction, and
   offline restart behavior.
