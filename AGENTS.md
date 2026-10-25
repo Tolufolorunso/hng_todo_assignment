@@ -57,28 +57,36 @@ and installed dependencies before adding machinery.
 
 ## Project structure
 
-- Routes and route-level UI: `app/[segment]/page.tsx`
-- Shared components: `components/[feature]/ComponentName.tsx`
-- Server actions and shared logic: `lib/[name].ts`
-- Types: `types/[feature].ts`
+The repository is organized as an isolated monorepo:
 
-Marked items become real as they appear; leave a short `> TODO` rather than
-inventing a convention that does not exist yet.
+- `apps/web`: Next.js web application and future API host (`app/`, `components/`, `lib/`, `types/`, `public/`).
+- `apps/mobile`: Standalone React Native (Android and iOS) root.
+- `apps/windows`: Standalone C# / .NET 10 LTS WPF root.
+- `scripts/`: Monorepo orchestration scripts, including cross-application boundary checks.
+
+Within `apps/web`:
+- Routes and route-level UI: `apps/web/app/[segment]/page.tsx`
+- Shared components: `apps/web/components/[feature]/ComponentName.tsx`
+- Shared logic and data access: `apps/web/lib/[name].ts`
+- Types: `apps/web/types/[feature].ts`
 
 ## Commands
 
-- Dev server: `npm run dev` (http://localhost:3000)
-- Build: `npm run build`
-- Production server: `npm run start`
-- Lint: `npm run lint` (ESLint)
-- Test: `npm run test` (Vitest)
+All commands can be run directly from the repository root:
+
+- Dev server: `npm run dev` (runs `apps/web` development server at http://localhost:3000)
+- Build: `npm run build` (builds `apps/web` production bundle)
+- Production server: `npm run start` (starts `apps/web` production server)
+- Lint: `npm run lint` (runs ESLint on `apps/web`)
+- Test: `npm run test` (runs Vitest test suite on `apps/web`)
+- Boundary check: `npm run check:boundaries` (verifies zero cross-application imports)
+- Verify: `npm run verify` (runs boundary check, lint, tests, and build)
+
+Commands can also be executed directly within `apps/web` with local `npm run <command>`.
 
 Testing is configured. `npm run test` runs the unit suite over the data layer and
 logic. Logic-bearing changes must ship a passing test; UI and integration-only
 changes ride on screenshot and build evidence.
 
-Type checking: `tsc --noEmit` is available through the installed TypeScript, but
-there is no dedicated `typecheck` script yet.
-
-There is no combined `Verify` command and no CI configuration in this repository
-yet.
+CI is configured via GitHub Actions (`.github/workflows/ci.yml`), running boundary checks,
+linting, unit tests, and production build on pull requests and pushes to `main`.

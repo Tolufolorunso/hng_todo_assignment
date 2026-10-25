@@ -117,7 +117,7 @@ The Blueprint overlay, `AGENTS.md`, and onboarding setup are already present.
 
 ## Milestone J: Cross-Platform Product and Service Foundation
 
-- [ ] 29. **Isolated monorepo layout** - move the existing Next.js project into
+- [x] 29. **Isolated monorepo layout** - move the existing Next.js project into
   `apps/web`, establish independent `apps/mobile` and `apps/windows` roots,
   preserve the web origin and behavior, and add dependency, CI, and cross-import
   boundaries.
