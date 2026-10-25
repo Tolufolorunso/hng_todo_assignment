@@ -121,7 +121,7 @@ The Blueprint overlay, `AGENTS.md`, and onboarding setup are already present.
   `apps/web`, establish independent `apps/mobile` and `apps/windows` roots,
   preserve the web origin and behavior, and add dependency, CI, and cross-import
   boundaries.
-- [ ] 30. **Web API and PostgreSQL foundation** - add versioned `/api/v1` Route
+- [x] 30. **Web API and PostgreSQL foundation** - add versioned `/api/v1` Route
   Handlers inside `apps/web`, PostgreSQL migrations, structured validation and
   errors, OpenAPI documentation, health and capabilities endpoints, rate
   limits, security controls, and deployment configuration.

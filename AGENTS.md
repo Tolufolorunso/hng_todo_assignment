@@ -66,8 +66,11 @@ The repository is organized as an isolated monorepo:
 
 Within `apps/web`:
 - Routes and route-level UI: `apps/web/app/[segment]/page.tsx`
+- API Route Handlers: `apps/web/app/api/v1/[resource]/route.ts`
 - Shared components: `apps/web/components/[feature]/ComponentName.tsx`
-- Shared logic and data access: `apps/web/lib/[name].ts`
+- Shared logic and client data access: `apps/web/lib/[name].ts`
+- Server-only modules and database access: `apps/web/server/[name].ts`
+- Database migrations: `apps/web/server/db/migrations/`
 - Types: `apps/web/types/[feature].ts`
 
 ## Commands
@@ -79,6 +82,7 @@ All commands can be run directly from the repository root:
 - Production server: `npm run start` (starts `apps/web` production server)
 - Lint: `npm run lint` (runs ESLint on `apps/web`)
 - Test: `npm run test` (runs Vitest test suite on `apps/web`)
+- Database migrations: `npm run db:migrate` (executes pending PostgreSQL migrations)
 - Boundary check: `npm run check:boundaries` (verifies zero cross-application imports)
 - Verify: `npm run verify` (runs boundary check, lint, tests, and build)
 
