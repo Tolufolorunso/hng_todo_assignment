@@ -78,7 +78,17 @@ describe("API v1 Route Handlers", () => {
     expect(doc.paths["/health"]).toBeDefined();
     expect(doc.paths["/capabilities"]).toBeDefined();
     expect(doc.paths["/openapi.json"]).toBeDefined();
+    expect(doc.paths["/auth/otp/request"]).toBeDefined();
+    expect(doc.paths["/auth/otp/verify"]).toBeDefined();
+    expect(doc.paths["/auth/refresh"]).toBeDefined();
+    expect(doc.paths["/auth/logout"]).toBeDefined();
+    expect(doc.paths["/auth/sessions"]).toBeDefined();
+    expect(doc.paths["/auth/sessions/{id}"]).toBeDefined();
+    expect(doc.paths["/account"]).toBeDefined();
     expect(doc.components.schemas.HealthResponse).toBeDefined();
     expect(doc.components.schemas.CapabilitiesResponse).toBeDefined();
+    expect(doc.components.schemas.AuthSuccessResponse).toBeDefined();
+    expect(doc.components.schemas.SessionSummary).toBeDefined();
+    expect(doc.components.schemas.AccountProfile).toBeDefined();
   });
 });

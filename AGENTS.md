@@ -67,6 +67,9 @@ The repository is organized as an isolated monorepo:
 Within `apps/web`:
 - Routes and route-level UI: `apps/web/app/[segment]/page.tsx`
 - API Route Handlers: `apps/web/app/api/v1/[resource]/route.ts`
+  - Health and Capabilities: `GET /api/v1/health`, `GET /api/v1/capabilities`, `GET /api/v1/openapi.json`
+  - Authentication: `POST /api/v1/auth/otp/request`, `POST /api/v1/auth/otp/verify`, `POST /api/v1/auth/refresh`, `POST /api/v1/auth/logout`
+  - Sessions and Account: `GET /api/v1/auth/sessions`, `POST /api/v1/auth/sessions/revoke-all`, `DELETE /api/v1/auth/sessions/[id]`, `GET /api/v1/account`, `DELETE /api/v1/account`
 - Shared components: `apps/web/components/[feature]/ComponentName.tsx`
 - Shared logic and client data access: `apps/web/lib/[name].ts`
 - Server-only modules and database access: `apps/web/server/[name].ts`

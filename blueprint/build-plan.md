@@ -125,7 +125,7 @@ The Blueprint overlay, `AGENTS.md`, and onboarding setup are already present.
   Handlers inside `apps/web`, PostgreSQL migrations, structured validation and
   errors, OpenAPI documentation, health and capabilities endpoints, rate
   limits, security controls, and deployment configuration.
-- [ ] 31. **Optional accounts and session lifecycle** - implement email one-time
+- [x] 31. **Optional accounts and session lifecycle** - implement email one-time
   password authentication, secure refresh rotation, logout, revocation, account
   inspection, account deletion, and platform-neutral session behavior.
 - [ ] 32. **Cloud productivity persistence** - add account-owned tasks, notes,
