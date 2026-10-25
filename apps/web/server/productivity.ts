@@ -59,6 +59,7 @@ export interface OccurrenceRecord {
   accountId: string;
   dueAt: string;
   completedAt: string;
+  revision: number;
   createdAt: string;
 }
 
@@ -742,13 +743,14 @@ export async function recordOccurrence(
 
   const id = `occ_${crypto.randomUUID()}`;
   const actualCompletedAt = completedAt ?? new Date().toISOString();
+  const revision = await advanceAccountRevision(accountId);
 
   const result = await executeQuery<OccurrenceRecord>(
-    `INSERT INTO occurrence_history (id, followup_id, account_id, due_at, completed_at, created_at)
-     VALUES ($1, $2, $3, $4, $5, NOW())
+    `INSERT INTO occurrence_history (id, followup_id, account_id, due_at, completed_at, revision, created_at)
+     VALUES ($1, $2, $3, $4, $5, $6, NOW())
      RETURNING id, followup_id as "followupId", account_id as "accountId", due_at as "dueAt",
-               completed_at as "completedAt", created_at as "createdAt"`,
-    [id, followUpId, accountId, dueAt, actualCompletedAt]
+               completed_at as "completedAt", revision, created_at as "createdAt"`,
+    [id, followUpId, accountId, dueAt, actualCompletedAt, revision]
   );
 
   return result.rows[0];
@@ -763,7 +765,7 @@ export async function listOccurrences(
   }
 
   let query = `SELECT id, followup_id as "followupId", account_id as "accountId", due_at as "dueAt",
-                      completed_at as "completedAt", created_at as "createdAt"
+                      completed_at as "completedAt", revision, created_at as "createdAt"
                FROM occurrence_history
                WHERE account_id = $1`;
   const params: unknown[] = [accountId];

@@ -132,7 +132,7 @@ The Blueprint overlay, `AGENTS.md`, and onboarding setup are already present.
   follow-ups, occurrence history, daily plans, inbox captures, and task-order
   documents with ownership enforcement, validation, restricted rich-text
   sanitization, recurrence validation, and change sequencing.
-- [ ] 33. **Synchronization and conflict engine** - implement idempotent push and
+- [x] 33. **Synchronization and conflict engine** - implement idempotent push and
   pull batches for all synchronized entities, server revisions, cursors,
   pagination, mutation receipts, deletion tombstones, stable Follow Up
   occurrence handling, explicit conflicts, and backward-compatibility tests.

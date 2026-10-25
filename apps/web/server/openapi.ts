@@ -392,13 +392,35 @@ export const openApiSpecification = {
     },
     "/sync": {
       post: {
-        summary: "Synchronize client changes and fetch server updates",
-        description: "Idempotent push and pull batch operation for account workspaces.",
+        summary: "Batch synchronize mutations and pull paginated changes",
+        description: "Executes bounded push mutations with idempotency and conflict detection, and pulls paginated changes across productivity entities.",
         security: [{ BearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/SyncRequest" },
+            },
+          },
+        },
         responses: {
-          "200": { description: "Synchronization batch result" },
+          "200": {
+            description: "Sync batch processed successfully",
+            headers: {
+              "Cache-Control": {
+                schema: { type: "string", example: "no-store, private" },
+                description: "Instructs clients and intermediaries never to store sync responses",
+              },
+            },
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/SyncResponse" },
+              },
+            },
+          },
+          "400": { $ref: "#/components/responses/ErrorResponse" },
           "401": { $ref: "#/components/responses/ErrorResponse" },
-          "429": { $ref: "#/components/responses/ErrorResponse" },
+          "503": { $ref: "#/components/responses/ErrorResponse" },
         },
       },
     },
@@ -1515,13 +1537,14 @@ export const openApiSpecification = {
       },
       FollowUpOccurrence: {
         type: "object",
-        required: ["id", "followupId", "accountId", "dueAt", "completedAt", "createdAt"],
+        required: ["id", "followupId", "accountId", "dueAt", "completedAt", "revision", "createdAt"],
         properties: {
           id: { type: "string" },
           followupId: { type: "string" },
           accountId: { type: "string" },
           dueAt: { type: "string", format: "date-time" },
           completedAt: { type: "string", format: "date-time" },
+          revision: { type: "integer" },
           createdAt: { type: "string", format: "date-time" },
         },
       },
@@ -1587,6 +1610,98 @@ export const openApiSpecification = {
           state: { type: "string", enum: ["pending", "processed", "discarded"] },
           targetType: { type: "string", enum: ["task", "note", "followup"], nullable: true },
           targetId: { type: "string", nullable: true },
+        },
+      },
+      SyncMutation: {
+        type: "object",
+        required: ["mutationId", "entityType", "entityId", "action"],
+        properties: {
+          mutationId: { type: "string" },
+          entityType: {
+            type: "string",
+            enum: ["task", "note", "followup", "occurrence", "plan", "inbox", "task_order"],
+          },
+          entityId: { type: "string" },
+          action: { type: "string", enum: ["put", "delete"] },
+          baseRevision: { type: "integer", nullable: true },
+          payload: { type: "object", nullable: true },
+        },
+      },
+      SyncReceipt: {
+        type: "object",
+        required: ["mutationId", "status", "entityType", "entityId"],
+        properties: {
+          mutationId: { type: "string" },
+          status: { type: "string", enum: ["applied", "duplicate", "conflict", "invalid"] },
+          entityType: { type: "string" },
+          entityId: { type: "string" },
+          appliedRevision: { type: "integer", nullable: true },
+          conflictDetails: {
+            type: "object",
+            nullable: true,
+            properties: {
+              message: { type: "string" },
+              serverRevision: { type: "integer" },
+              currentServerEntity: { type: "object", nullable: true },
+            },
+          },
+          error: { type: "string", nullable: true },
+        },
+      },
+      SyncTombstone: {
+        type: "object",
+        required: ["id", "entityType", "deletedAt", "revision"],
+        properties: {
+          id: { type: "string" },
+          entityType: { type: "string" },
+          deletedAt: { type: "string", format: "date-time" },
+          revision: { type: "integer" },
+        },
+      },
+      SyncChanges: {
+        type: "object",
+        required: ["tasks", "notes", "followups", "occurrences", "plans", "inbox", "taskOrder", "tombstones"],
+        properties: {
+          tasks: { type: "array", items: { $ref: "#/components/schemas/Task" } },
+          notes: { type: "array", items: { $ref: "#/components/schemas/Note" } },
+          followups: { type: "array", items: { $ref: "#/components/schemas/FollowUp" } },
+          occurrences: { type: "array", items: { $ref: "#/components/schemas/FollowUpOccurrence" } },
+          plans: { type: "array", items: { $ref: "#/components/schemas/DailyPlan" } },
+          inbox: { type: "array", items: { $ref: "#/components/schemas/InboxCapture" } },
+          taskOrder: {
+            anyOf: [
+              { $ref: "#/components/schemas/TaskOrder" },
+              { type: "null" },
+            ],
+          },
+          tombstones: { type: "array", items: { $ref: "#/components/schemas/SyncTombstone" } },
+        },
+      },
+      SyncRequest: {
+        type: "object",
+        properties: {
+          protocolVersion: { type: "integer", default: 1 },
+          mutations: {
+            type: "array",
+            items: { $ref: "#/components/schemas/SyncMutation" },
+          },
+          cursor: { type: "integer", default: 0 },
+          limit: { type: "integer", default: 100 },
+        },
+      },
+      SyncResponse: {
+        type: "object",
+        required: ["protocolVersion", "receipts", "changes", "nextCursor", "hasMore", "serverTime"],
+        properties: {
+          protocolVersion: { type: "integer" },
+          receipts: {
+            type: "array",
+            items: { $ref: "#/components/schemas/SyncReceipt" },
+          },
+          changes: { $ref: "#/components/schemas/SyncChanges" },
+          nextCursor: { type: "integer" },
+          hasMore: { type: "boolean" },
+          serverTime: { type: "string", format: "date-time" },
         },
       },
     },

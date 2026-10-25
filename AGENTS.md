@@ -75,6 +75,7 @@ Within `apps/web`:
   - Follow-ups: `GET /api/v1/followups`, `POST /api/v1/followups`, `GET /api/v1/followups/[id]`, `PATCH /api/v1/followups/[id]`, `DELETE /api/v1/followups/[id]`, `GET /api/v1/followups/[id]/occurrences`, `POST /api/v1/followups/[id]/occurrences`
   - Daily Plans: `GET /api/v1/plans`, `PUT /api/v1/plans`, `GET /api/v1/plans/[date]`
   - Inbox: `GET /api/v1/inbox`, `POST /api/v1/inbox`, `GET /api/v1/inbox/[id]`, `PATCH /api/v1/inbox/[id]`, `DELETE /api/v1/inbox/[id]`
+  - Synchronization: `POST /api/v1/sync`
 - Shared components: `apps/web/components/[feature]/ComponentName.tsx`
 - Shared logic and client data access: `apps/web/lib/[name].ts`
 - Server-only modules and database access: `apps/web/server/[name].ts`
