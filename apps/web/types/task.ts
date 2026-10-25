@@ -13,6 +13,8 @@ export interface Task {
   sourceNoteId?: string | null;
   sourceExcerpt?: string | null;
   order?: number;
+  workspaceId?: string;
+  revision?: number;
   createdAt: string;
   updatedAt: string;
   completedAt: string | null;

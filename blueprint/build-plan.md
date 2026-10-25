@@ -139,7 +139,7 @@ The Blueprint overlay, `AGENTS.md`, and onboarding setup are already present.
 
 ## Milestone K: Synchronized Web Client
 
-- [ ] 34. **Web local-first storage upgrade** - introduce web-owned repository
+- [x] 34. **Web local-first storage upgrade** - introduce web-owned repository
   boundaries, migrate existing IndexedDB data into workspace-aware stores, and
   add Follow Up, daily plan, inbox, task order, outbox, cursor, tombstone,
   conflict, backup version 2, and version 1 import behavior.

@@ -4,9 +4,17 @@ import type { Task } from "@/types/task";
 import type { FollowUp, FollowUpOccurrence } from "@/types/followup";
 import type { DailyPlan } from "@/types/plan";
 import type { InboxCapture } from "@/types/inbox";
+import type {
+  WorkspaceRecord,
+  TaskOrderRecord,
+  OutboxMutationRecord,
+  SyncCursorRecord,
+  LocalTombstoneRecord,
+  LocalConflictRecord,
+} from "@/types/storage";
 
 export const DB_NAME = "taskflow";
-export const DB_VERSION = 8;
+export const DB_VERSION = 9;
 
 export interface TaskFlowDB extends DBSchema {
   tasks: {
@@ -17,12 +25,16 @@ export interface TaskFlowDB extends DBSchema {
       updatedAt: string;
       category: string;
       sourceNoteId: string;
+      workspaceId: string;
     };
   };
   notes: {
     key: string;
     value: Note;
-    indexes: { updatedAt: string };
+    indexes: {
+      updatedAt: string;
+      workspaceId: string;
+    };
   };
   followups: {
     key: string;
@@ -32,6 +44,7 @@ export interface TaskFlowDB extends DBSchema {
       status: string;
       updatedAt: string;
       sourceNoteId: string;
+      workspaceId: string;
     };
   };
   followup_occurrences: {
@@ -41,6 +54,7 @@ export interface TaskFlowDB extends DBSchema {
       followUpId: string;
       dueAt: string;
       outcome: string;
+      workspaceId: string;
     };
   };
   daily_plans: {
@@ -49,6 +63,7 @@ export interface TaskFlowDB extends DBSchema {
     indexes: {
       date: string;
       updatedAt: string;
+      workspaceId: string;
     };
   };
   inbox_captures: {
@@ -58,6 +73,45 @@ export interface TaskFlowDB extends DBSchema {
       state: string;
       capturedAt: string;
       updatedAt: string;
+      workspaceId: string;
+    };
+  };
+  workspaces: {
+    key: string;
+    value: WorkspaceRecord;
+  };
+  task_orders: {
+    key: string;
+    value: TaskOrderRecord;
+    indexes: {
+      workspaceId: string;
+    };
+  };
+  outbox: {
+    key: string;
+    value: OutboxMutationRecord;
+    indexes: {
+      workspaceId: string;
+      createdAt: string;
+    };
+  };
+  sync_cursors: {
+    key: string;
+    value: SyncCursorRecord;
+  };
+  tombstones: {
+    key: string;
+    value: LocalTombstoneRecord;
+    indexes: {
+      workspaceId: string;
+    };
+  };
+  conflicts: {
+    key: string;
+    value: LocalConflictRecord;
+    indexes: {
+      workspaceId: string;
+      entityId: string;
     };
   };
 }
@@ -77,8 +131,6 @@ export function getDb(): Promise<IDBPDatabase<TaskFlowDB>> {
         }
 
         if (oldVersion >= 1 && oldVersion < 2) {
-          // v1 tasks predate priority and dueDate, so backfill before the
-          // non-null priority contract applies.
           const tasks = transaction.objectStore("tasks");
           let cursor = await tasks.openCursor();
           while (cursor) {
@@ -95,7 +147,6 @@ export function getDb(): Promise<IDBPDatabase<TaskFlowDB>> {
         }
 
         if (oldVersion >= 1 && oldVersion < 3) {
-          // v1 and v2 tasks predate category, so backfill category: null
           const tasks = transaction.objectStore("tasks");
           let cursor = await tasks.openCursor();
           while (cursor) {
@@ -164,6 +215,87 @@ export function getDb(): Promise<IDBPDatabase<TaskFlowDB>> {
             captures.createIndex("updatedAt", "updatedAt");
           }
         }
+
+        if (oldVersion < 9) {
+          // 1. Create workspace-aware stores
+          if (!db.objectStoreNames.contains("workspaces")) {
+            db.createObjectStore("workspaces", { keyPath: "id" });
+          }
+
+          if (!db.objectStoreNames.contains("task_orders")) {
+            const taskOrders = db.createObjectStore("task_orders", { keyPath: "id" });
+            taskOrders.createIndex("workspaceId", "workspaceId");
+          }
+
+          if (!db.objectStoreNames.contains("outbox")) {
+            const outbox = db.createObjectStore("outbox", { keyPath: "mutationId" });
+            outbox.createIndex("workspaceId", "workspaceId");
+            outbox.createIndex("createdAt", "createdAt");
+          }
+
+          if (!db.objectStoreNames.contains("sync_cursors")) {
+            db.createObjectStore("sync_cursors", { keyPath: "workspaceId" });
+          }
+
+          if (!db.objectStoreNames.contains("tombstones")) {
+            const tombstones = db.createObjectStore("tombstones", { keyPath: "id" });
+            tombstones.createIndex("workspaceId", "workspaceId");
+          }
+
+          if (!db.objectStoreNames.contains("conflicts")) {
+            const conflicts = db.createObjectStore("conflicts", { keyPath: "id" });
+            conflicts.createIndex("workspaceId", "workspaceId");
+            conflicts.createIndex("entityId", "entityId");
+          }
+
+          // 2. Add workspaceId indexes and backfill existing entity stores
+          const entityStoreNames = [
+            "tasks",
+            "notes",
+            "followups",
+            "followup_occurrences",
+            "daily_plans",
+            "inbox_captures",
+          ] as const;
+
+          for (const storeName of entityStoreNames) {
+            if (db.objectStoreNames.contains(storeName)) {
+              const store = transaction.objectStore(storeName);
+              if (!store.indexNames.contains("workspaceId")) {
+                store.createIndex("workspaceId", "workspaceId");
+              }
+
+              let cursor = await store.openCursor();
+              while (cursor) {
+                const val = cursor.value as unknown as { workspaceId?: string };
+                if (val.workspaceId === undefined || val.workspaceId === null) {
+                  await (
+                    cursor as unknown as { update: (record: unknown) => Promise<unknown> }
+                  ).update({
+                    ...cursor.value,
+                    workspaceId: "local",
+                  });
+                }
+                cursor = await cursor.continue();
+              }
+            }
+          }
+
+          // 3. Seed default "local" workspace
+          const workspaces = transaction.objectStore("workspaces");
+          const existingLocal = await workspaces.get("local");
+          if (!existingLocal) {
+            const now = new Date().toISOString();
+            await workspaces.put({
+              id: "local",
+              name: "Personal Workspace",
+              type: "local",
+              accountId: null,
+              createdAt: now,
+              updatedAt: now,
+            });
+          }
+        }
       },
     });
   }
@@ -171,9 +303,11 @@ export function getDb(): Promise<IDBPDatabase<TaskFlowDB>> {
 }
 
 export async function deleteDb(): Promise<void> {
-  const db = await getDb();
-  db.close();
-  dbPromise = null;
+  if (dbPromise !== null) {
+    const db = await dbPromise;
+    db.close();
+    dbPromise = null;
+  }
   await new Promise<void>((resolve, reject) => {
     const request = indexedDB.deleteDatabase(DB_NAME);
     request.onsuccess = () => resolve();

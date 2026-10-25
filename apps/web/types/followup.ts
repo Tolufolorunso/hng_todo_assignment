@@ -32,6 +32,8 @@ export interface FollowUp {
   status: FollowUpStatus;
   sourceNoteId: string | null;
   sourceExcerpt: string | null;
+  workspaceId?: string;
+  revision?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -46,6 +48,8 @@ export interface FollowUpOccurrence {
   resolvedAt: string | null;
   nextDueAt: string | null;
   notes?: string | null;
+  workspaceId?: string;
+  revision?: number;
 }
 
 export interface CreateFollowUpInput {
@@ -79,3 +83,6 @@ export interface UpdateFollowUpInput {
   sourceNoteId?: string | null;
   sourceExcerpt?: string | null;
 }
+
+export type UpdateFollowUpPatch = UpdateFollowUpInput;
+

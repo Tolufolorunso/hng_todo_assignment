@@ -7,9 +7,12 @@ import {
   isValidInboxCapture,
   isValidNote,
   isValidTask,
+  isValidTaskOrder,
   parseAndValidateBackup,
   restoreDatabaseBackup,
   type BackupPayload,
+  type BackupPayloadV1,
+  type BackupPayloadV2,
 } from "@/lib/backup";
 import { deleteDb, getDb } from "@/lib/db";
 import type { Note } from "@/types/note";
@@ -29,6 +32,7 @@ function mockTask(overrides: Partial<Task> = {}): Task {
     updatedAt: "2026-10-01T10:00:00.000Z",
     completedAt: null,
     order: 0,
+    workspaceId: "local",
     ...overrides,
   };
 }
@@ -40,6 +44,7 @@ function mockNote(overrides: Partial<Note> = {}): Note {
     body: "Note body text",
     createdAt: "2026-10-01T10:00:00.000Z",
     updatedAt: "2026-10-01T10:00:00.000Z",
+    workspaceId: "local",
     ...overrides,
   };
 }
@@ -53,7 +58,7 @@ describe("backup and restore logic", () => {
     it("validates valid task objects", () => {
       expect(isValidTask(mockTask())).toBe(true);
       expect(isValidTask(mockTask({ dueDate: null, category: null, order: undefined }))).toBe(
-        true,
+        true
       );
     });
 
@@ -61,8 +66,12 @@ describe("backup and restore logic", () => {
       expect(isValidTask(null)).toBe(false);
       expect(isValidTask({})).toBe(false);
       expect(isValidTask(mockTask({ title: "" }))).toBe(false);
-      expect(isValidTask(mockTask({ priority: "urgent" as unknown as Task["priority"] }))).toBe(false);
-      expect(isValidTask(mockTask({ category: "invalid-cat" as unknown as Task["category"] }))).toBe(false);
+      expect(isValidTask(mockTask({ priority: "urgent" as unknown as Task["priority"] }))).toBe(
+        false
+      );
+      expect(
+        isValidTask(mockTask({ category: "invalid-cat" as unknown as Task["category"] }))
+      ).toBe(false);
       expect(isValidTask(mockTask({ completed: "yes" as unknown as boolean }))).toBe(false);
     });
 
@@ -111,13 +120,54 @@ describe("backup and restore logic", () => {
         })
       ).toBe(false);
     });
+
+    it("validates valid task order objects", () => {
+      expect(isValidTaskOrder({ id: "local", orderedIds: ["task-1", "task-2"] })).toBe(true);
+      expect(isValidTaskOrder({ id: "work", orderedIds: [] })).toBe(true);
+    });
+
+    it("rejects invalid task order objects", () => {
+      expect(isValidTaskOrder(null)).toBe(false);
+      expect(isValidTaskOrder({})).toBe(false);
+      expect(isValidTaskOrder({ id: "", orderedIds: [] })).toBe(false);
+      expect(isValidTaskOrder({ id: "local", orderedIds: "not-an-array" })).toBe(false);
+      expect(isValidTaskOrder({ id: "local", orderedIds: [123] })).toBe(false);
+    });
   });
 
   describe("payload builders & filename", () => {
-    it("builds valid BackupPayload structure", () => {
+    it("builds valid version 2 BackupPayload structure by default", () => {
       const tasks = [mockTask()];
       const notes = [mockNote()];
       const payload = buildBackupPayload(tasks, notes);
+
+      expect(payload.version).toBe(2);
+      expect(payload.app).toBe("TaskFlow");
+      expect(typeof payload.exportedAt).toBe("string");
+      expect((payload as BackupPayloadV2).workspaceId).toBe("local");
+      expect((payload as BackupPayloadV2).metadata).toEqual({
+        format: "taskflow-backup-v2",
+        exportedFrom: "web",
+        schemaVersion: 9,
+      });
+      expect(payload.data.tasks).toEqual(tasks);
+      expect(payload.data.notes).toEqual(notes);
+      expect((payload as BackupPayloadV2).data.taskOrders).toEqual([]);
+    });
+
+    it("builds valid version 1 BackupPayload when requested", () => {
+      const tasks = [mockTask()];
+      const notes = [mockNote()];
+      const payload = buildBackupPayload(
+        tasks,
+        notes,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        { version: 1 }
+      );
 
       expect(payload.version).toBe(1);
       expect(payload.app).toBe("TaskFlow");
@@ -134,15 +184,36 @@ describe("backup and restore logic", () => {
   });
 
   describe("parseAndValidateBackup", () => {
-    it("accepts valid JSON backup payload", () => {
+    it("accepts valid version 2 JSON backup payload", () => {
       const payload = buildBackupPayload([mockTask()], [mockNote()]);
       const json = JSON.stringify(payload);
       const result = parseAndValidateBackup(json);
 
       expect(result.ok).toBe(true);
       if (result.ok) {
+        expect(result.value.version).toBe(2);
         expect(result.value.data.tasks).toHaveLength(1);
         expect(result.value.data.notes).toHaveLength(1);
+      }
+    });
+
+    it("accepts valid version 1 JSON backup payload", () => {
+      const payload: BackupPayloadV1 = {
+        version: 1,
+        app: "TaskFlow",
+        exportedAt: new Date().toISOString(),
+        data: {
+          tasks: [mockTask()],
+          notes: [mockNote()],
+        },
+      };
+      const json = JSON.stringify(payload);
+      const result = parseAndValidateBackup(json);
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.value.version).toBe(1);
+        expect(result.value.data.tasks).toHaveLength(1);
       }
     });
 
@@ -155,18 +226,66 @@ describe("backup and restore logic", () => {
     });
 
     it("rejects non-TaskFlow backups", () => {
-      const result = parseAndValidateBackup(JSON.stringify({ app: "OtherApp", version: 1 }));
+      const result = parseAndValidateBackup(JSON.stringify({ app: "OtherApp", version: 2 }));
       expect(result.ok).toBe(false);
       if (!result.ok) {
         expect(result.error).toContain("Not a valid TaskFlow backup");
       }
     });
 
+    it("rejects unsupported backup versions", () => {
+      const result = parseAndValidateBackup(
+        JSON.stringify({ app: "TaskFlow", version: 3, exportedAt: "now", data: {} })
+      );
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error).toContain("Unsupported backup version");
+      }
+    });
+
+    it("rejects version 2 backup missing metadata or wrong format", () => {
+      const badV2 = {
+        app: "TaskFlow",
+        version: 2,
+        exportedAt: new Date().toISOString(),
+        data: { tasks: [], notes: [] },
+      };
+      const result1 = parseAndValidateBackup(JSON.stringify(badV2));
+      expect(result1.ok).toBe(false);
+
+      const badFormat = {
+        ...badV2,
+        metadata: { format: "wrong-format" },
+      };
+      const result2 = parseAndValidateBackup(JSON.stringify(badFormat));
+      expect(result2.ok).toBe(false);
+    });
+
+    it("rejects version 2 backup with malformed task orders", () => {
+      const payload = {
+        app: "TaskFlow",
+        version: 2,
+        exportedAt: new Date().toISOString(),
+        metadata: { format: "taskflow-backup-v2", exportedFrom: "web", schemaVersion: 9 },
+        data: {
+          tasks: [],
+          notes: [],
+          taskOrders: [{ id: "local", orderedIds: [123] }],
+        },
+      };
+      const result = parseAndValidateBackup(JSON.stringify(payload));
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error).toContain("Task order at position 1 is corrupted");
+      }
+    });
+
     it("identifies corrupted task in backup", () => {
       const badPayload = {
-        version: 1,
+        version: 2,
         app: "TaskFlow",
         exportedAt: new Date().toISOString(),
+        metadata: { format: "taskflow-backup-v2", exportedFrom: "web", schemaVersion: 9 },
         data: {
           tasks: [mockTask({ title: "" })],
           notes: [],
@@ -182,15 +301,107 @@ describe("backup and restore logic", () => {
   });
 
   describe("database export and restore", () => {
-    it("exports database tasks and notes into backup snapshot", async () => {
+    it("exports database tasks, notes, and task orders into version 2 snapshot", async () => {
       const db = await getDb();
       await db.put("tasks", mockTask({ id: "t1" }));
       await db.put("notes", mockNote({ id: "n1" }));
+      await db.put("task_orders", {
+        id: "local",
+        workspaceId: "local",
+        orderedIds: ["t1"],
+        updatedAt: "2026-10-25T10:00:00.000Z",
+      });
 
       const exportResult = await exportDatabaseBackup();
+      expect(exportResult.payload.version).toBe(2);
       expect(exportResult.payload.data.tasks).toHaveLength(1);
       expect(exportResult.payload.data.notes).toHaveLength(1);
+      expect((exportResult.payload as BackupPayloadV2).data.taskOrders).toHaveLength(1);
       expect(exportResult.filename).toMatch(/^taskflow-backup-\d{4}-\d{2}-\d{2}-\d{4}\.json$/);
+    });
+
+    it("excludes sync runtime state and entity revisions from export", async () => {
+      const db = await getDb();
+      await db.put("tasks", mockTask({ id: "t1", revision: 4 }));
+      await db.put("notes", mockNote({ id: "n1", revision: 2 }));
+      await db.put("outbox", {
+        mutationId: "mut_secret",
+        workspaceId: "local",
+        protocolVersion: 1,
+        entityType: "task",
+        entityId: "t1",
+        action: "put",
+        baseRevision: null,
+        payload: { title: "Draft" },
+        createdAt: "2026-10-25T10:00:00.000Z",
+      });
+      await db.put("sync_cursors", {
+        workspaceId: "local",
+        cursor: 12345,
+        lastSyncedAt: "2026-10-25T10:00:00.000Z",
+        updatedAt: "2026-10-25T10:00:00.000Z",
+      });
+      await db.put("tombstones", {
+        id: "tomb_1",
+        workspaceId: "local",
+        entityType: "task",
+        entityId: "old_task",
+        deletedAt: "2026-10-25T10:00:00.000Z",
+      });
+      const attemptedMutation = {
+        mutationId: "mut_conflict",
+        workspaceId: "local",
+        protocolVersion: 1 as const,
+        entityType: "task" as const,
+        entityId: "t1",
+        action: "put" as const,
+        baseRevision: 1,
+        payload: { title: "Attempted title" },
+        createdAt: "2026-10-25T10:00:00.000Z",
+      };
+      await db.put("conflicts", {
+        id: "conf_1",
+        workspaceId: "local",
+        entityType: "task",
+        entityId: "t1",
+        baseRevision: 1,
+        serverRevision: 2,
+        currentServerEntity: { id: "t1", title: "Server title" },
+        attemptedMutation,
+        status: "open",
+        detectedAt: "2026-10-25T10:00:00.000Z",
+        resolvedAt: null,
+      });
+
+      const { payload, jsonString } = await exportDatabaseBackup("local");
+
+      // Verify revision is stripped from entities
+      expect(payload.data.tasks[0].revision).toBeUndefined();
+      expect(payload.data.notes[0].revision).toBeUndefined();
+
+      // Verify runtime sync stores and sensitive terms are completely absent
+      const rawParsed = JSON.parse(jsonString) as Record<string, unknown>;
+      expect(rawParsed.outbox).toBeUndefined();
+      expect(rawParsed.sync_cursors).toBeUndefined();
+      expect(rawParsed.tombstones).toBeUndefined();
+      expect(rawParsed.conflicts).toBeUndefined();
+      expect(jsonString).not.toContain("mut_secret");
+      expect(jsonString).not.toContain("cur_12345");
+      expect(jsonString).not.toContain("old_task");
+    });
+
+    it("exports records scoped to the requested workspaceId", async () => {
+      const db = await getDb();
+      await db.put("tasks", mockTask({ id: "t-local", workspaceId: "local" }));
+      await db.put("tasks", mockTask({ id: "t-work", workspaceId: "work" }));
+
+      const exportLocal = await exportDatabaseBackup("local");
+      expect(exportLocal.payload.data.tasks).toHaveLength(1);
+      expect(exportLocal.payload.data.tasks[0].id).toBe("t-local");
+
+      const exportWork = await exportDatabaseBackup("work");
+      expect(exportWork.payload.data.tasks).toHaveLength(1);
+      expect(exportWork.payload.data.tasks[0].id).toBe("t-work");
     });
 
     it("restores backup in merge mode without removing existing distinct items", async () => {
@@ -218,31 +429,78 @@ describe("backup and restore logic", () => {
       expect(allNotes).toHaveLength(2);
     });
 
-    it("restores backup in replace mode wiping existing items", async () => {
+    it("restores backup in replace mode wiping existing items only for target workspace", async () => {
       const db = await getDb();
-      await db.put("tasks", mockTask({ id: "old-task", title: "Old Task" }));
-      await db.put("notes", mockNote({ id: "old-note", title: "Old Note" }));
+      await db.put("tasks", mockTask({ id: "old-local-task", workspaceId: "local" }));
+      await db.put("tasks", mockTask({ id: "work-task", workspaceId: "work" }));
 
-      const backup: BackupPayload = {
-        version: 1,
+      const backup: BackupPayloadV2 = {
+        version: 2,
         app: "TaskFlow",
         exportedAt: new Date().toISOString(),
+        workspaceId: "local",
+        metadata: { format: "taskflow-backup-v2", exportedFrom: "web", schemaVersion: 9 },
         data: {
-          tasks: [mockTask({ id: "fresh-task", title: "Fresh Task" })],
-          notes: [mockNote({ id: "fresh-note", title: "Fresh Note" })],
+          tasks: [mockTask({ id: "fresh-local-task", workspaceId: "local" })],
+          notes: [],
+          taskOrders: [{ id: "local", orderedIds: ["fresh-local-task"] }],
         },
       };
 
       const result = await restoreDatabaseBackup(backup, "replace");
       expect(result.tasksCount).toBe(1);
-      expect(result.notesCount).toBe(1);
+      expect(result.taskOrdersCount).toBe(1);
 
       const allTasks = await db.getAll("tasks");
-      const allNotes = await db.getAll("notes");
-      expect(allTasks).toHaveLength(1);
-      expect(allTasks[0].id).toBe("fresh-task");
-      expect(allNotes).toHaveLength(1);
-      expect(allNotes[0].id).toBe("fresh-note");
+      expect(allTasks).toHaveLength(2);
+      expect(allTasks.map((t) => t.id).sort()).toEqual(["fresh-local-task", "work-task"]);
+
+      const restoredOrder = await db.get("task_orders", "local");
+      expect(restoredOrder?.orderedIds).toEqual(["fresh-local-task"]);
+    });
+
+    it("restores version 1 legacy backups with workspaceId backfilled to local", async () => {
+      const db = await getDb();
+      const legacyBackup: BackupPayloadV1 = {
+        version: 1,
+        app: "TaskFlow",
+        exportedAt: new Date().toISOString(),
+        data: {
+          tasks: [
+            {
+              id: "legacy-t1",
+              title: "Legacy Task",
+              description: "Legacy content",
+              completed: false,
+              priority: "high",
+              dueDate: null,
+              category: "work",
+              createdAt: "2026-09-01T10:00:00.000Z",
+              updatedAt: "2026-09-01T10:00:00.000Z",
+              completedAt: null,
+            },
+          ],
+          notes: [
+            {
+              id: "legacy-n1",
+              title: "Legacy Note",
+              body: "Legacy note body",
+              createdAt: "2026-09-01T10:00:00.000Z",
+              updatedAt: "2026-09-01T10:00:00.000Z",
+            },
+          ],
+        },
+      };
+
+      const result = await restoreDatabaseBackup(legacyBackup, "replace");
+      expect(result.tasksCount).toBe(1);
+      expect(result.notesCount).toBe(1);
+
+      const savedTask = await db.get("tasks", "legacy-t1");
+      expect(savedTask?.workspaceId).toBe("local");
+
+      const savedNote = await db.get("notes", "legacy-n1");
+      expect(savedNote?.workspaceId).toBe("local");
     });
 
     it("sanitizes dangerous HTML in tasks and notes on restore", async () => {
@@ -255,7 +513,8 @@ describe("backup and restore logic", () => {
           tasks: [
             mockTask({
               id: "xss-task",
-              description: '<p>Task detail</p><script>alert("xss")</script><img src="x" onerror="steal()">',
+              description:
+                '<p>Task detail</p><script>alert("xss")</script><img src="x" onerror="steal()">',
             }),
           ],
           notes: [
@@ -280,6 +539,7 @@ describe("backup and restore logic", () => {
       const db = await getDb();
       const sampleFollowUp = {
         id: "fu-1",
+        workspaceId: "local",
         personName: "Bob Ross",
         commitment: "Send painting guide",
         details: "Oil on canvas techniques",
@@ -299,6 +559,7 @@ describe("backup and restore logic", () => {
 
       const sampleOccurrence = {
         id: "occ-1",
+        workspaceId: "local",
         followUpId: "fu-1",
         dueAt: "2026-11-10T15:00:00.000Z",
         outcome: "completed" as const,
@@ -314,12 +575,10 @@ describe("backup and restore logic", () => {
       expect(exported.payload.data.followups).toHaveLength(1);
       expect(exported.payload.data.followupOccurrences).toHaveLength(1);
 
-      // Clear db
       await db.clear("followups");
       await db.clear("followup_occurrences");
       expect(await db.getAll("followups")).toHaveLength(0);
 
-      // Restore
       const restoreResult = await restoreDatabaseBackup(exported.payload, "replace");
       expect(restoreResult.followupsCount).toBe(1);
       expect(restoreResult.occurrencesCount).toBe(1);
@@ -336,6 +595,7 @@ describe("backup and restore logic", () => {
       const db = await getDb();
       const samplePlan = {
         id: "plan-1",
+        workspaceId: "local",
         date: "2026-10-25",
         timeZone: "UTC",
         availableMinutes: 240,
@@ -399,6 +659,7 @@ describe("backup and restore logic", () => {
       const db = await getDb();
       const sampleCapture: InboxCapture = {
         id: "cap-1",
+        workspaceId: "local",
         text: "Read article later",
         sharedUrl: "https://example.com/read",
         sourceAppLabel: "Web Share",
@@ -429,5 +690,3 @@ describe("backup and restore logic", () => {
     });
   });
 });
-
-

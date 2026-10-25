@@ -20,7 +20,7 @@ describe("getDb", () => {
     expect(db.version).toBe(DB_VERSION);
   });
 
-  it("creates the tasks, notes, followups, followup_occurrences, daily_plans, and inbox_captures object stores", async () => {
+  it("creates all object stores including workspace and sync stores", async () => {
     const db = await getDb();
     expect(db.objectStoreNames.contains("tasks")).toBe(true);
     expect(db.objectStoreNames.contains("notes")).toBe(true);
@@ -28,6 +28,12 @@ describe("getDb", () => {
     expect(db.objectStoreNames.contains("followup_occurrences")).toBe(true);
     expect(db.objectStoreNames.contains("daily_plans")).toBe(true);
     expect(db.objectStoreNames.contains("inbox_captures")).toBe(true);
+    expect(db.objectStoreNames.contains("workspaces")).toBe(true);
+    expect(db.objectStoreNames.contains("task_orders")).toBe(true);
+    expect(db.objectStoreNames.contains("outbox")).toBe(true);
+    expect(db.objectStoreNames.contains("sync_cursors")).toBe(true);
+    expect(db.objectStoreNames.contains("tombstones")).toBe(true);
+    expect(db.objectStoreNames.contains("conflicts")).toBe(true);
   });
 
   it("creates the updatedAt index on both stores", async () => {
@@ -256,5 +262,99 @@ describe("version upgrades", () => {
     expect(tx.objectStore("tasks").indexNames.contains("dueDate")).toBe(true);
     expect(tx.objectStore("tasks").indexNames.contains("category")).toBe(true);
     await tx.done;
+  });
+
+  it("creates workspaceId index on all entity stores", async () => {
+    const db = await getDb();
+    const stores = [
+      "tasks",
+      "notes",
+      "followups",
+      "followup_occurrences",
+      "daily_plans",
+      "inbox_captures",
+    ] as const;
+
+    for (const store of stores) {
+      const tx = db.transaction(store);
+      expect(tx.objectStore(store).indexNames.contains("workspaceId")).toBe(true);
+      await tx.done;
+    }
+  });
+
+  it("seeds default 'local' workspace in workspaces store", async () => {
+    const db = await getDb();
+    const local = await db.get("workspaces", "local");
+    expect(local).toBeDefined();
+    expect(local?.id).toBe("local");
+    expect(local?.name).toBe("Personal Workspace");
+    expect(local?.type).toBe("local");
+    expect(local?.accountId).toBeNull();
+  });
+
+  it("upgrades version 8 databases, backfilling workspaceId: 'local' and creating workspace stores", async () => {
+    // Create a v8 database with a task and a note without workspaceId
+    await new Promise<void>((resolve, reject) => {
+      const request = indexedDB.open(DB_NAME, 8);
+      request.onupgradeneeded = () => {
+        const database = request.result;
+        const tasks = database.createObjectStore("tasks", { keyPath: "id" });
+        tasks.createIndex("updatedAt", "updatedAt");
+        tasks.createIndex("dueDate", "dueDate");
+        tasks.createIndex("category", "category");
+        tasks.createIndex("sourceNoteId", "sourceNoteId");
+
+        const notes = database.createObjectStore("notes", { keyPath: "id" });
+        notes.createIndex("updatedAt", "updatedAt");
+      };
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        const database = request.result;
+        const tx = database.transaction(["tasks", "notes"], "readwrite");
+        tx.objectStore("tasks").put({
+          id: "task-v8-1",
+          title: "V8 Legacy Task",
+          description: "",
+          completed: false,
+          priority: "medium",
+          dueDate: null,
+          category: null,
+          createdAt: "2026-01-01T00:00:00.000Z",
+          updatedAt: "2026-01-01T00:00:00.000Z",
+          completedAt: null,
+        });
+        tx.objectStore("notes").put({
+          id: "note-v8-1",
+          title: "V8 Legacy Note",
+          body: "Note content",
+          createdAt: "2026-01-01T00:00:00.000Z",
+          updatedAt: "2026-01-01T00:00:00.000Z",
+        });
+        tx.oncomplete = () => {
+          database.close();
+          resolve();
+        };
+        tx.onerror = () => reject(tx.error);
+      };
+    });
+
+    const db = await getDb();
+    expect(db.version).toBe(DB_VERSION);
+    expect(db.objectStoreNames.contains("workspaces")).toBe(true);
+    expect(db.objectStoreNames.contains("task_orders")).toBe(true);
+    expect(db.objectStoreNames.contains("outbox")).toBe(true);
+    expect(db.objectStoreNames.contains("sync_cursors")).toBe(true);
+    expect(db.objectStoreNames.contains("tombstones")).toBe(true);
+    expect(db.objectStoreNames.contains("conflicts")).toBe(true);
+
+    const migratedTask = await db.get("tasks", "task-v8-1");
+    expect(migratedTask?.workspaceId).toBe("local");
+
+    const migratedNote = await db.get("notes", "note-v8-1");
+    expect(migratedNote?.workspaceId).toBe("local");
+
+    const localWorkspace = await db.get("workspaces", "local");
+    expect(localWorkspace).toBeDefined();
+    expect(localWorkspace?.type).toBe("local");
   });
 });

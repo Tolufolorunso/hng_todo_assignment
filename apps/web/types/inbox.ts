@@ -15,6 +15,8 @@ export interface InboxCapture {
   targetId?: string | null;
   processedAt?: string | null;
   discardedAt?: string | null;
+  workspaceId?: string;
+  revision?: number;
   createdAt: string;
   updatedAt: string;
 }

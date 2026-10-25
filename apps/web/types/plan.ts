@@ -18,6 +18,8 @@ export interface DailyPlan {
   availableMinutes: number;
   items: DailyPlanItem[];
   acceptedAt: string | null;
+  workspaceId?: string;
+  revision?: number;
   createdAt: string;
   updatedAt: string;
 }

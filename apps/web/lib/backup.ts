@@ -3,10 +3,10 @@ import { sanitizeHtml } from "@/lib/html";
 import type { Note } from "@/types/note";
 import type { Task, TaskCategory, TaskPriority } from "@/types/task";
 import type { FollowUp, FollowUpOccurrence } from "@/types/followup";
-import type { DailyPlan } from "@/types/plan";
+import type { DailyPlan, DailyPlanItem } from "@/types/plan";
 import type { InboxCapture } from "@/types/inbox";
 
-export interface BackupPayload {
+export interface BackupPayloadV1 {
   version: 1;
   app: "TaskFlow";
   exportedAt: string;
@@ -19,6 +19,29 @@ export interface BackupPayload {
     inboxCaptures?: InboxCapture[];
   };
 }
+
+export interface BackupPayloadV2 {
+  version: 2;
+  app: "TaskFlow";
+  exportedAt: string;
+  workspaceId?: string;
+  metadata: {
+    format: "taskflow-backup-v2";
+    exportedFrom: "web";
+    schemaVersion: number;
+  };
+  data: {
+    tasks: Task[];
+    notes: Note[];
+    followups?: FollowUp[];
+    followupOccurrences?: FollowUpOccurrence[];
+    dailyPlans?: DailyPlan[];
+    inboxCaptures?: InboxCapture[];
+    taskOrders?: Array<{ id: string; orderedIds: string[] }>;
+  };
+}
+
+export type BackupPayload = BackupPayloadV1 | BackupPayloadV2;
 
 export type RestoreMode = "merge" | "replace";
 
@@ -41,6 +64,7 @@ export interface RestoreResult {
   occurrencesCount?: number;
   plansCount?: number;
   capturesCount?: number;
+  taskOrdersCount?: number;
 }
 
 const VALID_PRIORITIES = new Set<TaskPriority>(["low", "medium", "high"]);
@@ -129,14 +153,20 @@ export function isValidFollowUp(item: unknown): item is FollowUp {
   if (typeof candidate.id !== "string" || !candidate.id) return false;
   if (typeof candidate.personName !== "string" || !candidate.personName.trim()) return false;
   if (typeof candidate.commitment !== "string" || !candidate.commitment.trim()) return false;
+  if (candidate.details !== null && typeof candidate.details !== "string") return false;
+  if (typeof candidate.dueAt !== "string") return false;
+  if (typeof candidate.timeZone !== "string") return false;
+  if (candidate.emailAddress !== null && typeof candidate.emailAddress !== "string") return false;
+  if (candidate.phoneNumber !== null && typeof candidate.phoneNumber !== "string") return false;
+  if (candidate.whatsAppNumber !== null && typeof candidate.whatsAppNumber !== "string") return false;
   if (
-    candidate.details !== null &&
-    candidate.details !== undefined &&
-    typeof candidate.details !== "string"
+    candidate.preferredAction !== null &&
+    candidate.preferredAction !== "email" &&
+    candidate.preferredAction !== "whatsapp" &&
+    candidate.preferredAction !== "phone"
   ) {
     return false;
   }
-  if (typeof candidate.dueAt !== "string") return false;
   if (
     candidate.status !== "open" &&
     candidate.status !== "completed" &&
@@ -165,6 +195,30 @@ export function isValidFollowUpOccurrence(item: unknown): item is FollowUpOccurr
   ) {
     return false;
   }
+  if (candidate.resolvedAt !== null && typeof candidate.resolvedAt !== "string") return false;
+  if (candidate.nextDueAt !== null && typeof candidate.nextDueAt !== "string") return false;
+  if (
+    candidate.notes !== undefined &&
+    candidate.notes !== null &&
+    typeof candidate.notes !== "string"
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
+export function isValidDailyPlanItem(item: unknown): item is DailyPlanItem {
+  if (typeof item !== "object" || item === null) return false;
+  const candidate = item as Record<string, unknown>;
+
+  if (typeof candidate.id !== "string" || !candidate.id) return false;
+  if (candidate.type !== "task" && candidate.type !== "followup") return false;
+  if (typeof candidate.targetId !== "string" || !candidate.targetId) return false;
+  if (typeof candidate.title !== "string") return false;
+  if (typeof candidate.estimatedMinutes !== "number") return false;
+  if (typeof candidate.completed !== "boolean") return false;
+  if (typeof candidate.order !== "number") return false;
 
   return true;
 }
@@ -174,12 +228,16 @@ export function isValidDailyPlan(item: unknown): item is DailyPlan {
   const candidate = item as Record<string, unknown>;
 
   if (typeof candidate.id !== "string" || !candidate.id) return false;
-  if (typeof candidate.date !== "string" || !candidate.date) return false;
+  if (typeof candidate.date !== "string") return false;
   if (typeof candidate.timeZone !== "string") return false;
-  if (typeof candidate.availableMinutes !== "number" || candidate.availableMinutes < 0) return false;
+  if (typeof candidate.availableMinutes !== "number") return false;
   if (!Array.isArray(candidate.items)) return false;
+  for (const planItem of candidate.items) {
+    if (!isValidDailyPlanItem(planItem)) return false;
+  }
   if (candidate.acceptedAt !== null && typeof candidate.acceptedAt !== "string") return false;
-  if (typeof candidate.createdAt !== "string" || typeof candidate.updatedAt !== "string") return false;
+  if (typeof candidate.createdAt !== "string") return false;
+  if (typeof candidate.updatedAt !== "string") return false;
 
   return true;
 }
@@ -200,27 +258,19 @@ export function isValidInboxCapture(item: unknown): item is InboxCapture {
   ) {
     return false;
   }
-  if (
-    candidate.targetType !== undefined &&
-    candidate.targetType !== null &&
-    candidate.targetType !== "task" &&
-    candidate.targetType !== "note" &&
-    candidate.targetType !== "followup"
-  ) {
-    return false;
-  }
-  if (
-    candidate.targetId !== undefined &&
-    candidate.targetId !== null &&
-    typeof candidate.targetId !== "string"
-  ) {
-    return false;
-  }
-  if (typeof candidate.createdAt !== "string" || typeof candidate.updatedAt !== "string") {
-    return false;
-  }
+  if (typeof candidate.createdAt !== "string") return false;
+  if (typeof candidate.updatedAt !== "string") return false;
 
   return true;
+}
+
+export function isValidTaskOrder(item: unknown): item is { id: string; orderedIds: string[] } {
+  if (typeof item !== "object" || item === null) return false;
+  const candidate = item as Record<string, unknown>;
+
+  if (typeof candidate.id !== "string" || !candidate.id) return false;
+  if (!Array.isArray(candidate.orderedIds)) return false;
+  return candidate.orderedIds.every((id) => typeof id === "string");
 }
 
 export function buildBackupPayload(
@@ -229,12 +279,39 @@ export function buildBackupPayload(
   followups?: FollowUp[],
   followupOccurrences?: FollowUpOccurrence[],
   dailyPlans?: DailyPlan[],
-  inboxCaptures?: InboxCapture[]
+  inboxCaptures?: InboxCapture[],
+  taskOrders?: Array<{ id: string; orderedIds: string[] }>,
+  options?: { workspaceId?: string; version?: 1 | 2 }
 ): BackupPayload {
+  const version = options?.version ?? 2;
+  const exportedAt = new Date().toISOString();
+
+  if (version === 1) {
+    return {
+      version: 1,
+      app: "TaskFlow",
+      exportedAt,
+      data: {
+        tasks,
+        notes,
+        followups: followups || [],
+        followupOccurrences: followupOccurrences || [],
+        dailyPlans: dailyPlans || [],
+        inboxCaptures: inboxCaptures || [],
+      },
+    };
+  }
+
   return {
-    version: 1,
+    version: 2,
     app: "TaskFlow",
-    exportedAt: new Date().toISOString(),
+    exportedAt,
+    workspaceId: options?.workspaceId ?? "local",
+    metadata: {
+      format: "taskflow-backup-v2",
+      exportedFrom: "web",
+      schemaVersion: 9,
+    },
     data: {
       tasks,
       notes,
@@ -242,6 +319,7 @@ export function buildBackupPayload(
       followupOccurrences: followupOccurrences || [],
       dailyPlans: dailyPlans || [],
       inboxCaptures: inboxCaptures || [],
+      taskOrders: taskOrders || [],
     },
   };
 }
@@ -273,12 +351,22 @@ export function parseAndValidateBackup(jsonString: string): BackupValidationResu
     return { ok: false, error: "Not a valid TaskFlow backup file." };
   }
 
-  if (candidate.version !== 1) {
+  if (candidate.version !== 1 && candidate.version !== 2) {
     return { ok: false, error: "Unsupported backup version." };
   }
 
   if (typeof candidate.exportedAt !== "string") {
     return { ok: false, error: "Missing export timestamp in backup." };
+  }
+
+  if (candidate.version === 2) {
+    if (typeof candidate.metadata !== "object" || candidate.metadata === null) {
+      return { ok: false, error: "Missing metadata in version 2 backup." };
+    }
+    const meta = candidate.metadata as Record<string, unknown>;
+    if (meta.format !== "taskflow-backup-v2") {
+      return { ok: false, error: "Invalid backup format in metadata." };
+    }
   }
 
   if (typeof candidate.data !== "object" || candidate.data === null) {
@@ -369,21 +457,64 @@ export function parseAndValidateBackup(jsonString: string): BackupValidationResu
     }
   }
 
+  if (data.taskOrders !== undefined) {
+    if (!Array.isArray(data.taskOrders)) {
+      return { ok: false, error: "Backup task orders list is malformed." };
+    }
+    for (let i = 0; i < data.taskOrders.length; i++) {
+      if (!isValidTaskOrder(data.taskOrders[i])) {
+        return {
+          ok: false,
+          error: `Task order at position ${i + 1} is corrupted or missing required fields.`,
+        };
+      }
+    }
+  }
+
   return { ok: true, value: parsed as BackupPayload };
 }
 
-export async function exportDatabaseBackup(): Promise<{
+export async function exportDatabaseBackup(
+  workspaceId: string = "local"
+): Promise<{
   payload: BackupPayload;
   jsonString: string;
   filename: string;
 }> {
   const db = await getDb();
-  const tasks = await db.getAll("tasks");
-  const notes = await db.getAll("notes");
-  const followups = await db.getAll("followups");
-  const followupOccurrences = await db.getAll("followup_occurrences");
-  const dailyPlans = await db.getAll("daily_plans");
-  const inboxCaptures = await db.getAll("inbox_captures");
+  const allTasks = await db.getAll("tasks");
+  const sanitizeEntityForBackup = <T extends { revision?: number }>(item: T): T => {
+    const copy = { ...item };
+    delete copy.revision;
+    return copy;
+  };
+  const tasks = allTasks
+    .filter((t) => (t.workspaceId ?? "local") === workspaceId)
+    .map(sanitizeEntityForBackup);
+  const allNotes = await db.getAll("notes");
+  const notes = allNotes
+    .filter((n) => (n.workspaceId ?? "local") === workspaceId)
+    .map(sanitizeEntityForBackup);
+  const allFollowups = await db.getAll("followups");
+  const followups = allFollowups
+    .filter((f) => (f.workspaceId ?? "local") === workspaceId)
+    .map(sanitizeEntityForBackup);
+  const allOccurrences = await db.getAll("followup_occurrences");
+  const followupOccurrences = allOccurrences
+    .filter((o) => (o.workspaceId ?? "local") === workspaceId)
+    .map(sanitizeEntityForBackup);
+  const allPlans = await db.getAll("daily_plans");
+  const dailyPlans = allPlans
+    .filter((p) => (p.workspaceId ?? "local") === workspaceId)
+    .map(sanitizeEntityForBackup);
+  const allCaptures = await db.getAll("inbox_captures");
+  const inboxCaptures = allCaptures
+    .filter((c) => (c.workspaceId ?? "local") === workspaceId)
+    .map(sanitizeEntityForBackup);
+  const taskOrderRecord = await db.get("task_orders", workspaceId);
+  const taskOrders = taskOrderRecord
+    ? [{ id: taskOrderRecord.id, orderedIds: taskOrderRecord.orderedIds }]
+    : [];
 
   const payload = buildBackupPayload(
     tasks,
@@ -391,7 +522,9 @@ export async function exportDatabaseBackup(): Promise<{
     followups,
     followupOccurrences,
     dailyPlans,
-    inboxCaptures
+    inboxCaptures,
+    taskOrders,
+    { workspaceId, version: 2 }
   );
   const jsonString = JSON.stringify(payload, null, 2);
   const filename = generateBackupFilename();
@@ -402,8 +535,13 @@ export async function exportDatabaseBackup(): Promise<{
 export async function restoreDatabaseBackup(
   payload: BackupPayload,
   mode: RestoreMode,
+  targetWorkspaceId?: string
 ): Promise<RestoreResult> {
   const db = await getDb();
+  const workspaceId =
+    targetWorkspaceId ??
+    (payload.version === 2 && payload.workspaceId ? payload.workspaceId : "local");
+
   const tx = db.transaction(
     [
       "tasks",
@@ -412,6 +550,7 @@ export async function restoreDatabaseBackup(
       "followup_occurrences",
       "daily_plans",
       "inbox_captures",
+      "task_orders",
     ],
     "readwrite"
   );
@@ -422,20 +561,35 @@ export async function restoreDatabaseBackup(
   const occurrenceStore = tx.objectStore("followup_occurrences");
   const dailyPlanStore = tx.objectStore("daily_plans");
   const captureStore = tx.objectStore("inbox_captures");
+  const orderStore = tx.objectStore("task_orders");
 
   if (mode === "replace") {
-    await taskStore.clear();
-    await noteStore.clear();
-    await followupStore.clear();
-    await occurrenceStore.clear();
-    await dailyPlanStore.clear();
-    await captureStore.clear();
+    const stores = [
+      taskStore,
+      noteStore,
+      followupStore,
+      occurrenceStore,
+      dailyPlanStore,
+      captureStore,
+    ];
+    for (const store of stores) {
+      let cursor = await store.openCursor();
+      while (cursor) {
+        const val = cursor.value as unknown as { workspaceId?: string };
+        if (!val.workspaceId || val.workspaceId === workspaceId) {
+          await cursor.delete();
+        }
+        cursor = await cursor.continue();
+      }
+    }
+    await orderStore.delete(workspaceId);
   }
 
   for (const task of payload.data.tasks) {
     await taskStore.put({
       ...task,
       description: sanitizeHtml(task.description),
+      workspaceId,
     });
   }
 
@@ -443,30 +597,54 @@ export async function restoreDatabaseBackup(
     await noteStore.put({
       ...note,
       body: sanitizeHtml(note.body),
+      workspaceId,
     });
   }
 
   if (payload.data.followups) {
     for (const followup of payload.data.followups) {
-      await followupStore.put(followup);
+      await followupStore.put({
+        ...followup,
+        workspaceId,
+      });
     }
   }
 
   if (payload.data.followupOccurrences) {
     for (const occurrence of payload.data.followupOccurrences) {
-      await occurrenceStore.put(occurrence);
+      await occurrenceStore.put({
+        ...occurrence,
+        workspaceId,
+      });
     }
   }
 
   if (payload.data.dailyPlans) {
     for (const plan of payload.data.dailyPlans) {
-      await dailyPlanStore.put(plan);
+      await dailyPlanStore.put({
+        ...plan,
+        workspaceId,
+      });
     }
   }
 
   if (payload.data.inboxCaptures) {
     for (const capture of payload.data.inboxCaptures) {
-      await captureStore.put(capture);
+      await captureStore.put({
+        ...capture,
+        workspaceId,
+      });
+    }
+  }
+
+  if (payload.version === 2 && payload.data.taskOrders) {
+    for (const order of payload.data.taskOrders) {
+      await orderStore.put({
+        id: workspaceId,
+        workspaceId,
+        orderedIds: order.orderedIds,
+        updatedAt: new Date().toISOString(),
+      });
     }
   }
 
@@ -479,6 +657,7 @@ export async function restoreDatabaseBackup(
     occurrencesCount: payload.data.followupOccurrences?.length ?? 0,
     plansCount: payload.data.dailyPlans?.length ?? 0,
     capturesCount: payload.data.inboxCaptures?.length ?? 0,
+    taskOrdersCount: payload.version === 2 ? payload.data.taskOrders?.length ?? 0 : 0,
   };
 }
 
