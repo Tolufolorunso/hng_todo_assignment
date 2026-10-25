@@ -117,3 +117,85 @@ self.addEventListener("fetch", (event) => {
 
   event.respondWith(networkFirst(request));
 });
+
+// Push notification event listener
+self.addEventListener("push", (event) => {
+  let payload = {};
+  if (event.data) {
+    try {
+      payload = event.data.json();
+    } catch {
+      payload = {
+        title: "TaskFlow Commitment Due",
+        body: event.data.text() || "You have a Follow Up commitment due.",
+      };
+    }
+  }
+
+  const title = payload.title || "TaskFlow Commitment Due";
+  const data = payload.data || {};
+  const tag = payload.tag || (data.followupId ? `followup_${data.followupId}` : "taskflow_notification");
+
+  const options = {
+    body: payload.body || "You have a Follow Up commitment due.",
+    icon: payload.icon || "/icon.svg",
+    badge: payload.badge || "/icon.svg",
+    tag,
+    data,
+    requireInteraction: true,
+    actions: payload.actions || [
+      { action: "view", title: "View Follow Up" },
+    ],
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+// Notification click and launcher routing
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+
+  const data = event.notification.data || {};
+  const action = event.action;
+  const launcherUri = data.launcherUri;
+  const targetUrl = data.url || (data.followupId ? `/followups?id=${encodeURIComponent(data.followupId)}` : "/followups");
+
+  event.waitUntil(
+    (async () => {
+      // If the user clicked a direct communication action (email, phone, whatsapp)
+      // and launcherUri exists, open the launcher directly
+      if ((action === "email" || action === "whatsapp" || action === "phone" || action === "launch") && launcherUri) {
+        if (self.clients.openWindow) {
+          try {
+            await self.clients.openWindow(launcherUri);
+            return;
+          } catch {
+            // If direct launcher protocol fails in browser, fall back to app window
+          }
+        }
+      }
+
+      // Check existing browser windows for TaskFlow
+      const clientList = await self.clients.matchAll({
+        type: "window",
+        includeUncontrolled: true,
+      });
+
+      for (const client of clientList) {
+        const clientUrl = new URL(client.url);
+        if (clientUrl.origin === self.location.origin && "focus" in client) {
+          await client.focus();
+          if ("navigate" in client) {
+            await client.navigate(targetUrl);
+          }
+          return;
+        }
+      }
+
+      // If no existing window is open, open a new window to target route
+      if (self.clients.openWindow) {
+        await self.clients.openWindow(targetUrl);
+      }
+    })()
+  );
+});

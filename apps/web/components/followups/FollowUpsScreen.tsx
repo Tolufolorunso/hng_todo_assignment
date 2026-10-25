@@ -14,6 +14,7 @@ import {
   listOccurrencesByFollowUp,
 } from "@/lib/followups";
 import { isFollowUpOverdue } from "@/lib/recurrence";
+import { getOverdueFollowUps } from "@/lib/notifications";
 import FollowUpCard from "@/components/followups/FollowUpCard";
 import FollowUpModal from "@/components/followups/FollowUpModal";
 import RescheduleModal from "@/components/followups/RescheduleModal";
@@ -28,6 +29,7 @@ export default function FollowUpsScreen() {
   const [filter, setFilter] = useState<FilterTab>("all");
   const [query, setQuery] = useState("");
   const [nowMs] = useState(() => Date.now());
+  const [dismissedOverdue, setDismissedOverdue] = useState(false);
 
   // Modal dialog states
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -187,6 +189,105 @@ export default function FollowUpsScreen() {
           <span>New Follow Up</span>
         </button>
       </div>
+
+      {/* Overdue Catch-up Banner */}
+      {(() => {
+        const overdueCatchUpItems = getOverdueFollowUps(followUps, new Date(nowMs));
+        if (overdueCatchUpItems.length === 0 || dismissedOverdue) return null;
+
+        return (
+          <div className="mt-6 rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4 sm:p-5">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-500/20 text-rose-500">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                    <line x1="12" y1="9" x2="12" y2="13" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                  </svg>
+                </span>
+                <div>
+                  <h2 className="text-sm font-bold text-text">
+                    Overdue Commitments Catch-up ({overdueCatchUpItems.length})
+                  </h2>
+                  <p className="text-xs text-muted">
+                    These commitments became due while the app was closed or idle.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDismissedOverdue(true)}
+                className="text-xs text-muted hover:text-text transition-colors"
+                aria-label="Dismiss catch-up alert"
+              >
+                Dismiss
+              </button>
+            </div>
+
+            <div className="mt-3 space-y-2">
+              {overdueCatchUpItems.slice(0, 3).map((item) => {
+                const fullItem = followUps.find((f) => f.id === item.id);
+                return (
+                  <div
+                    key={item.id}
+                    className="flex flex-col gap-2 rounded-xl border border-rose-500/20 bg-surface p-3 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div>
+                      <div className="text-xs font-semibold text-text">
+                        {item.personName}
+                      </div>
+                      <div className="text-xs text-muted line-clamp-1">
+                        {item.commitment}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {item.launcherUri && (
+                        <a
+                          href={item.launcherUri}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="rounded-lg bg-accent px-2.5 py-1 text-xs font-semibold text-accent-contrast shadow-xs hover:bg-accent-hover transition-all"
+                        >
+                          Launch {item.preferredAction || "Action"}
+                        </a>
+                      )}
+                      {fullItem && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setRescheduleTarget(fullItem)}
+                            className="rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-text hover:bg-surface-muted transition-all"
+                          >
+                            Reschedule
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleComplete(fullItem)}
+                            className="rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-text hover:bg-surface-muted transition-all"
+                          >
+                            Complete
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Control bar: Search and Tabs */}
       <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

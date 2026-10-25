@@ -19,7 +19,11 @@ export async function GET(request: Request): Promise<Response> {
     version: "1.0.0",
     protocolVersion: 1,
     auth: ["otp"],
-    entities: ["tasks", "notes", "followups", "plans", "inbox"],
+    entities: ["tasks", "notes", "followups", "plans", "inbox", "push_subscriptions"],
+    push: {
+      supported: true,
+      vapidPublicKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "taskflow_mock_public_vapid_key_for_testing_and_local_development",
+    },
     limits: {
       taskTitleMaxLength: 200,
       taskDescriptionMaxLength: 20000,
@@ -27,6 +31,7 @@ export async function GET(request: Request): Promise<Response> {
       noteBodyMaxLength: 50000,
       followupNameMaxLength: 200,
       inboxTextMaxLength: 20000,
+      pushEndpointMaxLength: 2048,
     },
   };
 

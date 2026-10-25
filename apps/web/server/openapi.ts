@@ -1250,6 +1250,153 @@ export const openApiSpecification = {
         },
       },
     },
+    "/push/subscriptions": {
+      get: {
+        summary: "List active push subscriptions",
+        description: "Returns active Web Push subscriptions for the authenticated account.",
+        security: [{ BearerAuth: [] }],
+        responses: {
+          "200": {
+            description: "List of subscriptions",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  required: ["subscriptions"],
+                  properties: {
+                    subscriptions: {
+                      type: "array",
+                      items: { $ref: "#/components/schemas/PushSubscription" },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          "401": { $ref: "#/components/responses/ErrorResponse" },
+          "503": { $ref: "#/components/responses/ErrorResponse" },
+        },
+      },
+      post: {
+        summary: "Register or update push subscription",
+        description: "Saves a Web Push subscription and presentation privacy preference for the authenticated account.",
+        security: [{ BearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/PushSubscriptionInput" },
+            },
+          },
+        },
+        responses: {
+          "201": {
+            description: "Subscription created or updated",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  required: ["subscription"],
+                  properties: {
+                    subscription: { $ref: "#/components/schemas/PushSubscription" },
+                  },
+                },
+              },
+            },
+          },
+          "400": { $ref: "#/components/responses/ErrorResponse" },
+          "401": { $ref: "#/components/responses/ErrorResponse" },
+          "503": { $ref: "#/components/responses/ErrorResponse" },
+        },
+      },
+    },
+    "/push/subscriptions/{id}": {
+      delete: {
+        summary: "Delete push subscription",
+        description: "Deactivates a Web Push subscription.",
+        security: [{ BearerAuth: [] }],
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+          },
+        ],
+        responses: {
+          "200": {
+            description: "Subscription deleted",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  required: ["success", "id"],
+                  properties: {
+                    success: { type: "boolean" },
+                    id: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          "401": { $ref: "#/components/responses/ErrorResponse" },
+          "404": { $ref: "#/components/responses/ErrorResponse" },
+          "503": { $ref: "#/components/responses/ErrorResponse" },
+        },
+      },
+    },
+    "/push/dispatch": {
+      post: {
+        summary: "Dispatch due push notifications",
+        description: "Runs the durable scheduled dispatcher for due follow-up occurrences.",
+        security: [{ BearerAuth: [] }],
+        requestBody: {
+          required: false,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  dryRun: { type: "boolean" },
+                  accountId: { type: "string" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          "200": {
+            description: "Dispatcher execution summary",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  required: ["success", "dryRun", "summary"],
+                  properties: {
+                    success: { type: "boolean" },
+                    dryRun: { type: "boolean" },
+                    summary: {
+                      type: "object",
+                      required: ["evaluatedFollowUps", "dispatchedCount", "skippedCount", "failedCount", "expiredCount"],
+                      properties: {
+                        evaluatedFollowUps: { type: "integer" },
+                        dispatchedCount: { type: "integer" },
+                        skippedCount: { type: "integer" },
+                        failedCount: { type: "integer" },
+                        expiredCount: { type: "integer" },
+                        errors: { type: "array", items: { type: "string" } },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          "401": { $ref: "#/components/responses/ErrorResponse" },
+          "503": { $ref: "#/components/responses/ErrorResponse" },
+        },
+      },
+    },
   },
   components: {
     securitySchemes: {
@@ -1702,6 +1849,40 @@ export const openApiSpecification = {
           nextCursor: { type: "integer" },
           hasMore: { type: "boolean" },
           serverTime: { type: "string", format: "date-time" },
+        },
+      },
+      PushSubscription: {
+        type: "object",
+        required: ["id", "accountId", "endpoint", "keysP256dh", "keysAuth", "previewMode", "isActive", "createdAt", "updatedAt"],
+        properties: {
+          id: { type: "string" },
+          accountId: { type: "string" },
+          endpoint: { type: "string", format: "uri" },
+          keysP256dh: { type: "string" },
+          keysAuth: { type: "string" },
+          userAgent: { type: "string", nullable: true },
+          previewMode: { type: "string", enum: ["generic", "detailed"] },
+          isActive: { type: "boolean" },
+          createdAt: { type: "string", format: "date-time" },
+          updatedAt: { type: "string", format: "date-time" },
+          revokedAt: { type: "string", format: "date-time", nullable: true },
+        },
+      },
+      PushSubscriptionInput: {
+        type: "object",
+        required: ["endpoint", "keys"],
+        properties: {
+          endpoint: { type: "string", format: "uri" },
+          keys: {
+            type: "object",
+            required: ["p256dh", "auth"],
+            properties: {
+              p256dh: { type: "string" },
+              auth: { type: "string" },
+            },
+          },
+          userAgent: { type: "string", nullable: true },
+          previewMode: { type: "string", enum: ["generic", "detailed"], default: "generic" },
         },
       },
     },

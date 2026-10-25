@@ -147,7 +147,7 @@ The Blueprint overlay, `AGENTS.md`, and onboarding setup are already present.
   local-data adoption, synchronization states, retries, conflict resolution,
   multi-tab coordination, service-worker API exclusions, and two-browser
   acceptance evidence across the supported product entities.
-- [ ] 36. **Closed-app web Follow Up notifications** - add authenticated web-push
+- [x] 36. **Closed-app web Follow Up notifications** - add authenticated web-push
   subscriptions, notification privacy controls, a durable scheduled dispatcher,
   idempotent per-occurrence delivery, service-worker notification handling,
   launcher routing, expired-subscription feedback, and overdue catch-up.

@@ -7,7 +7,14 @@ import {
   revokeAllOtherSessions,
   revokeSession,
 } from "@/lib/auth";
+import {
+  getClientPushSubscriptionState,
+  subscribeToWebPush,
+  unsubscribeFromWebPush,
+  updateNotificationPrivacy,
+} from "@/lib/notifications";
 import type { SessionInfo } from "@/types/auth";
+import type { ClientPushSubscriptionState, NotificationPreviewMode } from "@/types/notifications";
 
 interface AccountModalProps {
   isOpen: boolean;
@@ -29,6 +36,18 @@ export default function AccountModal({ isOpen, onClose, onAuthenticated }: Accou
   const [sessions, setSessions] = useState<SessionInfo[] | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
+  // Push notification state
+  const [pushState, setPushState] = useState<ClientPushSubscriptionState>({
+    isSupported: false,
+    permission: "default",
+    isSubscribed: false,
+    subscriptionId: null,
+    endpoint: null,
+    previewMode: "generic",
+  });
+  const [pushLoading, setPushLoading] = useState(false);
+  const [pushFeedback, setPushFeedback] = useState<string | null>(null);
+
   useEffect(() => {
     if (!isOpen || !isAuthenticated || !token) return;
 
@@ -36,6 +55,12 @@ export default function AccountModal({ isOpen, onClose, onAuthenticated }: Accou
     void listSessions(token).then((res) => {
       if (mounted) {
         setSessions(res.ok && res.sessions ? res.sessions : []);
+      }
+    });
+
+    void getClientPushSubscriptionState(token).then((state) => {
+      if (mounted) {
+        setPushState(state);
       }
     });
 
@@ -124,6 +149,63 @@ export default function AccountModal({ isOpen, onClose, onAuthenticated }: Accou
       handleClose();
     } else {
       setError(res.error || "Failed to delete account");
+    }
+  }
+
+  async function handleTogglePush() {
+    if (!token) return;
+    setPushLoading(true);
+    setPushFeedback(null);
+    try {
+      if (pushState.isSubscribed) {
+        const nextState = await unsubscribeFromWebPush(token, pushState.subscriptionId);
+        setPushState(nextState);
+        setPushFeedback("Push notifications disabled on this browser.");
+      } else {
+        const nextState = await subscribeToWebPush(token, { previewMode: pushState.previewMode });
+        setPushState(nextState);
+        if (nextState.isSubscribed) {
+          setPushFeedback("Push notifications activated for Follow Up reminders!");
+        } else if (nextState.permission === "denied") {
+          setPushFeedback("Browser notification permission was blocked. Check your address bar settings.");
+        }
+      }
+    } catch (err) {
+      setPushFeedback(err instanceof Error ? err.message : "Failed to update notification settings");
+    } finally {
+      setPushLoading(false);
+    }
+  }
+
+  async function handlePrivacyModeChange(mode: NotificationPreviewMode) {
+    if (!token) return;
+    setPushState((prev) => ({ ...prev, previewMode: mode }));
+    await updateNotificationPrivacy(token, mode);
+    setPushFeedback(`Preview mode set to ${mode === "generic" ? "generic (private)" : "detailed"}.`);
+  }
+
+  async function handleSendTestNotification() {
+    if (!token) return;
+    setPushLoading(true);
+    setPushFeedback(null);
+    try {
+      const res = await fetch("/api/v1/push/dispatch", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ dryRun: false }),
+      });
+      if (res.ok) {
+        setPushFeedback("Test dispatch completed. Check your device notifications!");
+      } else {
+        setPushFeedback("Test dispatch failed to send.");
+      }
+    } catch {
+      setPushFeedback("Network error during test dispatch.");
+    } finally {
+      setPushLoading(false);
     }
   }
 
@@ -316,6 +398,123 @@ export default function AccountModal({ isOpen, onClose, onAuthenticated }: Accou
                   ))
                 )}
               </div>
+            </div>
+
+            {/* Push Notifications & Privacy section */}
+            <div className="mt-5 border-t border-border/80 pt-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-xs font-semibold text-text">Follow Up Push Reminders</span>
+                  <p className="text-[11px] text-muted">
+                    Closed-app notifications for due commitments
+                  </p>
+                </div>
+                <span
+                  className={`rounded-md px-2 py-0.5 text-[10px] font-bold ${
+                    pushState.isSubscribed
+                      ? "bg-emerald-500/15 text-emerald-500"
+                      : pushState.permission === "denied"
+                      ? "bg-rose-500/15 text-rose-500"
+                      : pushState.isSupported
+                      ? "bg-surface-muted text-muted"
+                      : "bg-surface-muted text-muted"
+                  }`}
+                >
+                  {pushState.isSubscribed
+                    ? "Active"
+                    : pushState.permission === "denied"
+                    ? "Blocked"
+                    : pushState.isSupported
+                    ? "Disabled"
+                    : "Unsupported"}
+                </span>
+              </div>
+
+              {pushFeedback && (
+                <div className="mt-2.5 rounded-lg border border-accent/20 bg-accent/5 p-2 text-xs text-text">
+                  {pushFeedback}
+                </div>
+              )}
+
+              {pushState.isExpired && (
+                <div className="mt-2.5 rounded-lg border border-amber-500/30 bg-amber-500/10 p-2.5 text-xs text-amber-500">
+                  Your push subscription has expired. Re-enable to resume closed-app reminders.
+                </div>
+              )}
+
+              <div className="mt-3 flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={pushLoading || !pushState.isSupported || pushState.permission === "denied"}
+                  onClick={handleTogglePush}
+                  className={`flex-1 rounded-xl px-3 py-2 text-xs font-semibold transition-all disabled:opacity-50 ${
+                    pushState.isSubscribed
+                      ? "border border-border bg-surface-muted text-text hover:bg-surface-muted/80"
+                      : "bg-accent text-accent-contrast shadow-sm hover:bg-accent-hover"
+                  }`}
+                >
+                  {pushLoading
+                    ? "Updating..."
+                    : pushState.isSubscribed
+                    ? "Disable Web Push"
+                    : "Enable Web Push"}
+                </button>
+
+                {pushState.isSubscribed && (
+                  <button
+                    type="button"
+                    disabled={pushLoading}
+                    onClick={handleSendTestNotification}
+                    className="rounded-xl border border-border bg-surface px-3 py-2 text-xs font-medium text-text hover:bg-surface-muted transition-all"
+                  >
+                    Send Test
+                  </button>
+                )}
+              </div>
+
+              {/* Privacy Controls */}
+              {pushState.isSupported && (
+                <div className="mt-3 rounded-xl border border-border/80 bg-surface-muted/40 p-3 space-y-2">
+                  <div className="text-[11px] font-semibold text-text">
+                    Notification Lock-Screen Privacy
+                  </div>
+                  <div className="space-y-1.5 text-xs">
+                    <label className="flex items-start gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="previewMode"
+                        value="generic"
+                        checked={pushState.previewMode === "generic"}
+                        onChange={() => handlePrivacyModeChange("generic")}
+                        className="mt-0.5 accent-accent"
+                      />
+                      <div>
+                        <span className="font-medium text-text">Generic Preview (Recommended)</span>
+                        <p className="text-[10px] text-muted">
+                          Hides names and commitment text on lock screens for privacy
+                        </p>
+                      </div>
+                    </label>
+
+                    <label className="flex items-start gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="previewMode"
+                        value="detailed"
+                        checked={pushState.previewMode === "detailed"}
+                        onChange={() => handlePrivacyModeChange("detailed")}
+                        className="mt-0.5 accent-accent"
+                      />
+                      <div>
+                        <span className="font-medium text-text">Detailed Preview</span>
+                        <p className="text-[10px] text-muted">
+                          Shows contact name and commitment text in notifications
+                        </p>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Sign Out and Delete buttons */}
