@@ -128,7 +128,7 @@ The Blueprint overlay, `AGENTS.md`, and onboarding setup are already present.
 - [x] 31. **Optional accounts and session lifecycle** - implement email one-time
   password authentication, secure refresh rotation, logout, revocation, account
   inspection, account deletion, and platform-neutral session behavior.
-- [ ] 32. **Cloud productivity persistence** - add account-owned tasks, notes,
+- [x] 32. **Cloud productivity persistence** - add account-owned tasks, notes,
   follow-ups, occurrence history, daily plans, inbox captures, and task-order
   documents with ownership enforcement, validation, restricted rich-text
   sanitization, recurrence validation, and change sequencing.

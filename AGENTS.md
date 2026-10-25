@@ -70,6 +70,11 @@ Within `apps/web`:
   - Health and Capabilities: `GET /api/v1/health`, `GET /api/v1/capabilities`, `GET /api/v1/openapi.json`
   - Authentication: `POST /api/v1/auth/otp/request`, `POST /api/v1/auth/otp/verify`, `POST /api/v1/auth/refresh`, `POST /api/v1/auth/logout`
   - Sessions and Account: `GET /api/v1/auth/sessions`, `POST /api/v1/auth/sessions/revoke-all`, `DELETE /api/v1/auth/sessions/[id]`, `GET /api/v1/account`, `DELETE /api/v1/account`
+  - Tasks: `GET /api/v1/tasks`, `POST /api/v1/tasks`, `GET /api/v1/tasks/[id]`, `PATCH /api/v1/tasks/[id]`, `DELETE /api/v1/tasks/[id]`, `GET /api/v1/tasks/order`, `PUT /api/v1/tasks/order`
+  - Notes: `GET /api/v1/notes`, `POST /api/v1/notes`, `GET /api/v1/notes/[id]`, `PATCH /api/v1/notes/[id]`, `DELETE /api/v1/notes/[id]`
+  - Follow-ups: `GET /api/v1/followups`, `POST /api/v1/followups`, `GET /api/v1/followups/[id]`, `PATCH /api/v1/followups/[id]`, `DELETE /api/v1/followups/[id]`, `GET /api/v1/followups/[id]/occurrences`, `POST /api/v1/followups/[id]/occurrences`
+  - Daily Plans: `GET /api/v1/plans`, `PUT /api/v1/plans`, `GET /api/v1/plans/[date]`
+  - Inbox: `GET /api/v1/inbox`, `POST /api/v1/inbox`, `GET /api/v1/inbox/[id]`, `PATCH /api/v1/inbox/[id]`, `DELETE /api/v1/inbox/[id]`
 - Shared components: `apps/web/components/[feature]/ComponentName.tsx`
 - Shared logic and client data access: `apps/web/lib/[name].ts`
 - Server-only modules and database access: `apps/web/server/[name].ts`
