@@ -31,5 +31,30 @@ export default function manifest(): MetadataRoute.Manifest {
         purpose: "maskable",
       },
     ],
+    shortcuts: [
+      {
+        name: "Quick Capture",
+        short_name: "Capture",
+        description: "Quickly capture text or links to your offline inbox",
+        url: "/inbox?capture=true",
+        icons: [{ src: "/icon.svg", sizes: "96x96" }],
+      },
+      {
+        name: "Inbox",
+        short_name: "Inbox",
+        description: "Open your offline capture inbox",
+        url: "/inbox",
+        icons: [{ src: "/icon.svg", sizes: "96x96" }],
+      },
+    ],
+    share_target: {
+      action: "/inbox",
+      method: "GET",
+      params: {
+        title: "title",
+        text: "text",
+        url: "url",
+      },
+    },
   };
 }

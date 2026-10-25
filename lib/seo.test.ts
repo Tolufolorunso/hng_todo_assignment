@@ -6,10 +6,11 @@ describe("SEO Routes", () => {
   describe("sitemap()", () => {
     it("returns all primary workspace routes with correct priorities", () => {
       const items = sitemap();
-      expect(items).toHaveLength(7);
+      expect(items).toHaveLength(8);
 
       const urls = items.map((item) => item.url);
       expect(urls).toContain(`${SITEMAP_BASE}/`);
+      expect(urls).toContain(`${SITEMAP_BASE}/inbox`);
       expect(urls).toContain(`${SITEMAP_BASE}/notes`);
       expect(urls).toContain(`${SITEMAP_BASE}/followups`);
       expect(urls).toContain(`${SITEMAP_BASE}/plan`);

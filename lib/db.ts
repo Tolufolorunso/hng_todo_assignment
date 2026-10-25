@@ -3,9 +3,10 @@ import type { Note } from "@/types/note";
 import type { Task } from "@/types/task";
 import type { FollowUp, FollowUpOccurrence } from "@/types/followup";
 import type { DailyPlan } from "@/types/plan";
+import type { InboxCapture } from "@/types/inbox";
 
 export const DB_NAME = "taskflow";
-export const DB_VERSION = 7;
+export const DB_VERSION = 8;
 
 export interface TaskFlowDB extends DBSchema {
   tasks: {
@@ -47,6 +48,15 @@ export interface TaskFlowDB extends DBSchema {
     value: DailyPlan;
     indexes: {
       date: string;
+      updatedAt: string;
+    };
+  };
+  inbox_captures: {
+    key: string;
+    value: InboxCapture;
+    indexes: {
+      state: string;
+      capturedAt: string;
       updatedAt: string;
     };
   };
@@ -143,6 +153,15 @@ export function getDb(): Promise<IDBPDatabase<TaskFlowDB>> {
             if (!followups.indexNames.contains("sourceNoteId")) {
               followups.createIndex("sourceNoteId", "sourceNoteId");
             }
+          }
+        }
+
+        if (oldVersion < 8) {
+          if (!db.objectStoreNames.contains("inbox_captures")) {
+            const captures = db.createObjectStore("inbox_captures", { keyPath: "id" });
+            captures.createIndex("state", "state");
+            captures.createIndex("capturedAt", "capturedAt");
+            captures.createIndex("updatedAt", "updatedAt");
           }
         }
       },

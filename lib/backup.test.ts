@@ -4,6 +4,7 @@ import {
   buildBackupPayload,
   exportDatabaseBackup,
   generateBackupFilename,
+  isValidInboxCapture,
   isValidNote,
   isValidTask,
   parseAndValidateBackup,
@@ -13,6 +14,7 @@ import {
 import { deleteDb, getDb } from "@/lib/db";
 import type { Note } from "@/types/note";
 import type { Task } from "@/types/task";
+import type { InboxCapture } from "@/types/inbox";
 
 function mockTask(overrides: Partial<Task> = {}): Task {
   return {
@@ -72,6 +74,42 @@ describe("backup and restore logic", () => {
       expect(isValidNote(null)).toBe(false);
       expect(isValidNote(mockNote({ title: "" }))).toBe(false);
       expect(isValidNote(mockNote({ body: 123 as unknown as string }))).toBe(false);
+    });
+
+    it("validates valid inbox capture objects", () => {
+      expect(
+        isValidInboxCapture({
+          id: "cap-1",
+          text: "Capture text",
+          sharedUrl: null,
+          sourceAppLabel: null,
+          capturedAt: "2026-10-25T10:00:00.000Z",
+          state: "pending",
+          targetType: null,
+          targetId: null,
+          createdAt: "2026-10-25T10:00:00.000Z",
+          updatedAt: "2026-10-25T10:00:00.000Z",
+        })
+      ).toBe(true);
+    });
+
+    it("rejects invalid inbox capture objects", () => {
+      expect(isValidInboxCapture(null)).toBe(false);
+      expect(isValidInboxCapture({})).toBe(false);
+      expect(
+        isValidInboxCapture({
+          id: "cap-1",
+          text: "",
+          state: "pending",
+        })
+      ).toBe(false);
+      expect(
+        isValidInboxCapture({
+          id: "cap-1",
+          text: "Hi",
+          state: "unknown-state",
+        })
+      ).toBe(false);
     });
   });
 
@@ -356,6 +394,40 @@ describe("backup and restore logic", () => {
       expect(restored?.sourceNoteId).toBe("note-123");
       expect(restored?.sourceExcerpt).toBe("Snippet from note");
     });
+
+    it("round-trips inbox captures through export and restore", async () => {
+      const db = await getDb();
+      const sampleCapture: InboxCapture = {
+        id: "cap-1",
+        text: "Read article later",
+        sharedUrl: "https://example.com/read",
+        sourceAppLabel: "Web Share",
+        capturedAt: "2026-10-25T10:00:00.000Z",
+        state: "pending",
+        targetType: null,
+        targetId: null,
+        processedAt: null,
+        discardedAt: null,
+        createdAt: "2026-10-25T10:00:00.000Z",
+        updatedAt: "2026-10-25T10:00:00.000Z",
+      };
+
+      await db.put("inbox_captures", sampleCapture);
+
+      const exported = await exportDatabaseBackup();
+      expect(exported.payload.data.inboxCaptures).toHaveLength(1);
+      expect(exported.payload.data.inboxCaptures?.[0].id).toBe("cap-1");
+
+      await db.clear("inbox_captures");
+      expect(await db.getAll("inbox_captures")).toHaveLength(0);
+
+      const restoreResult = await restoreDatabaseBackup(exported.payload, "replace");
+      expect(restoreResult.capturesCount).toBe(1);
+
+      const restored = await db.get("inbox_captures", "cap-1");
+      expect(restored).toEqual(sampleCapture);
+    });
   });
 });
+
 

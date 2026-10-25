@@ -438,3 +438,74 @@ export function validateNotePatch(patch: NotePatch): ValidationResult<ValidNoteP
 
   return { ok: true, value };
 }
+
+export const CAPTURE_TEXT_MAX_LENGTH = 20000;
+export const CAPTURE_SOURCE_MAX_LENGTH = 100;
+
+export type CaptureField = "text" | "sharedUrl" | "sourceAppLabel" | "state";
+
+export function extractFirstUrl(text: string): string | null {
+  const match = text.match(/https?:\/\/[^\s]+/i);
+  return match ? match[0] : null;
+}
+
+export function isValidHttpUrl(candidate: string): boolean {
+  try {
+    const url = new URL(candidate);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+export function validateCaptureInput(
+  input: { text?: string; sharedUrl?: string | null; sourceAppLabel?: string | null }
+): ValidationResult<
+  { text: string; sharedUrl: string | null; sourceAppLabel: string | null },
+  CaptureField
+> {
+  if (typeof input !== "object" || input === null) {
+    return { ok: false, error: "Invalid capture input.", field: "text" };
+  }
+  const text = (input.text ?? "").trim();
+  if (!text) {
+    return { ok: false, error: "Capture content cannot be empty.", field: "text" };
+  }
+  if (text.length > CAPTURE_TEXT_MAX_LENGTH) {
+    return {
+      ok: false,
+      error: `Capture text must be ${CAPTURE_TEXT_MAX_LENGTH} characters or fewer.`,
+      field: "text",
+    };
+  }
+
+  let sharedUrl = input.sharedUrl ? input.sharedUrl.trim() : null;
+  if (!sharedUrl) {
+    sharedUrl = extractFirstUrl(text);
+  } else if (!isValidHttpUrl(sharedUrl)) {
+    return {
+      ok: false,
+      error: "Shared URL must be a valid http or https URL.",
+      field: "sharedUrl",
+    };
+  }
+
+  const sourceAppLabel = input.sourceAppLabel ? input.sourceAppLabel.trim() : null;
+  if (sourceAppLabel && sourceAppLabel.length > CAPTURE_SOURCE_MAX_LENGTH) {
+    return {
+      ok: false,
+      error: `Source label must be ${CAPTURE_SOURCE_MAX_LENGTH} characters or fewer.`,
+      field: "sourceAppLabel",
+    };
+  }
+
+  return {
+    ok: true,
+    value: {
+      text,
+      sharedUrl,
+      sourceAppLabel,
+    },
+  };
+}
+

@@ -110,7 +110,7 @@ The Blueprint overlay, `AGENTS.md`, and onboarding setup are already present.
 - [x] 27. **Actionable notes** - create tasks or follow-ups from selected note
   content while preserving source links, context snapshots, backlinks, and
   usable actions when the source note changes or is deleted.
-- [ ] 28. **Extremely fast capture inbox** - add offline minimal capture for text
+- [x] 28. **Extremely fast capture inbox** - add offline minimal capture for text
   and links, a web keyboard shortcut, compact capture interface, installed-PWA
   share handling where supported, and idempotent processing into tasks, notes,
   or follow-ups.

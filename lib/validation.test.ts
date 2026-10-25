@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  CAPTURE_TEXT_MAX_LENGTH,
   DESCRIPTION_MAX_LENGTH,
   NOTE_BODY_MAX_LENGTH,
   NOTE_TITLE_MAX_LENGTH,
   TITLE_MAX_LENGTH,
+  validateCaptureInput,
   validateNoteInput,
   validateNotePatch,
   validateTaskInput,
@@ -543,3 +545,71 @@ describe("validateNotePatch", () => {
     });
   });
 });
+
+describe("validateCaptureInput", () => {
+  it("accepts valid text and trims whitespace", () => {
+    const result = validateCaptureInput({
+      text: "   Remember to check server logs   ",
+    });
+    expect(result).toEqual({
+      ok: true,
+      value: {
+        text: "Remember to check server logs",
+        sharedUrl: null,
+        sourceAppLabel: null,
+      },
+    });
+  });
+
+  it("extracts URL automatically from text when sharedUrl is omitted", () => {
+    const result = validateCaptureInput({
+      text: "Interesting article https://example.com/post about engineering",
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.sharedUrl).toBe("https://example.com/post");
+    }
+  });
+
+  it("accepts explicit sharedUrl and sourceAppLabel", () => {
+    const result = validateCaptureInput({
+      text: "Product design inspiration",
+      sharedUrl: "https://dribbble.com",
+      sourceAppLabel: "Web Share",
+    });
+    expect(result).toEqual({
+      ok: true,
+      value: {
+        text: "Product design inspiration",
+        sharedUrl: "https://dribbble.com",
+        sourceAppLabel: "Web Share",
+      },
+    });
+  });
+
+  it("rejects empty text", () => {
+    expect(validateCaptureInput({ text: "   " })).toEqual({
+      ok: false,
+      error: "Capture content cannot be empty.",
+      field: "text",
+    });
+  });
+
+  it("rejects text exceeding max length", () => {
+    const longText = "a".repeat(CAPTURE_TEXT_MAX_LENGTH + 1);
+    expect(validateCaptureInput({ text: longText })).toEqual({
+      ok: false,
+      error: `Capture text must be ${CAPTURE_TEXT_MAX_LENGTH} characters or fewer.`,
+      field: "text",
+    });
+  });
+
+  it("rejects invalid http url", () => {
+    expect(validateCaptureInput({ text: "Hello", sharedUrl: "ftp://files.example.com" })).toEqual({
+      ok: false,
+      error: "Shared URL must be a valid http or https URL.",
+      field: "sharedUrl",
+    });
+  });
+});
+

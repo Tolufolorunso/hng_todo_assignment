@@ -20,13 +20,14 @@ describe("getDb", () => {
     expect(db.version).toBe(DB_VERSION);
   });
 
-  it("creates the tasks, notes, followups, followup_occurrences, and daily_plans object stores", async () => {
+  it("creates the tasks, notes, followups, followup_occurrences, daily_plans, and inbox_captures object stores", async () => {
     const db = await getDb();
     expect(db.objectStoreNames.contains("tasks")).toBe(true);
     expect(db.objectStoreNames.contains("notes")).toBe(true);
     expect(db.objectStoreNames.contains("followups")).toBe(true);
     expect(db.objectStoreNames.contains("followup_occurrences")).toBe(true);
     expect(db.objectStoreNames.contains("daily_plans")).toBe(true);
+    expect(db.objectStoreNames.contains("inbox_captures")).toBe(true);
   });
 
   it("creates the updatedAt index on both stores", async () => {
@@ -34,6 +35,15 @@ describe("getDb", () => {
     const tx = db.transaction(["tasks", "notes"]);
     expect(tx.objectStore("tasks").indexNames.contains("updatedAt")).toBe(true);
     expect(tx.objectStore("notes").indexNames.contains("updatedAt")).toBe(true);
+    await tx.done;
+  });
+
+  it("creates the state, capturedAt, and updatedAt indexes on inbox_captures", async () => {
+    const db = await getDb();
+    const tx = db.transaction("inbox_captures");
+    expect(tx.objectStore("inbox_captures").indexNames.contains("state")).toBe(true);
+    expect(tx.objectStore("inbox_captures").indexNames.contains("capturedAt")).toBe(true);
+    expect(tx.objectStore("inbox_captures").indexNames.contains("updatedAt")).toBe(true);
     await tx.done;
   });
 

@@ -4,6 +4,7 @@ import type { Note } from "@/types/note";
 import type { Task, TaskCategory, TaskPriority } from "@/types/task";
 import type { FollowUp, FollowUpOccurrence } from "@/types/followup";
 import type { DailyPlan } from "@/types/plan";
+import type { InboxCapture } from "@/types/inbox";
 
 export interface BackupPayload {
   version: 1;
@@ -15,6 +16,7 @@ export interface BackupPayload {
     followups?: FollowUp[];
     followupOccurrences?: FollowUpOccurrence[];
     dailyPlans?: DailyPlan[];
+    inboxCaptures?: InboxCapture[];
   };
 }
 
@@ -38,6 +40,7 @@ export interface RestoreResult {
   followupsCount?: number;
   occurrencesCount?: number;
   plansCount?: number;
+  capturesCount?: number;
 }
 
 const VALID_PRIORITIES = new Set<TaskPriority>(["low", "medium", "high"]);
@@ -181,12 +184,52 @@ export function isValidDailyPlan(item: unknown): item is DailyPlan {
   return true;
 }
 
+export function isValidInboxCapture(item: unknown): item is InboxCapture {
+  if (typeof item !== "object" || item === null) return false;
+  const candidate = item as Record<string, unknown>;
+
+  if (typeof candidate.id !== "string" || !candidate.id) return false;
+  if (typeof candidate.text !== "string" || !candidate.text.trim()) return false;
+  if (candidate.sharedUrl !== null && typeof candidate.sharedUrl !== "string") return false;
+  if (candidate.sourceAppLabel !== null && typeof candidate.sourceAppLabel !== "string") return false;
+  if (typeof candidate.capturedAt !== "string") return false;
+  if (
+    candidate.state !== "pending" &&
+    candidate.state !== "processed" &&
+    candidate.state !== "discarded"
+  ) {
+    return false;
+  }
+  if (
+    candidate.targetType !== undefined &&
+    candidate.targetType !== null &&
+    candidate.targetType !== "task" &&
+    candidate.targetType !== "note" &&
+    candidate.targetType !== "followup"
+  ) {
+    return false;
+  }
+  if (
+    candidate.targetId !== undefined &&
+    candidate.targetId !== null &&
+    typeof candidate.targetId !== "string"
+  ) {
+    return false;
+  }
+  if (typeof candidate.createdAt !== "string" || typeof candidate.updatedAt !== "string") {
+    return false;
+  }
+
+  return true;
+}
+
 export function buildBackupPayload(
   tasks: Task[],
   notes: Note[],
   followups?: FollowUp[],
   followupOccurrences?: FollowUpOccurrence[],
-  dailyPlans?: DailyPlan[]
+  dailyPlans?: DailyPlan[],
+  inboxCaptures?: InboxCapture[]
 ): BackupPayload {
   return {
     version: 1,
@@ -198,6 +241,7 @@ export function buildBackupPayload(
       followups: followups || [],
       followupOccurrences: followupOccurrences || [],
       dailyPlans: dailyPlans || [],
+      inboxCaptures: inboxCaptures || [],
     },
   };
 }
@@ -311,6 +355,20 @@ export function parseAndValidateBackup(jsonString: string): BackupValidationResu
     }
   }
 
+  if (data.inboxCaptures !== undefined) {
+    if (!Array.isArray(data.inboxCaptures)) {
+      return { ok: false, error: "Backup inbox captures list is malformed." };
+    }
+    for (let i = 0; i < data.inboxCaptures.length; i++) {
+      if (!isValidInboxCapture(data.inboxCaptures[i])) {
+        return {
+          ok: false,
+          error: `Inbox capture at position ${i + 1} is corrupted or missing required fields.`,
+        };
+      }
+    }
+  }
+
   return { ok: true, value: parsed as BackupPayload };
 }
 
@@ -325,8 +383,16 @@ export async function exportDatabaseBackup(): Promise<{
   const followups = await db.getAll("followups");
   const followupOccurrences = await db.getAll("followup_occurrences");
   const dailyPlans = await db.getAll("daily_plans");
+  const inboxCaptures = await db.getAll("inbox_captures");
 
-  const payload = buildBackupPayload(tasks, notes, followups, followupOccurrences, dailyPlans);
+  const payload = buildBackupPayload(
+    tasks,
+    notes,
+    followups,
+    followupOccurrences,
+    dailyPlans,
+    inboxCaptures
+  );
   const jsonString = JSON.stringify(payload, null, 2);
   const filename = generateBackupFilename();
 
@@ -339,7 +405,14 @@ export async function restoreDatabaseBackup(
 ): Promise<RestoreResult> {
   const db = await getDb();
   const tx = db.transaction(
-    ["tasks", "notes", "followups", "followup_occurrences", "daily_plans"],
+    [
+      "tasks",
+      "notes",
+      "followups",
+      "followup_occurrences",
+      "daily_plans",
+      "inbox_captures",
+    ],
     "readwrite"
   );
 
@@ -348,6 +421,7 @@ export async function restoreDatabaseBackup(
   const followupStore = tx.objectStore("followups");
   const occurrenceStore = tx.objectStore("followup_occurrences");
   const dailyPlanStore = tx.objectStore("daily_plans");
+  const captureStore = tx.objectStore("inbox_captures");
 
   if (mode === "replace") {
     await taskStore.clear();
@@ -355,6 +429,7 @@ export async function restoreDatabaseBackup(
     await followupStore.clear();
     await occurrenceStore.clear();
     await dailyPlanStore.clear();
+    await captureStore.clear();
   }
 
   for (const task of payload.data.tasks) {
@@ -389,6 +464,12 @@ export async function restoreDatabaseBackup(
     }
   }
 
+  if (payload.data.inboxCaptures) {
+    for (const capture of payload.data.inboxCaptures) {
+      await captureStore.put(capture);
+    }
+  }
+
   await tx.done;
 
   return {
@@ -397,6 +478,7 @@ export async function restoreDatabaseBackup(
     followupsCount: payload.data.followups?.length ?? 0,
     occurrencesCount: payload.data.followupOccurrences?.length ?? 0,
     plansCount: payload.data.dailyPlans?.length ?? 0,
+    capturesCount: payload.data.inboxCaptures?.length ?? 0,
   };
 }
 

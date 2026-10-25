@@ -3,8 +3,9 @@
 import Link from "next/link";
 
 interface MobileNavBarProps {
-  active?: "tasks" | "notes" | "calendar" | "analytics" | "privacy" | "followups" | "plan";
+  active?: "tasks" | "notes" | "calendar" | "analytics" | "privacy" | "followups" | "plan" | "inbox";
   dueCount?: number;
+  inboxCount?: number;
 }
 
 const MOBILE_NAV_ITEMS = [
@@ -25,6 +26,27 @@ const MOBILE_NAV_ITEMS = [
         aria-hidden="true"
       >
         <path d="M20 6 9 17l-5-5" />
+      </svg>
+    ),
+  },
+  {
+    key: "inbox",
+    href: "/inbox",
+    label: "Inbox",
+    icon: (
+      <svg
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M22 12h-6l-2 3h-4l-2-3H2" />
+        <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
       </svg>
     ),
   },
@@ -138,7 +160,7 @@ const MOBILE_NAV_ITEMS = [
   },
 ];
 
-export default function MobileNavBar({ active, dueCount }: MobileNavBarProps) {
+export default function MobileNavBar({ active, dueCount, inboxCount }: MobileNavBarProps) {
   return (
     <nav
       aria-label="Mobile Bottom Navigation"
@@ -147,7 +169,11 @@ export default function MobileNavBar({ active, dueCount }: MobileNavBarProps) {
       <div className="mx-auto flex max-w-md items-center justify-around px-2 py-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
         {MOBILE_NAV_ITEMS.map((item) => {
           const isActive = active === item.key;
-          const hasDueBadge = item.key === "followups" && Boolean(dueCount && dueCount > 0);
+          const hasBadge =
+            (item.key === "followups" && Boolean(dueCount && dueCount > 0)) ||
+            (item.key === "inbox" && Boolean(inboxCount && inboxCount > 0));
+          const count = item.key === "followups" ? dueCount : inboxCount;
+          const badgeBg = item.key === "followups" ? "bg-rose-500" : "bg-accent";
 
           return (
             <Link
@@ -166,9 +192,11 @@ export default function MobileNavBar({ active, dueCount }: MobileNavBarProps) {
                 }`}
               >
                 {item.icon}
-                {hasDueBadge && (
-                  <span className="absolute -top-1.5 -right-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-bold text-white shadow-xs">
-                    {(dueCount ?? 0) > 9 ? "9+" : dueCount}
+                {hasBadge && (
+                  <span
+                    className={`absolute -top-1.5 -right-2 flex h-4 min-w-4 items-center justify-center rounded-full ${badgeBg} px-1 text-[9px] font-bold text-white shadow-xs`}
+                  >
+                    {(count ?? 0) > 9 ? "9+" : count}
                   </span>
                 )}
               </div>
@@ -182,4 +210,5 @@ export default function MobileNavBar({ active, dueCount }: MobileNavBarProps) {
     </nav>
   );
 }
+
 

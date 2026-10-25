@@ -4,13 +4,15 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import OfflineIndicator from "@/components/app/OfflineIndicator";
 import BackupModal from "@/components/backup/BackupModal";
+import FastCaptureModal from "@/components/inbox/FastCaptureModal";
 import ThemeToggle from "@/components/app/ThemeToggle";
 import TaskFlowLogo from "@/components/brand/TaskFlowLogo";
 import MobileNavBar from "@/components/app/MobileNavBar";
 import { getDueFollowUpsCount } from "@/lib/followups";
+import { getPendingCapturesCount } from "@/lib/inbox";
 
 interface AppHeaderProps {
-  active?: "tasks" | "notes" | "calendar" | "analytics" | "privacy" | "followups" | "plan";
+  active?: "tasks" | "notes" | "calendar" | "analytics" | "privacy" | "followups" | "plan" | "inbox";
 }
 
 const NAV_ITEMS = [
@@ -31,6 +33,27 @@ const NAV_ITEMS = [
         aria-hidden="true"
       >
         <path d="M20 6 9 17l-5-5" />
+      </svg>
+    ),
+  },
+  {
+    key: "inbox",
+    href: "/inbox",
+    label: "Inbox",
+    icon: (
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M22 12h-6l-2 3h-4l-2-3H2" />
+        <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
       </svg>
     ),
   },
@@ -146,7 +169,9 @@ const NAV_ITEMS = [
 
 export default function AppHeader({ active }: AppHeaderProps) {
   const [isBackupOpen, setIsBackupOpen] = useState(false);
+  const [isCaptureOpen, setIsCaptureOpen] = useState(false);
   const [dueFollowUpsCount, setDueFollowUpsCount] = useState<number>(0);
+  const [pendingCapturesCount, setPendingCapturesCount] = useState<number>(0);
 
   useEffect(() => {
     let mounted = true;
@@ -156,9 +181,43 @@ export default function AppHeader({ active }: AppHeaderProps) {
       })
       .catch(() => {});
 
+    getPendingCapturesCount()
+      .then((count) => {
+        if (mounted) setPendingCapturesCount(count);
+      })
+      .catch(() => {});
+
     return () => {
       mounted = false;
     };
+  }, []);
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.altKey && (e.key === "c" || e.key === "C")) {
+        e.preventDefault();
+        setIsCaptureOpen(true);
+        return;
+      }
+
+      if (e.key === "c" && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        const target = e.target as HTMLElement | null;
+        const tagName = target?.tagName?.toLowerCase();
+        if (
+          tagName === "input" ||
+          tagName === "textarea" ||
+          tagName === "select" ||
+          target?.isContentEditable
+        ) {
+          return;
+        }
+        e.preventDefault();
+        setIsCaptureOpen(true);
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
   return (
@@ -186,7 +245,18 @@ export default function AppHeader({ active }: AppHeaderProps) {
           >
             {NAV_ITEMS.map((item) => {
               const isActive = active === item.key;
-              const hasDueBadge = item.key === "followups" && dueFollowUpsCount > 0;
+              const hasBadge =
+                item.key === "followups"
+                  ? dueFollowUpsCount > 0
+                  : item.key === "inbox"
+                  ? pendingCapturesCount > 0
+                  : false;
+              const badgeCount =
+                item.key === "followups" ? dueFollowUpsCount : pendingCapturesCount;
+              const badgeColor =
+                item.key === "followups"
+                  ? "bg-rose-500/20 text-rose-500"
+                  : "bg-accent/20 text-accent";
 
               return (
                 <Link
@@ -203,9 +273,9 @@ export default function AppHeader({ active }: AppHeaderProps) {
                     {item.icon}
                   </span>
                   <span>{item.label}</span>
-                  {hasDueBadge && (
-                    <span className="rounded-full bg-rose-500/20 px-1.5 py-0.2 text-[10px] font-bold text-rose-500">
-                      {dueFollowUpsCount}
+                  {hasBadge && (
+                    <span className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${badgeColor}`}>
+                      {badgeCount}
                     </span>
                   )}
                 </Link>
@@ -215,6 +285,32 @@ export default function AppHeader({ active }: AppHeaderProps) {
 
           {/* Header Right Utilities */}
           <div className="flex items-center gap-2 sm:gap-2.5">
+            <button
+              type="button"
+              onClick={() => setIsCaptureOpen(true)}
+              title="Quick Capture (Alt+C)"
+              aria-label="Quick Capture (Alt+C)"
+              className="flex items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-2.5 py-1.5 text-xs font-semibold text-accent shadow-sm transition-all hover:bg-accent/20 active:scale-95"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              <span className="hidden sm:inline">Capture</span>
+              <kbd className="hidden md:inline rounded bg-accent/20 px-1 py-0.2 font-mono text-[9px] text-accent">
+                Alt+C
+              </kbd>
+            </button>
             <ThemeToggle />
             <button
               type="button"
@@ -247,10 +343,22 @@ export default function AppHeader({ active }: AppHeaderProps) {
           isOpen={isBackupOpen}
           onClose={() => setIsBackupOpen(false)}
         />
+
+        {isCaptureOpen && (
+          <FastCaptureModal
+            isOpen={isCaptureOpen}
+            onClose={() => setIsCaptureOpen(false)}
+            onCaptured={() => setPendingCapturesCount((c) => c + 1)}
+          />
+        )}
       </header>
 
       {/* Mobile Bottom Navigation Bar */}
-      <MobileNavBar active={active} dueCount={dueFollowUpsCount} />
+      <MobileNavBar
+        active={active}
+        dueCount={dueFollowUpsCount}
+        inboxCount={pendingCapturesCount}
+      />
     </>
   );
 }
