@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import ActionCreationModal from "@/components/notes/ActionCreationModal";
+import NoteBacklinks from "@/components/notes/NoteBacklinks";
 import { calculateReadingStats, stripHtmlToText } from "@/lib/html";
 import { getNote } from "@/lib/notes";
 import type { Note } from "@/types/note";
@@ -31,6 +33,15 @@ export default function StandaloneNoteView({ id }: StandaloneNoteViewProps) {
   const [note, setNote] = useState<Note | null>(null);
   const [status, setStatus] = useState<Status>("loading");
   const [copied, setCopied] = useState(false);
+  const [actionModalOpen, setActionModalOpen] = useState(false);
+  const [actionExcerpt, setActionExcerpt] = useState("");
+  const [refreshSignal, setRefreshSignal] = useState(0);
+
+  function handleOpenActionModal() {
+    const selection = typeof window !== "undefined" ? window.getSelection()?.toString().trim() : "";
+    setActionExcerpt(selection || (note?.body ? stripHtmlToText(note.body).slice(0, 300) : ""));
+    setActionModalOpen(true);
+  }
 
   useEffect(() => {
     let active = true;
@@ -258,6 +269,29 @@ export default function StandaloneNoteView({ id }: StandaloneNoteViewProps) {
             <span>Print / PDF</span>
           </button>
 
+          {/* Create Action */}
+          <button
+            type="button"
+            onClick={handleOpenActionModal}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-accent/40 bg-accent/10 px-3 py-2 text-xs font-semibold text-accent shadow-xs transition-all hover:bg-accent hover:text-accent-foreground active:scale-95"
+            title="Create Task or Follow Up from note"
+          >
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            <span>Create Action</span>
+          </button>
+
           {/* Edit Note */}
           <Link
             href={`/notes?id=${encodeURIComponent(note.id)}`}
@@ -347,6 +381,25 @@ export default function StandaloneNoteView({ id }: StandaloneNoteViewProps) {
           )}
         </section>
       </article>
+
+      {/* Note Backlinks (Linked Actions) */}
+      <section aria-label="Linked actions" className="print:hidden">
+        <NoteBacklinks
+          noteId={note.id}
+          refreshSignal={refreshSignal}
+          onActionToggled={() => setRefreshSignal((s) => s + 1)}
+        />
+      </section>
+
+      {actionModalOpen && (
+        <ActionCreationModal
+          onClose={() => setActionModalOpen(false)}
+          noteId={note.id}
+          noteTitle={note.title}
+          initialExcerpt={actionExcerpt}
+          onActionCreated={() => setRefreshSignal((s) => s + 1)}
+        />
+      )}
     </main>
   );
 }

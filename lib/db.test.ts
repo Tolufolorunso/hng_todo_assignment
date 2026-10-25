@@ -37,13 +37,24 @@ describe("getDb", () => {
     await tx.done;
   });
 
-  it("creates the dueDate, updatedAt, and category indexes on tasks", async () => {
+  it("creates the dueDate, updatedAt, category, and sourceNoteId indexes on tasks", async () => {
     const db = await getDb();
     const tx = db.transaction("tasks");
     expect(tx.objectStore("tasks").indexNames.contains("dueDate")).toBe(true);
     expect(tx.objectStore("tasks").indexNames.contains("updatedAt")).toBe(true);
     expect(tx.objectStore("tasks").indexNames.contains("category")).toBe(true);
+    expect(tx.objectStore("tasks").indexNames.contains("sourceNoteId")).toBe(true);
     expect((tx.objectStore("tasks").indexNames as unknown as DOMStringList).contains("completed")).toBe(false);
+    await tx.done;
+  });
+
+  it("creates the dueAt, status, updatedAt, and sourceNoteId indexes on followups", async () => {
+    const db = await getDb();
+    const tx = db.transaction("followups");
+    expect(tx.objectStore("followups").indexNames.contains("dueAt")).toBe(true);
+    expect(tx.objectStore("followups").indexNames.contains("status")).toBe(true);
+    expect(tx.objectStore("followups").indexNames.contains("updatedAt")).toBe(true);
+    expect(tx.objectStore("followups").indexNames.contains("sourceNoteId")).toBe(true);
     await tx.done;
   });
 

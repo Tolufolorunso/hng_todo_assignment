@@ -23,6 +23,8 @@ export type TaskField =
   | "dueDate"
   | "category"
   | "estimatedMinutes"
+  | "sourceNoteId"
+  | "sourceExcerpt"
   | "order";
 
 export type NoteField = "title" | "body";
@@ -33,6 +35,7 @@ export type ValidationResult<T, F extends string = string> =
 
 export const ESTIMATED_MINUTES_MIN = 1;
 export const ESTIMATED_MINUTES_MAX = 1440;
+export const SOURCE_EXCERPT_MAX_LENGTH = 2000;
 
 export interface TaskInput {
   title: string;
@@ -41,6 +44,8 @@ export interface TaskInput {
   dueDate?: string | null;
   category?: TaskCategory | null;
   estimatedMinutes?: number | null;
+  sourceNoteId?: string | null;
+  sourceExcerpt?: string | null;
   order?: number;
 }
 
@@ -51,6 +56,8 @@ export interface ValidTaskInput {
   dueDate: string | null;
   category: TaskCategory | null;
   estimatedMinutes?: number | null;
+  sourceNoteId?: string | null;
+  sourceExcerpt?: string | null;
   order?: number;
 }
 
@@ -62,6 +69,8 @@ export interface TaskPatch {
   dueDate?: string | null;
   category?: TaskCategory | null;
   estimatedMinutes?: number | null;
+  sourceNoteId?: string | null;
+  sourceExcerpt?: string | null;
   order?: number;
 }
 
@@ -73,6 +82,8 @@ export interface ValidTaskPatch {
   dueDate?: string | null;
   category?: TaskCategory | null;
   estimatedMinutes?: number | null;
+  sourceNoteId?: string | null;
+  sourceExcerpt?: string | null;
   order?: number;
 }
 
@@ -177,6 +188,35 @@ function validateEstimatedMinutes(
   return { ok: true, value: raw };
 }
 
+function validateSourceNoteId(raw: unknown): ValidationResult<string | null, TaskField> {
+  if (raw === undefined || raw === null) {
+    return { ok: true, value: null };
+  }
+  if (typeof raw !== "string") {
+    return { ok: false, error: "Source note ID must be a string.", field: "sourceNoteId" };
+  }
+  const trimmed = raw.trim();
+  return { ok: true, value: trimmed.length > 0 ? trimmed : null };
+}
+
+function validateSourceExcerpt(raw: unknown): ValidationResult<string | null, TaskField> {
+  if (raw === undefined || raw === null) {
+    return { ok: true, value: null };
+  }
+  if (typeof raw !== "string") {
+    return { ok: false, error: "Source excerpt must be a string.", field: "sourceExcerpt" };
+  }
+  const trimmed = raw.trim();
+  if (trimmed.length > SOURCE_EXCERPT_MAX_LENGTH) {
+    return {
+      ok: false,
+      error: `Source excerpt must be ${SOURCE_EXCERPT_MAX_LENGTH} characters or fewer.`,
+      field: "sourceExcerpt",
+    };
+  }
+  return { ok: true, value: trimmed.length > 0 ? trimmed : null };
+}
+
 export function validateTaskInput(input: TaskInput): ValidationResult<ValidTaskInput, TaskField> {
   const title = validateTitle(input.title);
   if (!title.ok) {
@@ -202,6 +242,14 @@ export function validateTaskInput(input: TaskInput): ValidationResult<ValidTaskI
   if (!estimatedMinutes.ok) {
     return estimatedMinutes;
   }
+  const sourceNoteId = validateSourceNoteId(input.sourceNoteId);
+  if (!sourceNoteId.ok) {
+    return sourceNoteId;
+  }
+  const sourceExcerpt = validateSourceExcerpt(input.sourceExcerpt);
+  if (!sourceExcerpt.ok) {
+    return sourceExcerpt;
+  }
   if (input.order !== undefined) {
     if (typeof input.order !== "number" || !Number.isFinite(input.order)) {
       return { ok: false, error: "Order must be a valid number.", field: "order" };
@@ -216,6 +264,8 @@ export function validateTaskInput(input: TaskInput): ValidationResult<ValidTaskI
       dueDate: dueDate.value,
       category: category.value,
       ...(input.estimatedMinutes !== undefined ? { estimatedMinutes: estimatedMinutes.value } : {}),
+      ...(input.sourceNoteId !== undefined ? { sourceNoteId: sourceNoteId.value } : {}),
+      ...(input.sourceExcerpt !== undefined ? { sourceExcerpt: sourceExcerpt.value } : {}),
       ...(input.order !== undefined ? { order: input.order } : {}),
     },
   };
@@ -277,6 +327,22 @@ export function validateTaskPatch(patch: TaskPatch): ValidationResult<ValidTaskP
       return estimatedMinutes;
     }
     value.estimatedMinutes = estimatedMinutes.value;
+  }
+
+  if (patch.sourceNoteId !== undefined) {
+    const sourceNoteId = validateSourceNoteId(patch.sourceNoteId);
+    if (!sourceNoteId.ok) {
+      return sourceNoteId;
+    }
+    value.sourceNoteId = sourceNoteId.value;
+  }
+
+  if (patch.sourceExcerpt !== undefined) {
+    const sourceExcerpt = validateSourceExcerpt(patch.sourceExcerpt);
+    if (!sourceExcerpt.ok) {
+      return sourceExcerpt;
+    }
+    value.sourceExcerpt = sourceExcerpt.value;
   }
 
   if (patch.order !== undefined) {

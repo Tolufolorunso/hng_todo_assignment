@@ -87,6 +87,22 @@ export function isValidTask(item: unknown): item is Task {
     return false;
   }
 
+  if (
+    candidate.sourceNoteId !== undefined &&
+    candidate.sourceNoteId !== null &&
+    typeof candidate.sourceNoteId !== "string"
+  ) {
+    return false;
+  }
+
+  if (
+    candidate.sourceExcerpt !== undefined &&
+    candidate.sourceExcerpt !== null &&
+    typeof candidate.sourceExcerpt !== "string"
+  ) {
+    return false;
+  }
+
   return true;
 }
 

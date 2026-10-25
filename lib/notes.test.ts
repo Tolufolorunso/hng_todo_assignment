@@ -7,6 +7,7 @@ import {
   deleteNote,
   filterNotes,
   getNote,
+  getNoteBacklinks,
   listNotes,
   updateNote,
 } from "@/lib/notes";
@@ -178,5 +179,73 @@ describe("filterNotes", () => {
 
   it("returns an empty array when nothing matches", () => {
     expect(filterNotes(notes, "budget")).toEqual([]);
+  });
+});
+
+describe("getNoteBacklinks", () => {
+  it("returns empty arrays for a note with no linked actions", async () => {
+    const backlinks = await getNoteBacklinks("empty-note");
+    expect(backlinks).toEqual({ tasks: [], followups: [] });
+  });
+
+  it("retrieves linked tasks and follow-ups matching sourceNoteId", async () => {
+    const note = await createNote({ title: "Project Spec", body: "Requirements" });
+    const otherNote = await createNote({ title: "Other Note", body: "Other" });
+
+    // Tasks
+    const { createTask } = await import("@/lib/tasks");
+    const task1 = await createTask({
+      title: "Action Item 1",
+      sourceNoteId: note.id,
+      sourceExcerpt: "Excerpt 1",
+    });
+    vi.setSystemTime(new Date("2026-01-01T00:00:10.000Z"));
+    const task2 = await createTask({
+      title: "Action Item 2",
+      sourceNoteId: note.id,
+      sourceExcerpt: "Excerpt 2",
+    });
+    await createTask({
+      title: "Unrelated Task",
+      sourceNoteId: otherNote.id,
+    });
+
+    // FollowUp
+    const { createFollowUp } = await import("@/lib/followups");
+    const followUp1 = await createFollowUp({
+      personName: "Alice",
+      commitment: "Review architecture",
+      dueAt: "2026-01-05T10:00:00.000Z",
+      sourceNoteId: note.id,
+      sourceExcerpt: "Alice will review",
+    });
+    await createFollowUp({
+      personName: "Bob",
+      commitment: "Deploy server",
+      dueAt: "2026-01-06T10:00:00.000Z",
+      sourceNoteId: otherNote.id,
+    });
+
+    const backlinks = await getNoteBacklinks(note.id);
+    expect(backlinks.tasks.map((t) => t.id)).toEqual([task2.id, task1.id]);
+    expect(backlinks.followups.map((f) => f.id)).toEqual([followUp1.id]);
+  });
+
+  it("still retrieves backlinks even if the note was deleted", async () => {
+    const note = await createNote({ title: "Temporary Note", body: "Ephemeral" });
+    const { createTask } = await import("@/lib/tasks");
+    const task = await createTask({
+      title: "Survivor Task",
+      sourceNoteId: note.id,
+      sourceExcerpt: "Context preserved",
+    });
+
+    await deleteNote(note.id);
+    expect(await getNote(note.id)).toBeUndefined();
+
+    const backlinks = await getNoteBacklinks(note.id);
+    expect(backlinks.tasks.length).toBe(1);
+    expect(backlinks.tasks[0].id).toBe(task.id);
+    expect(backlinks.tasks[0].sourceExcerpt).toBe("Context preserved");
   });
 });

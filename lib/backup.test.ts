@@ -332,6 +332,30 @@ describe("backup and restore logic", () => {
       const restoredPlan = await db.get("daily_plans", "plan-1");
       expect(restoredPlan).toEqual(samplePlan);
     });
+
+    it("round-trips tasks with sourceNoteId and sourceExcerpt through export and restore", async () => {
+      const db = await getDb();
+      const taskWithSource = mockTask({
+        id: "task-linked",
+        title: "Linked Task",
+        sourceNoteId: "note-123",
+        sourceExcerpt: "Snippet from note",
+      });
+
+      await db.put("tasks", taskWithSource);
+
+      const exported = await exportDatabaseBackup();
+      const exportedTask = exported.payload.data.tasks.find((t) => t.id === "task-linked");
+      expect(exportedTask?.sourceNoteId).toBe("note-123");
+      expect(exportedTask?.sourceExcerpt).toBe("Snippet from note");
+
+      await db.clear("tasks");
+      await restoreDatabaseBackup(exported.payload, "replace");
+
+      const restored = await db.get("tasks", "task-linked");
+      expect(restored?.sourceNoteId).toBe("note-123");
+      expect(restored?.sourceExcerpt).toBe("Snippet from note");
+    });
   });
 });
 

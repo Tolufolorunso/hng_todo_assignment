@@ -2,6 +2,9 @@
 
 import { useRef, useState } from "react";
 import WysiwygEditor from "@/components/notes/WysiwygEditor";
+import ActionCreationModal from "@/components/notes/ActionCreationModal";
+import NoteBacklinks from "@/components/notes/NoteBacklinks";
+import { stripHtmlToText } from "@/lib/html";
 import {
   NOTE_BODY_MAX_LENGTH,
   NOTE_TITLE_MAX_LENGTH,
@@ -38,7 +41,16 @@ export default function NoteEditor({
   const [saving, setSaving] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [actionModalOpen, setActionModalOpen] = useState(false);
+  const [actionExcerpt, setActionExcerpt] = useState("");
+  const [refreshSignal, setRefreshSignal] = useState(0);
   const titleRef = useRef<HTMLInputElement>(null);
+
+  function handleOpenActionModal() {
+    const selection = typeof window !== "undefined" ? window.getSelection()?.toString().trim() : "";
+    setActionExcerpt(selection || (body ? stripHtmlToText(body).slice(0, 300) : ""));
+    setActionModalOpen(true);
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -156,14 +168,25 @@ export default function NoteEditor({
               </span>
               <div className="flex items-center gap-2">
                 {note !== null && (
-                  <button
-                    type="button"
-                    onClick={() => setConfirming(true)}
-                    disabled={disabled}
-                    className="rounded-xl border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-danger shadow-sm transition-all hover:border-danger/40 hover:bg-danger-soft disabled:opacity-60"
-                  >
-                    Delete
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleOpenActionModal}
+                      disabled={disabled}
+                      className="rounded-xl border border-accent/40 bg-accent/10 px-3 py-1.5 text-xs font-semibold text-accent shadow-xs transition-all hover:bg-accent hover:text-accent-foreground active:scale-95"
+                      title="Create a Task or Follow Up from this note"
+                    >
+                      + Action
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirming(true)}
+                      disabled={disabled}
+                      className="rounded-xl border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-danger shadow-sm transition-all hover:border-danger/40 hover:bg-danger-soft disabled:opacity-60"
+                    >
+                      Delete
+                    </button>
+                  </>
                 )}
                 <button
                   type="submit"
@@ -177,6 +200,28 @@ export default function NoteEditor({
           )}
         </div>
       </form>
+
+      {note !== null && (
+        <>
+          <div className="border-t border-border/70 p-6 pt-4">
+            <NoteBacklinks
+              noteId={note.id}
+              refreshSignal={refreshSignal}
+              onActionToggled={() => setRefreshSignal((s) => s + 1)}
+            />
+          </div>
+
+          {actionModalOpen && (
+            <ActionCreationModal
+              onClose={() => setActionModalOpen(false)}
+              noteId={note.id}
+              noteTitle={title || note.title}
+              initialExcerpt={actionExcerpt}
+              onActionCreated={() => setRefreshSignal((s) => s + 1)}
+            />
+          )}
+        </>
+      )}
     </section>
   );
 }

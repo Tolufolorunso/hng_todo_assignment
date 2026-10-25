@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import TaskEditForm from "@/components/tasks/TaskEditForm";
 import { isOverdue } from "@/lib/tasks";
 import { stripHtmlToText } from "@/lib/html";
@@ -350,7 +351,28 @@ export default function TaskItem({
                 {formatDue(task.dueDate)}
               </span>
             ))}
+
+          {/* Source Note badge */}
+          {task.sourceNoteId && (
+            <Link
+              href={`/notes?id=${encodeURIComponent(task.sourceNoteId)}`}
+              className="inline-flex items-center gap-1 rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-[10px] font-semibold text-accent hover:border-accent/50 hover:bg-accent/20 transition-colors"
+              title={task.sourceExcerpt ? `From note: "${task.sourceExcerpt}"` : "View source note"}
+            >
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+              </svg>
+              <span>From note</span>
+            </Link>
+          )}
         </div>
+
+        {task.sourceExcerpt && (
+          <p className="mt-1.5 text-[11px] text-muted italic line-clamp-1 border-l-2 border-accent/40 pl-2">
+            &ldquo;{task.sourceExcerpt}&rdquo;
+          </p>
+        )}
       </div>
 
       {/* Row Actions */}

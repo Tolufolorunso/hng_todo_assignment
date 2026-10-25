@@ -5,7 +5,7 @@ import type { FollowUp, FollowUpOccurrence } from "@/types/followup";
 import type { DailyPlan } from "@/types/plan";
 
 export const DB_NAME = "taskflow";
-export const DB_VERSION = 6;
+export const DB_VERSION = 7;
 
 export interface TaskFlowDB extends DBSchema {
   tasks: {
@@ -15,6 +15,7 @@ export interface TaskFlowDB extends DBSchema {
       dueDate: string;
       updatedAt: string;
       category: string;
+      sourceNoteId: string;
     };
   };
   notes: {
@@ -29,6 +30,7 @@ export interface TaskFlowDB extends DBSchema {
       dueAt: string;
       status: string;
       updatedAt: string;
+      sourceNoteId: string;
     };
   };
   followup_occurrences: {
@@ -128,6 +130,19 @@ export function getDb(): Promise<IDBPDatabase<TaskFlowDB>> {
             const dailyPlans = db.createObjectStore("daily_plans", { keyPath: "id" });
             dailyPlans.createIndex("date", "date");
             dailyPlans.createIndex("updatedAt", "updatedAt");
+          }
+        }
+
+        if (oldVersion < 7) {
+          const tasks = transaction.objectStore("tasks");
+          if (!tasks.indexNames.contains("sourceNoteId")) {
+            tasks.createIndex("sourceNoteId", "sourceNoteId");
+          }
+          if (db.objectStoreNames.contains("followups")) {
+            const followups = transaction.objectStore("followups");
+            if (!followups.indexNames.contains("sourceNoteId")) {
+              followups.createIndex("sourceNoteId", "sourceNoteId");
+            }
           }
         }
       },

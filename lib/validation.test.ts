@@ -231,12 +231,80 @@ describe("validateTaskInput", () => {
     const errFloat = validateTaskInput({ title: "Task", estimatedMinutes: 15.5 });
     expect(errFloat.ok).toBe(false);
   });
+
+  it("accepts valid sourceNoteId and sourceExcerpt", () => {
+    const res = validateTaskInput({
+      title: "Task",
+      sourceNoteId: " note-123 ",
+      sourceExcerpt: " Quote from note ",
+    });
+    expect(res.ok).toBe(true);
+    if (res.ok) {
+      expect(res.value.sourceNoteId).toBe("note-123");
+      expect(res.value.sourceExcerpt).toBe("Quote from note");
+    }
+  });
+
+  it("normalizes empty sourceNoteId and sourceExcerpt to null", () => {
+    const res = validateTaskInput({
+      title: "Task",
+      sourceNoteId: "   ",
+      sourceExcerpt: "",
+    });
+    expect(res.ok).toBe(true);
+    if (res.ok) {
+      expect(res.value.sourceNoteId).toBeNull();
+      expect(res.value.sourceExcerpt).toBeNull();
+    }
+  });
+
+  it("rejects non-string sourceNoteId or sourceExcerpt", () => {
+    const errId = validateTaskInput({ title: "Task", sourceNoteId: 123 as never });
+    expect(errId).toEqual({
+      ok: false,
+      error: "Source note ID must be a string.",
+      field: "sourceNoteId",
+    });
+
+    const errExcerpt = validateTaskInput({ title: "Task", sourceExcerpt: { foo: "bar" } as never });
+    expect(errExcerpt).toEqual({
+      ok: false,
+      error: "Source excerpt must be a string.",
+      field: "sourceExcerpt",
+    });
+  });
+
+  it("rejects sourceExcerpt exceeding max length", () => {
+    const errLong = validateTaskInput({
+      title: "Task",
+      sourceExcerpt: "x".repeat(2001),
+    });
+    expect(errLong).toEqual({
+      ok: false,
+      error: "Source excerpt must be 2000 characters or fewer.",
+      field: "sourceExcerpt",
+    });
+  });
 });
 
 describe("validateTaskPatch", () => {
   it("returns an empty patch for an empty input", () => {
     const result = validateTaskPatch({});
     expect(result).toEqual({ ok: true, value: {} });
+  });
+
+  it("accepts valid sourceNoteId and sourceExcerpt in patch", () => {
+    const res = validateTaskPatch({
+      sourceNoteId: "note-456",
+      sourceExcerpt: "Excerpt text",
+    });
+    expect(res).toEqual({
+      ok: true,
+      value: {
+        sourceNoteId: "note-456",
+        sourceExcerpt: "Excerpt text",
+      },
+    });
   });
 
   it("normalizes a provided title and description", () => {

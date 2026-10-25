@@ -71,6 +71,20 @@ describe("createTask", () => {
     await expect(createTask({ title: "   " })).rejects.toBeInstanceOf(TaskValidationError);
     expect(await listTasks()).toEqual([]);
   });
+
+  it("persists sourceNoteId and sourceExcerpt when provided", async () => {
+    const task = await createTask({
+      title: "Follow up on action item",
+      sourceNoteId: "note-1",
+      sourceExcerpt: "We must follow up on this tomorrow",
+    });
+    expect(task.sourceNoteId).toBe("note-1");
+    expect(task.sourceExcerpt).toBe("We must follow up on this tomorrow");
+
+    const fetched = await getTask(task.id);
+    expect(fetched?.sourceNoteId).toBe("note-1");
+    expect(fetched?.sourceExcerpt).toBe("We must follow up on this tomorrow");
+  });
 });
 
 describe("getTask", () => {

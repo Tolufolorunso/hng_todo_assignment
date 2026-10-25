@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import type { FollowUp } from "@/types/followup";
 import { isFollowUpOverdue } from "@/lib/recurrence";
 import { buildEmailUri, buildWhatsAppUri, buildPhoneUri } from "@/lib/launchers";
@@ -248,6 +249,28 @@ export default function FollowUpCard({
                 Due: {formatDueDate(followUp.dueAt)}
               </span>
             </div>
+
+            {/* Source Note Badge */}
+            {followUp.sourceNoteId && (
+              <div className="flex flex-col gap-1 pt-1.5">
+                <Link
+                  href={`/notes?id=${encodeURIComponent(followUp.sourceNoteId)}`}
+                  className="inline-flex items-center gap-1.5 text-xs text-accent hover:underline font-medium"
+                  title="View source note"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                  </svg>
+                  <span>From note</span>
+                </Link>
+                {followUp.sourceExcerpt && (
+                  <p className="text-[11px] text-muted italic line-clamp-2 border-l-2 border-accent/40 pl-2">
+                    &ldquo;{followUp.sourceExcerpt}&rdquo;
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Communication Action Launchers */}
             <div className="flex flex-wrap items-center gap-2 pt-2">

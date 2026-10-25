@@ -10,6 +10,8 @@ export interface Task {
   dueDate: string | null;
   category: TaskCategory | null;
   estimatedMinutes?: number | null;
+  sourceNoteId?: string | null;
+  sourceExcerpt?: string | null;
   order?: number;
   createdAt: string;
   updatedAt: string;

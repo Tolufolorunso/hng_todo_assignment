@@ -107,7 +107,7 @@ The Blueprint overlay, `AGENTS.md`, and onboarding setup are already present.
 - [x] 26. **Plan My Day** - add optional effort estimates, available-time entry,
   explained capacity-aware recommendations across tasks and due follow-ups,
   user-controlled daily plans, and safe handling of unfinished work.
-- [ ] 27. **Actionable notes** - create tasks or follow-ups from selected note
+- [x] 27. **Actionable notes** - create tasks or follow-ups from selected note
   content while preserving source links, context snapshots, backlinks, and
   usable actions when the source note changes or is deleted.
 - [ ] 28. **Extremely fast capture inbox** - add offline minimal capture for text

@@ -7,6 +7,8 @@ import {
 } from "@/lib/validation";
 import { stripHtmlToText } from "@/lib/html";
 import type { Note } from "@/types/note";
+import type { Task } from "@/types/task";
+import type { FollowUp } from "@/types/followup";
 
 export class NoteValidationError extends Error {
   constructor(message: string) {
@@ -100,4 +102,38 @@ export function filterNotes(notes: Note[], query: string): Note[] {
     const plain = stripHtmlToText(note.body).toLowerCase();
     return plain.includes(needle) || note.body.toLowerCase().includes(needle);
   });
+}
+
+export interface NoteBacklinks {
+  tasks: Task[];
+  followups: FollowUp[];
+}
+
+export async function getNoteBacklinks(noteId: string): Promise<NoteBacklinks> {
+  const db = await getDb();
+  let tasks: Task[] = [];
+  try {
+    tasks = await db.getAllFromIndex("tasks", "sourceNoteId", noteId);
+  } catch {
+    const allTasks = await db.getAll("tasks");
+    tasks = allTasks.filter((t) => t.sourceNoteId === noteId);
+  }
+
+  let followups: FollowUp[] = [];
+  try {
+    followups = await db.getAllFromIndex("followups", "sourceNoteId", noteId);
+  } catch {
+    const allFollowups = await db.getAll("followups");
+    followups = allFollowups.filter((f) => f.sourceNoteId === noteId);
+  }
+
+  tasks.sort((a, b) => {
+    if (a.createdAt !== b.createdAt) {
+      return a.createdAt < b.createdAt ? 1 : -1;
+    }
+    return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+  });
+  followups.sort((a, b) => (a.dueAt < b.dueAt ? -1 : a.dueAt > b.dueAt ? 1 : 0));
+
+  return { tasks, followups };
 }
