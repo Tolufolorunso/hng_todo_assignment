@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import ServiceWorkerRegistrar from "@/components/app/ServiceWorkerRegistrar";
 import AppFooter from "@/components/app/AppFooter";
 import JsonLd from "@/components/app/JsonLd";
+import { AuthProvider } from "@/components/auth/AuthProvider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -123,7 +124,9 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col bg-bg text-text transition-colors duration-150">
         <ServiceWorkerRegistrar />
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
         <AppFooter />
       </body>
     </html>

@@ -8,6 +8,13 @@ import FastCaptureModal from "@/components/inbox/FastCaptureModal";
 import ThemeToggle from "@/components/app/ThemeToggle";
 import TaskFlowLogo from "@/components/brand/TaskFlowLogo";
 import MobileNavBar from "@/components/app/MobileNavBar";
+import AccountModal from "@/components/auth/AccountModal";
+import DataAdoptionModal from "@/components/auth/DataAdoptionModal";
+import SyncStatusIndicator from "@/components/sync/SyncStatusIndicator";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { hasLocalDataToAdopt, getAccountWorkspaceId } from "@/lib/adoption";
+import { setActiveWorkspaceId } from "@/lib/repository";
+import { triggerSyncNow } from "@/lib/sync";
 import { getDueFollowUpsCount } from "@/lib/followups";
 import { getPendingCapturesCount } from "@/lib/inbox";
 
@@ -168,10 +175,30 @@ const NAV_ITEMS = [
 ];
 
 export default function AppHeader({ active }: AppHeaderProps) {
+  const { user, isAuthenticated } = useAuth();
   const [isBackupOpen, setIsBackupOpen] = useState(false);
   const [isCaptureOpen, setIsCaptureOpen] = useState(false);
+  const [isAccountOpen, setIsAccountOpen] = useState(false);
+  const [isAdoptionOpen, setIsAdoptionOpen] = useState(false);
   const [dueFollowUpsCount, setDueFollowUpsCount] = useState<number>(0);
   const [pendingCapturesCount, setPendingCapturesCount] = useState<number>(0);
+
+  async function handleAuthenticated() {
+    if (user) {
+      const hasData = await hasLocalDataToAdopt();
+      if (hasData) {
+        setIsAccountOpen(false);
+        setIsAdoptionOpen(true);
+      } else {
+        const wsId = getAccountWorkspaceId(user.id);
+        setActiveWorkspaceId(wsId);
+        void triggerSyncNow();
+        setIsAccountOpen(false);
+      }
+    } else {
+      setIsAccountOpen(false);
+    }
+  }
 
   useEffect(() => {
     let mounted = true;
@@ -335,7 +362,46 @@ export default function AppHeader({ active }: AppHeaderProps) {
               </svg>
               <span>Data</span>
             </button>
+            <SyncStatusIndicator />
             <OfflineIndicator />
+
+            {/* Account / Sign In */}
+            <button
+              type="button"
+              onClick={() => setIsAccountOpen(true)}
+              aria-label={isAuthenticated ? "Manage Account" : "Sign In"}
+              title={isAuthenticated ? user?.email : "Sign In"}
+              className="flex items-center gap-1.5 rounded-lg border border-border/80 bg-surface px-2.5 py-1.5 text-xs font-semibold text-text shadow-sm transition-all hover:border-border-strong hover:bg-surface-muted active:scale-95"
+            >
+              {isAuthenticated ? (
+                <>
+                  <div className="flex h-4 w-4 items-center justify-center rounded-full bg-accent/20 text-[10px] font-bold text-accent">
+                    {user?.email?.charAt(0).toUpperCase() || "A"}
+                  </div>
+                  <span className="hidden md:inline max-w-[100px] truncate">
+                    {user?.email || "Account"}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
+                  <span>Sign In</span>
+                </>
+              )}
+            </button>
           </div>
         </div>
 
@@ -349,6 +415,20 @@ export default function AppHeader({ active }: AppHeaderProps) {
             isOpen={isCaptureOpen}
             onClose={() => setIsCaptureOpen(false)}
             onCaptured={() => setPendingCapturesCount((c) => c + 1)}
+          />
+        )}
+
+        <AccountModal
+          isOpen={isAccountOpen}
+          onClose={() => setIsAccountOpen(false)}
+          onAuthenticated={handleAuthenticated}
+        />
+
+        {user && (
+          <DataAdoptionModal
+            isOpen={isAdoptionOpen}
+            accountId={user.id}
+            onClose={() => setIsAdoptionOpen(false)}
           />
         )}
       </header>

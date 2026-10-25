@@ -143,7 +143,7 @@ The Blueprint overlay, `AGENTS.md`, and onboarding setup are already present.
   boundaries, migrate existing IndexedDB data into workspace-aware stores, and
   add Follow Up, daily plan, inbox, task order, outbox, cursor, tombstone,
   conflict, backup version 2, and version 1 import behavior.
-- [ ] 35. **Web accounts and synchronization** - add optional sign-in, explicit
+- [x] 35. **Web accounts and synchronization** - add optional sign-in, explicit
   local-data adoption, synchronization states, retries, conflict resolution,
   multi-tab coordination, service-worker API exclusions, and two-browser
   acceptance evidence across the supported product entities.

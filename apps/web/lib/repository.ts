@@ -953,9 +953,21 @@ export async function listOutbox(workspaceId?: string): Promise<OutboxMutationRe
   return db.getAllFromIndex("outbox", "workspaceId", ws);
 }
 
-export async function dequeueOutbox(mutationId: string): Promise<void> {
+export async function dequeueOutbox(
+  mutationIdOrWorkspaceId: string,
+  maybeMutationIds?: string | string[]
+): Promise<void> {
   const db = await getDb();
-  await db.delete("outbox", mutationId);
+  if (maybeMutationIds !== undefined) {
+    const ids = Array.isArray(maybeMutationIds) ? maybeMutationIds : [maybeMutationIds];
+    const tx = db.transaction("outbox", "readwrite");
+    for (const id of ids) {
+      await tx.objectStore("outbox").delete(id);
+    }
+    await tx.done;
+  } else {
+    await db.delete("outbox", mutationIdOrWorkspaceId);
+  }
 }
 
 export async function clearOutbox(workspaceId?: string): Promise<void> {
@@ -977,18 +989,26 @@ export async function getSyncCursor(workspaceId?: string): Promise<number> {
 }
 
 export async function setSyncCursor(
-  workspaceId: string,
-  cursor: number,
+  workspaceIdOrRecord: string | SyncCursorRecord,
+  cursor?: number,
   lastSyncedAt?: string
 ): Promise<void> {
   const db = await getDb();
   const timestamp = now();
-  const record: SyncCursorRecord = {
-    workspaceId,
-    cursor,
-    lastSyncedAt: lastSyncedAt ?? timestamp,
-    updatedAt: timestamp,
-  };
+  let record: SyncCursorRecord;
+  if (typeof workspaceIdOrRecord === "string") {
+    record = {
+      workspaceId: workspaceIdOrRecord,
+      cursor: cursor ?? 0,
+      lastSyncedAt: lastSyncedAt ?? timestamp,
+      updatedAt: timestamp,
+    };
+  } else {
+    record = {
+      ...workspaceIdOrRecord,
+      updatedAt: workspaceIdOrRecord.updatedAt || timestamp,
+    };
+  }
   await db.put("sync_cursors", record);
 }
 
@@ -999,13 +1019,13 @@ export async function listTombstones(workspaceId?: string): Promise<LocalTombsto
 }
 
 export async function recordLocalConflict(
-  input: Omit<LocalConflictRecord, "id" | "detectedAt">
+  input: Omit<LocalConflictRecord, "id" | "detectedAt"> & { id?: string; detectedAt?: string }
 ): Promise<LocalConflictRecord> {
   const db = await getDb();
   const record: LocalConflictRecord = {
     ...input,
-    id: `cnf_${uuid()}`,
-    detectedAt: now(),
+    id: input.id || `cnf_${uuid()}`,
+    detectedAt: input.detectedAt || now(),
   };
   await db.put("conflicts", record);
   return record;
