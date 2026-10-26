@@ -7,6 +7,7 @@ export const FlatList = "FlatList";
 export const SafeAreaView = "SafeAreaView";
 export const StatusBar = "StatusBar";
 export const ActivityIndicator = "ActivityIndicator";
+export const Modal = "Modal";
 export const StyleSheet = {
   create: <T extends Record<string, unknown>>(styles: T): T => styles,
 };
@@ -25,6 +26,7 @@ export default {
   SafeAreaView,
   StatusBar,
   ActivityIndicator,
+  Modal,
   StyleSheet,
   Linking,
 };

@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { InMemorySqliteDatabase } from "../db/driver.js";
 import { runMigrations } from "../db/migrations.js";
 import { AuthService } from "./auth.js";
+import { InMemorySecureStorage } from "./secureStore.js";
 import { TaskRepository } from "../storage/taskRepository.js";
 import { NoteRepository } from "../storage/noteRepository.js";
 import { FollowUpRepository } from "../storage/followUpRepository.js";
@@ -126,6 +127,41 @@ describe("Mobile AuthService", () => {
       expect(state.status).toBe("unauthenticated");
       expect(state.accessToken).toBeNull();
       expect(state.user).toBeNull();
+    });
+
+    it("migrates legacy tokens from preferences into secure storage on initialize", async () => {
+      await db.execute("INSERT INTO preferences (key, value) VALUES (?, ?)", [
+        "auth_access_token",
+        "legacy_access_tok",
+      ]);
+      await db.execute("INSERT INTO preferences (key, value) VALUES (?, ?)", [
+        "auth_refresh_token",
+        "legacy_refresh_tok",
+      ]);
+      await db.execute("INSERT INTO preferences (key, value) VALUES (?, ?)", [
+        "auth_user",
+        JSON.stringify({ id: "legacy_user", email: "legacy@example.com" }),
+      ]);
+
+      const secureStore = new InMemorySecureStorage();
+      const migratingService = new AuthService(db, {
+        baseUrl: "https://api.taskflow.test",
+        secureStorage: secureStore,
+      });
+
+      const state = await migratingService.initialize();
+      expect(state.status).toBe("authenticated");
+      expect(state.accessToken).toBe("legacy_access_tok");
+      expect(state.refreshToken).toBe("legacy_refresh_tok");
+
+      expect(await secureStore.getItem("auth_access_token")).toBe("legacy_access_tok");
+      expect(await secureStore.getItem("auth_refresh_token")).toBe("legacy_refresh_tok");
+
+      const prefAccess = await db.queryFirst<{ value: string }>(
+        "SELECT value FROM preferences WHERE key = ?",
+        ["auth_access_token"]
+      );
+      expect(prefAccess).toBeNull();
     });
   });
 

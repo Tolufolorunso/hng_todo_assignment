@@ -13,15 +13,18 @@ import { NoteRepository } from "../storage/noteRepository.js";
 import { FollowUpRepository } from "../storage/followUpRepository.js";
 import { DailyPlanRepository } from "../storage/dailyPlanRepository.js";
 import { InboxRepository } from "../storage/inboxRepository.js";
+import { type SecureStorageDriver, defaultSecureStorage } from "./secureStore.js";
 
 export interface AuthServiceConfig {
   baseUrl?: string;
   fetchFn?: typeof fetch;
+  secureStorage?: SecureStorageDriver;
 }
 
 export class AuthService {
   private baseUrl: string;
   private fetchFn: typeof fetch;
+  private secureStorage: SecureStorageDriver;
   private listeners: Set<(state: MobileAuthState) => void> = new Set();
   private cachedState: MobileAuthState = {
     user: null,
@@ -37,11 +40,30 @@ export class AuthService {
   ) {
     this.baseUrl = config.baseUrl || "";
     this.fetchFn = config.fetchFn || (typeof fetch !== "undefined" ? fetch.bind(globalThis) : (async () => { throw new Error("fetch unavailable"); }));
+    this.secureStorage = config.secureStorage || defaultSecureStorage;
   }
 
   async initialize(): Promise<MobileAuthState> {
-    const accessToken = await this.getPref("auth_access_token");
-    const refreshToken = await this.getPref("auth_refresh_token");
+    let accessToken = await this.secureStorage.getItem("auth_access_token");
+    let refreshToken = await this.secureStorage.getItem("auth_refresh_token");
+
+    if (!accessToken) {
+      const legacyToken = await this.getPref("auth_access_token");
+      if (legacyToken) {
+        accessToken = legacyToken;
+        await this.secureStorage.setItem("auth_access_token", legacyToken);
+        await this.setPref("auth_access_token", null);
+      }
+    }
+    if (!refreshToken) {
+      const legacyRefresh = await this.getPref("auth_refresh_token");
+      if (legacyRefresh) {
+        refreshToken = legacyRefresh;
+        await this.secureStorage.setItem("auth_refresh_token", legacyRefresh);
+        await this.setPref("auth_refresh_token", null);
+      }
+    }
+
     const userJson = await this.getPref("auth_user");
     const sessionJson = await this.getPref("auth_session");
 
@@ -121,6 +143,8 @@ export class AuthService {
   }
 
   private async clearStoredAuth(): Promise<void> {
+    await this.secureStorage.deleteItem("auth_access_token");
+    await this.secureStorage.deleteItem("auth_refresh_token");
     await this.setPref("auth_access_token", null);
     await this.setPref("auth_refresh_token", null);
     await this.setPref("auth_user", null);
@@ -199,8 +223,12 @@ export class AuthService {
       }
 
       const data = body as unknown as VerifyOtpResponse;
-      await this.setPref("auth_access_token", data.accessToken);
-      await this.setPref("auth_refresh_token", data.refreshToken);
+      await this.secureStorage.setItem("auth_access_token", data.accessToken);
+      if (data.refreshToken) {
+        await this.secureStorage.setItem("auth_refresh_token", data.refreshToken);
+      }
+      await this.setPref("auth_access_token", null);
+      await this.setPref("auth_refresh_token", null);
       await this.setPref("auth_user", JSON.stringify(data.user));
       await this.setPref("auth_session", JSON.stringify(data.session));
 
@@ -220,7 +248,7 @@ export class AuthService {
   }
 
   async refreshSession(): Promise<{ ok: boolean; data?: VerifyOtpResponse; error?: string }> {
-    const refreshToken = this.cachedState.refreshToken || (await this.getPref("auth_refresh_token"));
+    const refreshToken = this.cachedState.refreshToken || (await this.secureStorage.getItem("auth_refresh_token")) || (await this.getPref("auth_refresh_token"));
     if (!refreshToken) {
       await this.clearStoredAuth();
       return { ok: false, error: "No refresh token available" };
@@ -246,9 +274,11 @@ export class AuthService {
       }
 
       const data = body as unknown as VerifyOtpResponse;
-      await this.setPref("auth_access_token", data.accessToken);
+      await this.secureStorage.setItem("auth_access_token", data.accessToken);
+      await this.setPref("auth_access_token", null);
       if (data.refreshToken) {
-        await this.setPref("auth_refresh_token", data.refreshToken);
+        await this.secureStorage.setItem("auth_refresh_token", data.refreshToken);
+        await this.setPref("auth_refresh_token", null);
       }
       if (data.user) {
         await this.setPref("auth_user", JSON.stringify(data.user));

@@ -187,7 +187,7 @@ The Blueprint overlay, `AGENTS.md`, and onboarding setup are already present.
   WhatsApp via native linking), Plan My Day, Actionable Notes, Calendar view,
   Analytics, local closed-app notifications via `expo-notifications`, and native
   dark and light themes.
-- [ ] 43. **React Native cloud synchronization, accounts, and emulator launch** -
+- [x] 43. **React Native cloud synchronization, accounts, and emulator launch** -
   independently implement secure token storage via `expo-secure-store`, passwordless
   email OTP authentication, local data cloud adoption, bidirectional outbox
   synchronization against the backend API, native conflict resolution modal,

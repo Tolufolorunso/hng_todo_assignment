@@ -1,10 +1,21 @@
 import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  ScrollView,
+  Pressable,
+  StyleSheet,
+  ActivityIndicator,
+  Modal,
+} from "react-native";
 import type { AuthService } from "../services/auth.js";
 import type { SyncEngine } from "../services/syncEngine.js";
 import type { SyncRepository } from "../storage/syncRepository.js";
 import type { MobileAuthState, SessionInfo, AdoptionSummary } from "../types/auth.js";
 import type { MobileSyncState, ConflictRecord } from "../types/sync.js";
 import { ConflictModal } from "../components/ConflictModal.js";
+import { TouchButton } from "../components/primitives.js";
 import { useTheme } from "../services/theme.js";
 
 export interface AccountScreenProps {
@@ -33,6 +44,7 @@ export function AccountScreen({
   const [showConflicts, setShowConflicts] = useState(false);
   const [conflicts, setConflicts] = useState<ConflictRecord[]>([]);
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     const unsubAuth = authService.subscribe((state) => {
@@ -58,8 +70,7 @@ export function AccountScreen({
     }
   }, [authState.status, authState.user, authService, syncRepo, syncState.status]);
 
-  const handleSendOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSendOtp = async () => {
     setErrorMessage(null);
     setSuccessMessage(null);
     setIsLoading(true);
@@ -77,8 +88,7 @@ export function AccountScreen({
     }
   };
 
-  const handleVerifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleVerifyOtp = async () => {
     setErrorMessage(null);
     setSuccessMessage(null);
     setIsLoading(true);
@@ -87,7 +97,6 @@ export function AccountScreen({
       const res = await authService.verifyOtp(email, otpCode);
       if (res.ok) {
         setSuccessMessage("Successfully signed in!");
-        // Check if local data exists for adoption
         const summary = await authService.inspectLocalData();
         const totalItems =
           summary.taskCount +
@@ -151,21 +160,15 @@ export function AccountScreen({
   };
 
   const handleDeleteAccount = async () => {
-    if (typeof window !== "undefined") {
-      const confirmed = window.confirm(
-        "Are you sure you want to delete your cloud account? This action cannot be undone."
-      );
-      if (!confirmed) return;
-    }
-
     setIsLoading(true);
+    setShowDeleteConfirm(false);
     try {
       const res = await authService.deleteAccount();
       if (res.ok) {
         setStep("email");
         setEmail("");
         setOtpCode("");
-        setSuccessMessage("Account deleted");
+        setSuccessMessage("Account deleted successfully");
       } else {
         setErrorMessage(res.error || "Failed to delete account");
       }
@@ -186,7 +189,7 @@ export function AccountScreen({
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "syncing":
-        return { text: "Syncing...", bg: "#1e3a8a", color: "#93c5fd" };
+        return { text: "Syncing", bg: "#1e3a8a", color: "#93c5fd" };
       case "conflict":
         return { text: "Conflict", bg: "#7c2d12", color: "#fdba74" };
       case "error":
@@ -198,471 +201,495 @@ export function AccountScreen({
     }
   };
 
+  const badge = getStatusBadge(syncState.status);
+
   return (
-    <div
-      style={{
-        padding: "16px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "20px",
-        maxWidth: "600px",
-        margin: "0 auto",
-        width: "100%",
-      }}
+    <ScrollView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      contentContainerStyle={styles.contentContainer}
+      testID="account-screen"
     >
-      <div>
-        <h1 style={{ fontSize: "24px", fontWeight: "bold", color: colors.textPrimary, margin: "0 0 6px 0" }}>
+      <View style={styles.header}>
+        <Text style={[styles.screenTitle, { color: colors.textPrimary }]}>
           Account & Sync
-        </h1>
-        <p style={{ fontSize: "14px", color: colors.textMuted, margin: 0 }}>
+        </Text>
+        <Text style={[styles.screenSubtitle, { color: colors.textMuted }]}>
           Optional passwordless synchronization across devices
-        </p>
-      </div>
+        </Text>
+      </View>
 
-      {errorMessage && (
-        <div
-          role="alert"
-          style={{
-            padding: "12px 16px",
-            backgroundColor: "#7f1d1d",
-            color: "#fecaca",
-            borderRadius: "8px",
-            fontSize: "14px",
-          }}
+      {errorMessage ? (
+        <View
+          accessibilityRole="alert"
+          style={[styles.bannerAlert, { backgroundColor: "#7f1d1d", borderColor: colors.danger }]}
         >
-          {errorMessage}
-        </div>
-      )}
+          <Text style={[styles.bannerAlertText, { color: "#fecaca" }]}>
+            {errorMessage}
+          </Text>
+        </View>
+      ) : null}
 
-      {successMessage && (
-        <div
-          role="status"
-          style={{
-            padding: "12px 16px",
-            backgroundColor: "#064e3b",
-            color: "#a7f3d0",
-            borderRadius: "8px",
-            fontSize: "14px",
-          }}
+      {successMessage ? (
+        <View
+          accessibilityRole="alert"
+          style={[styles.bannerAlert, { backgroundColor: "#064e3b", borderColor: colors.success }]}
         >
-          {successMessage}
-        </div>
-      )}
+          <Text style={[styles.bannerAlertText, { color: "#a7f3d0" }]}>
+            {successMessage}
+          </Text>
+        </View>
+      ) : null}
 
       {/* Local Data Adoption Prompt */}
-      {adoptionSummary && (
-        <div
-          role="region"
-          aria-label="Local Data Adoption Prompt"
-          style={{
-            backgroundColor: colors.surface,
-            border: `1px solid ${colors.accent}`,
-            borderRadius: "12px",
-            padding: "16px",
-            display: "flex",
-            flexDirection: "column",
-            gap: "12px",
-          }}
+      {adoptionSummary ? (
+        <View
+          accessibilityRole="region"
+          accessibilityLabel="Local Data Adoption Prompt"
+          style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.accent }]}
         >
-          <div style={{ fontSize: "16px", fontWeight: "bold", color: colors.textPrimary }}>
+          <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>
             Adopt Local Data into Account?
-          </div>
-          <p style={{ fontSize: "14px", color: colors.textMuted, margin: 0 }}>
+          </Text>
+          <Text style={[styles.bodyText, { color: colors.textMuted }]}>
             We found {adoptionSummary.taskCount} tasks, {adoptionSummary.noteCount} notes, and{" "}
             {adoptionSummary.followUpCount} follow-ups created on this device. Would you like to upload them to your cloud account?
-          </p>
-          <div style={{ display: "flex", gap: "10px" }}>
-            <button
-              onClick={handleAdoptLocalData}
+          </Text>
+          <View style={styles.buttonRow}>
+            <TouchButton
+              label={isLoading ? "Uploading..." : "Upload to Cloud"}
+              onPress={handleAdoptLocalData}
               disabled={isLoading}
-              style={{
-                flex: 1,
-                minHeight: "44px",
-                backgroundColor: colors.accent,
-                color: "#ffffff",
-                border: "none",
-                borderRadius: "8px",
-                fontWeight: "bold",
-                fontSize: "14px",
-                cursor: "pointer",
-              }}
-            >
-              Upload to Cloud
-            </button>
-            <button
-              onClick={handleSkipAdoption}
+              variant="primary"
+              style={styles.flexButton}
+            />
+            <TouchButton
+              label="Start Fresh"
+              onPress={handleSkipAdoption}
               disabled={isLoading}
-              style={{
-                flex: 1,
-                minHeight: "44px",
-                backgroundColor: colors.background,
-                color: colors.textMuted,
-                border: `1px solid ${colors.surfaceBorder}`,
-                borderRadius: "8px",
-                fontSize: "14px",
-                cursor: "pointer",
-              }}
-            >
-              Start Fresh
-            </button>
-          </div>
-        </div>
-      )}
+              variant="secondary"
+              style={styles.flexButton}
+            />
+          </View>
+        </View>
+      ) : null}
 
-      {/* Authenticated View */}
       {authState.status === "authenticated" && authState.user ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+        <View style={styles.authenticatedSection}>
           {/* Profile Card */}
-          <div
-            style={{
-              backgroundColor: colors.surface,
-              borderRadius: "12px",
-              padding: "16px",
-              border: `1px solid ${colors.surfaceBorder}`,
-              display: "flex",
-              flexDirection: "column",
-              gap: "8px",
-            }}
-          >
-            <div style={{ fontSize: "12px", color: colors.textMuted, textTransform: "uppercase" }}>
+          <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
+            <Text style={[styles.sectionCaption, { color: colors.textMuted }]}>
               Signed In As
-            </div>
-            <div style={{ fontSize: "18px", fontWeight: "bold", color: colors.textPrimary }}>
+            </Text>
+            <Text style={[styles.profileEmail, { color: colors.textPrimary }]}>
               {authState.user.email}
-            </div>
-            <div style={{ fontSize: "12px", color: colors.textMuted }}>
+            </Text>
+            <Text style={[styles.profileId, { color: colors.textMuted }]}>
               User ID: {authState.user.id}
-            </div>
-          </div>
+            </Text>
+          </View>
 
           {/* Sync Status Card */}
-          <div
-            style={{
-              backgroundColor: colors.surface,
-              borderRadius: "12px",
-              padding: "16px",
-              border: `1px solid ${colors.surfaceBorder}`,
-              display: "flex",
-              flexDirection: "column",
-              gap: "12px",
-            }}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: "15px", fontWeight: "bold", color: colors.textPrimary }}>
+          <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
+            <View style={styles.syncHeaderRow}>
+              <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>
                 Cloud Synchronization
-              </span>
-              {(() => {
-                const badge = getStatusBadge(syncState.status);
-                return (
-                  <span
-                    style={{
-                      padding: "4px 10px",
-                      borderRadius: "12px",
-                      fontSize: "12px",
-                      fontWeight: "bold",
-                      backgroundColor: badge.bg,
-                      color: badge.color,
-                    }}
-                  >
-                    {badge.text}
-                  </span>
-                );
-              })()}
-            </div>
+              </Text>
+              <View style={[styles.statusBadge, { backgroundColor: badge.bg }]}>
+                <Text style={[styles.statusBadgeText, { color: badge.color }]}>
+                  {badge.text}
+                </Text>
+              </View>
+            </View>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "13px", color: colors.textMuted }}>
-              <div>
+            <View style={styles.syncDetails}>
+              <Text style={[styles.detailText, { color: colors.textMuted }]}>
                 Last Synced:{" "}
-                <span style={{ color: colors.textPrimary }}>
+                <Text style={{ color: colors.textPrimary }}>
                   {syncState.lastSyncedAt ? new Date(syncState.lastSyncedAt).toLocaleTimeString() : "Never"}
-                </span>
-              </div>
-              <div>
+                </Text>
+              </Text>
+              <Text style={[styles.detailText, { color: colors.textMuted }]}>
                 Pending Outbox Changes:{" "}
-                <span style={{ color: colors.textPrimary }}>{syncState.pendingMutationsCount}</span>
-              </div>
-              {syncState.unresolvedConflictsCount > 0 && (
-                <div style={{ color: "#fdba74" }}>
+                <Text style={{ color: colors.textPrimary }}>{syncState.pendingMutationsCount}</Text>
+              </Text>
+              {syncState.unresolvedConflictsCount > 0 ? (
+                <Text style={[styles.detailText, { color: "#fdba74" }]}>
                   Unresolved Conflicts: {syncState.unresolvedConflictsCount}
-                </div>
-              )}
-            </div>
+                </Text>
+              ) : null}
+            </View>
 
-            <div style={{ display: "flex", gap: "10px", marginTop: "4px" }}>
-              <button
-                onClick={handleSyncNow}
+            <View style={styles.buttonRow}>
+              <TouchButton
+                label={isLoading ? "Syncing..." : "Sync Now"}
+                onPress={handleSyncNow}
                 disabled={isLoading}
-                aria-label="Sync Now"
-                style={{
-                  flex: 1,
-                  minHeight: "44px",
-                  backgroundColor: colors.accent,
-                  color: "#ffffff",
-                  border: "none",
-                  borderRadius: "8px",
-                  fontWeight: "bold",
-                  fontSize: "14px",
-                  cursor: isLoading ? "not-allowed" : "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                {isLoading ? "Syncing..." : "Sync Now"}
-              </button>
-              {conflicts.length > 0 && (
-                <button
-                  onClick={() => setShowConflicts(true)}
-                  aria-label="Review Conflicts"
-                  style={{
-                    flex: 1,
-                    minHeight: "44px",
-                    backgroundColor: "#ea580c",
-                    color: "#ffffff",
-                    border: "none",
-                    borderRadius: "8px",
-                    fontWeight: "bold",
-                    fontSize: "14px",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  Review Conflicts ({conflicts.length})
-                </button>
-              )}
-            </div>
-          </div>
+                variant="primary"
+                style={styles.flexButton}
+              />
+              {conflicts.length > 0 ? (
+                <TouchButton
+                  label={`Review Conflicts (${conflicts.length})`}
+                  onPress={() => setShowConflicts(true)}
+                  variant="danger"
+                  style={styles.flexButton}
+                />
+              ) : null}
+            </View>
+          </View>
 
           {/* Active Sessions */}
-          {sessions.length > 0 && (
-            <div
-              style={{
-                backgroundColor: colors.surface,
-                borderRadius: "12px",
-                padding: "16px",
-                border: `1px solid ${colors.surfaceBorder}`,
-                display: "flex",
-                flexDirection: "column",
-                gap: "10px",
-              }}
-            >
-              <div style={{ fontSize: "15px", fontWeight: "bold", color: colors.textPrimary }}>
+          {sessions.length > 0 ? (
+            <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
+              <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>
                 Active Sessions ({sessions.length})
-              </div>
+              </Text>
               {sessions.map((s) => (
-                <div
+                <View
                   key={s.id}
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    padding: "8px",
-                    backgroundColor: colors.background,
-                    borderRadius: "8px",
-                    fontSize: "13px",
-                  }}
+                  style={[styles.sessionRow, { backgroundColor: colors.background, borderColor: colors.surfaceBorder }]}
                 >
-                  <div>
-                    <div style={{ color: colors.textPrimary }}>
+                  <View style={styles.sessionInfo}>
+                    <Text style={[styles.sessionTitle, { color: colors.textPrimary }]}>
                       {s.isCurrent ? "This Device (Current)" : "Other Session"}
-                    </div>
-                    <div style={{ fontSize: "11px", color: colors.textMuted }}>
+                    </Text>
+                    <Text style={[styles.sessionDate, { color: colors.textMuted }]}>
                       Expires: {new Date(s.expiresAt).toLocaleDateString()}
-                    </div>
-                  </div>
-                  {!s.isCurrent && (
-                    <button
-                      onClick={async () => {
+                    </Text>
+                  </View>
+                  {!s.isCurrent ? (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel="Revoke session"
+                      onPress={async () => {
                         await authService.revokeSession(s.id);
                         const updated = await authService.listSessions();
                         if (updated.ok && updated.sessions) setSessions(updated.sessions);
                       }}
-                      style={{
-                        minHeight: "36px",
-                        padding: "0 10px",
-                        backgroundColor: "#7f1d1d",
-                        color: "#fecaca",
-                        border: "none",
-                        borderRadius: "6px",
-                        fontSize: "12px",
-                        cursor: "pointer",
-                      }}
+                      style={({ pressed }) => [
+                        styles.revokeButton,
+                        pressed ? { opacity: 0.8 } : null,
+                      ]}
                     >
-                      Revoke
-                    </button>
-                  )}
-                </div>
+                      <Text style={styles.revokeButtonText}>Revoke</Text>
+                    </Pressable>
+                  ) : null}
+                </View>
               ))}
-            </div>
-          )}
+            </View>
+          ) : null}
 
           {/* Account Actions */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "10px" }}>
-            <button
-              onClick={handleSignOut}
+          <View style={styles.accountActionSection}>
+            <TouchButton
+              label="Sign Out"
+              onPress={handleSignOut}
               disabled={isLoading}
-              style={{
-                minHeight: "44px",
-                backgroundColor: colors.background,
-                color: colors.textPrimary,
-                border: `1px solid ${colors.surfaceBorder}`,
-                borderRadius: "8px",
-                fontSize: "14px",
-                fontWeight: "bold",
-                cursor: "pointer",
-              }}
-            >
-              Sign Out
-            </button>
-            <button
-              onClick={handleDeleteAccount}
+              variant="secondary"
+            />
+            <TouchButton
+              label="Delete Cloud Account"
+              onPress={() => setShowDeleteConfirm(true)}
               disabled={isLoading}
-              style={{
-                minHeight: "44px",
-                backgroundColor: "transparent",
-                color: "#f87171",
-                border: "1px solid #7f1d1d",
-                borderRadius: "8px",
-                fontSize: "14px",
-                cursor: "pointer",
-              }}
-            >
-              Delete Cloud Account
-            </button>
-          </div>
-        </div>
+              variant="danger"
+            />
+          </View>
+        </View>
       ) : (
         /* Sign In Flow */
-        <div
-          style={{
-            backgroundColor: colors.surface,
-            borderRadius: "12px",
-            padding: "20px",
-            border: `1px solid ${colors.surfaceBorder}`,
-            display: "flex",
-            flexDirection: "column",
-            gap: "16px",
-          }}
-        >
+        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
           {step === "email" ? (
-            <form onSubmit={handleSendOtp} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-              <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                <span style={{ fontSize: "14px", fontWeight: "bold", color: colors.textPrimary }}>
-                  Email Address
-                </span>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@example.com"
-                  required
-                  style={{
-                    minHeight: "44px",
-                    padding: "0 12px",
+            <View style={styles.formContainer}>
+              <Text style={[styles.inputLabel, { color: colors.textPrimary }]}>
+                Email Address
+              </Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  {
                     backgroundColor: colors.background,
+                    borderColor: colors.surfaceBorder,
                     color: colors.textPrimary,
-                    border: `1px solid ${colors.surfaceBorder}`,
-                    borderRadius: "8px",
-                    fontSize: "15px",
-                  }}
-                />
-              </label>
-
-              <button
-                type="submit"
-                disabled={isLoading}
-                style={{
-                  minHeight: "44px",
-                  backgroundColor: colors.accent,
-                  color: "#ffffff",
-                  border: "none",
-                  borderRadius: "8px",
-                  fontWeight: "bold",
-                  fontSize: "15px",
-                  cursor: isLoading ? "not-allowed" : "pointer",
-                }}
-              >
-                {isLoading ? "Sending..." : "Send Verification Code"}
-              </button>
-            </form>
+                  },
+                ]}
+                value={email}
+                onChangeText={setEmail}
+                placeholder="name@example.com"
+                placeholderTextColor={colors.textMuted}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                accessibilityLabel="Email Address"
+              />
+              <TouchButton
+                label={isLoading ? "Sending..." : "Send Verification Code"}
+                onPress={handleSendOtp}
+                disabled={isLoading || !email.trim()}
+                variant="primary"
+              />
+            </View>
           ) : (
-            <form onSubmit={handleVerifyOtp} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-              <div style={{ fontSize: "14px", color: colors.textMuted }}>
-                Enter the 6-digit code sent to <strong style={{ color: colors.textPrimary }}>{email}</strong>
-              </div>
+            <View style={styles.formContainer}>
+              <Text style={[styles.bodyText, { color: colors.textMuted }]}>
+                Enter the 6-digit code sent to{" "}
+                <Text style={{ color: colors.textPrimary, fontWeight: "bold" }}>{email}</Text>
+              </Text>
 
-              <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                <span style={{ fontSize: "14px", fontWeight: "bold", color: colors.textPrimary }}>
-                  Verification Code
-                </span>
-                <input
-                  type="text"
-                  maxLength={6}
-                  value={otpCode}
-                  onChange={(e) => setOtpCode(e.target.value)}
-                  placeholder="123456"
-                  required
-                  style={{
-                    minHeight: "44px",
-                    padding: "0 12px",
+              <Text style={[styles.inputLabel, { color: colors.textPrimary }]}>
+                Verification Code
+              </Text>
+              <TextInput
+                style={[
+                  styles.otpInput,
+                  {
                     backgroundColor: colors.background,
+                    borderColor: colors.surfaceBorder,
                     color: colors.textPrimary,
-                    border: `1px solid ${colors.surfaceBorder}`,
-                    borderRadius: "8px",
-                    fontSize: "18px",
-                    letterSpacing: "4px",
-                    textAlign: "center",
-                  }}
-                />
-              </label>
+                  },
+                ]}
+                maxLength={6}
+                value={otpCode}
+                onChangeText={setOtpCode}
+                placeholder="123456"
+                placeholderTextColor={colors.textMuted}
+                keyboardType="number-pad"
+                accessibilityLabel="Verification Code"
+              />
 
-              <button
-                type="submit"
-                disabled={isLoading}
-                style={{
-                  minHeight: "44px",
-                  backgroundColor: colors.accent,
-                  color: "#ffffff",
-                  border: "none",
-                  borderRadius: "8px",
-                  fontWeight: "bold",
-                  fontSize: "15px",
-                  cursor: isLoading ? "not-allowed" : "pointer",
-                }}
-              >
-                {isLoading ? "Verifying..." : "Verify & Sign In"}
-              </button>
+              <TouchButton
+                label={isLoading ? "Verifying..." : "Verify & Sign In"}
+                onPress={handleVerifyOtp}
+                disabled={isLoading || otpCode.trim().length !== 6}
+                variant="primary"
+              />
 
-              <button
-                type="button"
-                onClick={() => setStep("email")}
-                style={{
-                  background: "none",
-                  border: "none",
-                  color: colors.accent,
-                  fontSize: "13px",
-                  cursor: "pointer",
-                  textAlign: "center",
-                  padding: "8px",
-                }}
-              >
-                Use a different email address
-              </button>
-            </form>
+              <TouchButton
+                label="Use a different email address"
+                onPress={() => setStep("email")}
+                variant="ghost"
+              />
+            </View>
           )}
-        </div>
+        </View>
       )}
 
+      {/* Delete Confirmation Modal */}
+      <Modal
+        visible={showDeleteConfirm}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowDeleteConfirm(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.confirmModalBox, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
+            <Text style={[styles.confirmModalTitle, { color: colors.textPrimary }]}>
+              Delete Cloud Account?
+            </Text>
+            <Text style={[styles.confirmModalMessage, { color: colors.textMuted }]}>
+              Are you sure you want to delete your cloud account? This action cannot be undone and will erase your cloud backups. Local data on this device will be preserved.
+            </Text>
+            <View style={styles.buttonRow}>
+              <TouchButton
+                label="Cancel"
+                onPress={() => setShowDeleteConfirm(false)}
+                variant="secondary"
+                style={styles.flexButton}
+              />
+              <TouchButton
+                label="Delete Account"
+                onPress={handleDeleteAccount}
+                variant="danger"
+                style={styles.flexButton}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       {/* Conflict Modal */}
-      {showConflicts && (
+      {showConflicts ? (
         <ConflictModal
           conflicts={conflicts}
           onResolve={handleResolveConflict}
           onClose={() => setShowConflicts(false)}
         />
-      )}
-    </div>
+      ) : null}
+    </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  contentContainer: {
+    padding: 16,
+    paddingBottom: 40,
+    gap: 16,
+    maxWidth: 600,
+    alignSelf: "center",
+    width: "100%",
+  },
+  header: {
+    gap: 4,
+    marginBottom: 4,
+  },
+  screenTitle: {
+    fontSize: 22,
+    fontWeight: "bold",
+  },
+  screenSubtitle: {
+    fontSize: 14,
+  },
+  bannerAlert: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  bannerAlertText: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  card: {
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 12,
+  },
+  authenticatedSection: {
+    gap: 16,
+  },
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  sectionCaption: {
+    fontSize: 12,
+    textTransform: "uppercase",
+    fontWeight: "600",
+    letterSpacing: 0.5,
+  },
+  profileEmail: {
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  profileId: {
+    fontSize: 12,
+  },
+  syncHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  statusBadge: {
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+  },
+  statusBadgeText: {
+    fontSize: 12,
+    fontWeight: "bold",
+  },
+  syncDetails: {
+    gap: 6,
+  },
+  detailText: {
+    fontSize: 13,
+  },
+  sessionRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  sessionInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  sessionTitle: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  sessionDate: {
+    fontSize: 11,
+  },
+  revokeButton: {
+    minHeight: 44,
+    minWidth: 44,
+    paddingHorizontal: 12,
+    backgroundColor: "#7f1d1d",
+    borderRadius: 6,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  revokeButtonText: {
+    color: "#fecaca",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  accountActionSection: {
+    gap: 12,
+    marginTop: 8,
+  },
+  formContainer: {
+    gap: 12,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: "bold",
+  },
+  bodyText: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  input: {
+    minHeight: 44,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    fontSize: 15,
+  },
+  otpInput: {
+    minHeight: 48,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    fontSize: 20,
+    letterSpacing: 6,
+    textAlign: "center",
+    fontWeight: "bold",
+  },
+  buttonRow: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  flexButton: {
+    flex: 1,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  confirmModalBox: {
+    width: "100%",
+    maxWidth: 420,
+    padding: 20,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 14,
+  },
+  confirmModalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  confirmModalMessage: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+});
