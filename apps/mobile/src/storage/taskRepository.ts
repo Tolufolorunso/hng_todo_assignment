@@ -1,6 +1,7 @@
 import type { SqliteDatabase } from "../db/driver.js";
 import type { Task, CreateTaskInput, UpdateTaskInput, TaskFilter } from "../types/task.js";
 import { validateTaskInput } from "../services/validation.js";
+import { SyncRepository, type RepositoryOptions } from "./syncRepository.js";
 
 interface TaskRow {
   id: string;
@@ -42,12 +43,17 @@ function mapRowToTask(row: TaskRow): Task {
 export class TaskRepository {
   constructor(private db: SqliteDatabase) {}
 
-  async create(input: CreateTaskInput): Promise<Task> {
+  private getExecutor(options?: RepositoryOptions): SqliteDatabase {
+    return options?.tx || this.db;
+  }
+
+  async create(input: CreateTaskInput, options?: RepositoryOptions): Promise<Task> {
     const validation = validateTaskInput(input, true);
     if (!validation.valid) {
       throw new Error(validation.error || "Invalid task input");
     }
 
+    const executor = this.getExecutor(options);
     const id = "task_" + Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
     const now = new Date().toISOString();
     const title = input.title.trim();
@@ -59,7 +65,7 @@ export class TaskRepository {
     const sourceNoteId = input.sourceNoteId || null;
     const sourceExcerpt = input.sourceExcerpt || null;
 
-    await this.db.execute(
+    await executor.execute(
       `INSERT INTO tasks (
         id, title, description, completed, completed_at, priority, due_date, category,
         estimated_minutes, source_note_id, source_excerpt, created_at, updated_at
@@ -81,7 +87,7 @@ export class TaskRepository {
       ]
     );
 
-    return {
+    const task: Task = {
       id,
       title,
       description,
@@ -96,6 +102,21 @@ export class TaskRepository {
       createdAt: now,
       updatedAt: now,
     };
+
+    if (options?.enqueueOutbox) {
+      const syncRepo = new SyncRepository(executor);
+      await syncRepo.enqueueOutbox(
+        {
+          entityType: "task",
+          entityId: id,
+          action: "put",
+          payload: JSON.stringify(task),
+        },
+        executor
+      );
+    }
+
+    return task;
   }
 
   async getById(id: string): Promise<Task | null> {
@@ -133,7 +154,7 @@ export class TaskRepository {
     return tasks;
   }
 
-  async update(id: string, input: UpdateTaskInput): Promise<Task> {
+  async update(id: string, input: UpdateTaskInput, options?: RepositoryOptions): Promise<Task> {
     const existing = await this.getById(id);
     if (!existing) {
       throw new Error(`Task ${id} not found`);
@@ -144,6 +165,7 @@ export class TaskRepository {
       throw new Error(validation.error || "Invalid task update");
     }
 
+    const executor = this.getExecutor(options);
     const now = new Date().toISOString();
     const title = input.title !== undefined ? input.title.trim() : existing.title;
     const description = input.description !== undefined ? input.description.trim() : existing.description;
@@ -164,7 +186,7 @@ export class TaskRepository {
     const sourceExcerpt =
       input.sourceExcerpt !== undefined ? input.sourceExcerpt : existing.sourceExcerpt;
 
-    await this.db.execute(
+    await executor.execute(
       `UPDATE tasks
        SET title = ?, description = ?, completed = ?, completed_at = ?, priority = ?, due_date = ?,
            category = ?, estimated_minutes = ?, source_note_id = ?, source_excerpt = ?, updated_at = ?
@@ -185,7 +207,7 @@ export class TaskRepository {
       ]
     );
 
-    return {
+    const updatedTask: Task = {
       id,
       title,
       description,
@@ -200,21 +222,104 @@ export class TaskRepository {
       createdAt: existing.createdAt,
       updatedAt: now,
     };
+
+    if (options?.enqueueOutbox) {
+      const syncRepo = new SyncRepository(executor);
+      const baseRev = await syncRepo.getServerRevision("task", id);
+      await syncRepo.enqueueOutbox(
+        {
+          entityType: "task",
+          entityId: id,
+          action: "put",
+          baseRevision: baseRev,
+          payload: JSON.stringify(updatedTask),
+        },
+        executor
+      );
+    }
+
+    return updatedTask;
   }
 
-  async toggleComplete(id: string): Promise<Task> {
+  async toggleComplete(id: string, options?: RepositoryOptions): Promise<Task> {
     const existing = await this.getById(id);
     if (!existing) {
       throw new Error(`Task ${id} not found`);
     }
-    return this.update(id, { completed: !existing.completed });
+    return this.update(id, { completed: !existing.completed }, options);
   }
 
-  async delete(id: string): Promise<boolean> {
+  async delete(id: string, options?: RepositoryOptions): Promise<boolean> {
     const existing = await this.getById(id);
     if (!existing) return false;
 
-    await this.db.execute("DELETE FROM tasks WHERE id = ?", [id]);
+    const executor = this.getExecutor(options);
+    await executor.execute("DELETE FROM tasks WHERE id = ?", [id]);
+
+    if (options?.enqueueOutbox) {
+      const syncRepo = new SyncRepository(executor);
+      const baseRev = await syncRepo.getServerRevision("task", id);
+      await syncRepo.enqueueOutbox(
+        {
+          entityType: "task",
+          entityId: id,
+          action: "delete",
+          baseRevision: baseRev,
+        },
+        executor
+      );
+      await syncRepo.recordTombstone("local", "task", id, executor);
+    }
+
     return true;
+  }
+
+  async putRaw(task: Task, tx?: SqliteDatabase): Promise<void> {
+    const executor = tx || this.db;
+    const existing = await executor.queryFirst<{ id: string }>("SELECT id FROM tasks WHERE id = ?", [task.id]);
+    if (existing) {
+      await executor.execute(
+        `UPDATE tasks
+         SET title = ?, description = ?, completed = ?, completed_at = ?, priority = ?, due_date = ?,
+             category = ?, estimated_minutes = ?, source_note_id = ?, source_excerpt = ?, updated_at = ?
+         WHERE id = ?`,
+        [
+          task.title,
+          task.description,
+          task.completed ? 1 : 0,
+          task.completedAt,
+          task.priority,
+          task.dueDate,
+          task.category,
+          task.estimatedMinutes,
+          task.sourceNoteId,
+          task.sourceExcerpt,
+          task.updatedAt,
+          task.id,
+        ]
+      );
+    } else {
+      await executor.execute(
+        `INSERT INTO tasks (
+          id, title, description, completed, completed_at, priority, due_date, category,
+          estimated_minutes, source_note_id, source_excerpt, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          task.id,
+          task.title,
+          task.description,
+          task.completed ? 1 : 0,
+          task.completedAt,
+          task.priority,
+          task.dueDate,
+          task.category,
+          task.estimatedMinutes,
+          task.sourceNoteId,
+          task.sourceExcerpt,
+          task.createdAt,
+          task.updatedAt,
+        ]
+      );
+    }
   }
 }

@@ -7,7 +7,8 @@ export type MobileTab =
   | "calendar"
   | "analytics"
   | "search"
-  | "backup";
+  | "backup"
+  | "account";
 
 export type MobileScreen =
   | { name: "tasks" }
@@ -23,4 +24,5 @@ export type MobileScreen =
   | { name: "calendar" }
   | { name: "analytics" }
   | { name: "search" }
-  | { name: "backup" };
+  | { name: "backup" }
+  | { name: "account" };

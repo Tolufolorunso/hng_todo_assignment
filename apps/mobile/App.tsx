@@ -6,11 +6,15 @@ import {
   FollowUpRepository,
   DailyPlanRepository,
   InboxRepository,
+  SyncRepository,
 } from "./src/storage/index.js";
 import {
   SearchService,
   BackupService,
   InboxTriageService,
+  AuthService,
+  SyncEngine,
+  LifecycleService,
   ThemeProvider,
 } from "./src/services/index.js";
 import { MobileNavigator } from "./src/navigation/Navigator.js";
@@ -27,9 +31,14 @@ export function App(): React.JSX.Element {
     triageService: InboxTriageService;
     searchService: SearchService;
     backupService: BackupService;
+    authService: AuthService;
+    syncEngine: SyncEngine;
+    syncRepo: SyncRepository;
   } | null>(null);
 
   useEffect(() => {
+    let lifecycleService: LifecycleService | null = null;
+
     async function initializeApp() {
       try {
         const db = createDatabase("memory");
@@ -40,9 +49,19 @@ export function App(): React.JSX.Element {
         const followUpRepo = new FollowUpRepository(db);
         const dailyPlanRepo = new DailyPlanRepository(db);
         const inboxRepo = new InboxRepository(db);
+        const syncRepo = new SyncRepository(db);
+
         const triageService = new InboxTriageService(inboxRepo, taskRepo, noteRepo, followUpRepo);
         const searchService = new SearchService(taskRepo, noteRepo);
         const backupService = new BackupService(db, taskRepo, noteRepo);
+
+        const authService = new AuthService(db);
+        await authService.initialize();
+
+        const syncEngine = new SyncEngine(db, authService);
+
+        lifecycleService = new LifecycleService(authService, syncEngine);
+        lifecycleService.start();
 
         setServices({
           taskRepo,
@@ -53,6 +72,9 @@ export function App(): React.JSX.Element {
           triageService,
           searchService,
           backupService,
+          authService,
+          syncEngine,
+          syncRepo,
         });
         setIsReady(true);
       } catch (err) {
@@ -61,6 +83,10 @@ export function App(): React.JSX.Element {
     }
 
     initializeApp();
+
+    return () => {
+      lifecycleService?.stop();
+    };
   }, []);
 
   if (initError) {
@@ -130,6 +156,9 @@ export function App(): React.JSX.Element {
           triageService={services.triageService}
           searchService={services.searchService}
           backupService={services.backupService}
+          authService={services.authService}
+          syncEngine={services.syncEngine}
+          syncRepo={services.syncRepo}
         />
       </div>
     </ThemeProvider>

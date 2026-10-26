@@ -10,3 +10,6 @@ export * from "./calendar.js";
 export * from "./analytics.js";
 export * from "./notifications.js";
 export * from "./theme.js";
+export * from "./auth.js";
+export * from "./syncEngine.js";
+export * from "./lifecycle.js";

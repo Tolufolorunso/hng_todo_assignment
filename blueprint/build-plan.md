@@ -164,7 +164,7 @@ The Blueprint overlay, `AGENTS.md`, and onboarding setup are already present.
   notes, Follow Up recurrence, local closed-app notifications, communication
   launchers, share-sheet and shortcut capture, phone and tablet layouts, and
   mobile accessibility.
-- [ ] 39. **React Native API integration and release readiness** - independently
+- [x] 39. **React Native API integration and release readiness** - independently
   implement authentication, synchronization for all supported entities, secure
   sessions, conflict resolution, Android and iOS lifecycle recovery, signed
   builds, notification and store privacy material, and physical-device

@@ -151,6 +151,74 @@ export const migrations: Migration[] = [
       await db.execute("CREATE INDEX IF NOT EXISTS idx_tasks_source_note ON tasks(source_note_id)");
     },
   },
+  {
+    version: 3,
+    name: "003_sync_engine",
+    up: async (db: SqliteDatabase) => {
+      // 1. outbox table
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS outbox (
+          id TEXT PRIMARY KEY,
+          mutation_id TEXT NOT NULL,
+          protocol_version INTEGER NOT NULL DEFAULT 1,
+          entity_type TEXT NOT NULL,
+          entity_id TEXT NOT NULL,
+          action TEXT NOT NULL,
+          base_revision INTEGER,
+          payload TEXT,
+          created_at TEXT NOT NULL
+        )
+      `);
+      await db.execute("CREATE INDEX IF NOT EXISTS idx_outbox_created_at ON outbox(created_at)");
+
+      // 2. sync_cursors table
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS sync_cursors (
+          id TEXT PRIMARY KEY,
+          workspace_id TEXT NOT NULL,
+          cursor INTEGER NOT NULL DEFAULT 0,
+          updated_at TEXT NOT NULL
+        )
+      `);
+
+      // 3. conflicts table
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS conflicts (
+          id TEXT PRIMARY KEY,
+          workspace_id TEXT NOT NULL,
+          entity_type TEXT NOT NULL,
+          entity_id TEXT NOT NULL,
+          local_value TEXT,
+          server_value TEXT,
+          server_revision INTEGER NOT NULL,
+          created_at TEXT NOT NULL
+        )
+      `);
+      await db.execute("CREATE INDEX IF NOT EXISTS idx_conflicts_workspace ON conflicts(workspace_id)");
+
+      // 4. tombstones table
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS tombstones (
+          id TEXT PRIMARY KEY,
+          workspace_id TEXT NOT NULL,
+          entity_type TEXT NOT NULL,
+          entity_id TEXT NOT NULL,
+          deleted_at TEXT NOT NULL
+        )
+      `);
+      await db.execute("CREATE INDEX IF NOT EXISTS idx_tombstones_entity ON tombstones(entity_type, entity_id)");
+
+      // 5. server_revisions table
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS server_revisions (
+          id TEXT PRIMARY KEY,
+          entity_type TEXT NOT NULL,
+          entity_id TEXT NOT NULL,
+          server_revision INTEGER NOT NULL
+        )
+      `);
+    },
+  },
 ];
 
 export async function runMigrations(db: SqliteDatabase): Promise<{ applied: number[]; total: number }> {

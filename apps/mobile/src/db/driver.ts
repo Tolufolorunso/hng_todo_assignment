@@ -175,17 +175,18 @@ export class InMemorySqliteDatabase implements SqliteDatabase {
   }
 
   private handleSelect<T>(sql: string, params: unknown[]): T[] {
+    // Simple count support e.g. SELECT COUNT(*) as count FROM table
+    const countMatch = sql.match(/SELECT\s+COUNT\(\*\)\s+(?:AS\s+([a-zA-Z0-9_]+)\s+)?FROM\s+([a-zA-Z0-9_]+)/i);
+    if (countMatch) {
+      const alias = countMatch[1] || "count";
+      const tableName = countMatch[2].toLowerCase();
+      const table = this.tables.get(tableName);
+      const count = table ? table.size : 0;
+      return [{ [alias]: count }] as unknown as T[];
+    }
+
     const match = sql.match(/SELECT\s+(.+?)\s+FROM\s+([a-zA-Z0-9_]+)(?:\s+WHERE\s+(.+?))?(?:\s+ORDER\s+BY\s+(.+?))?(?:\s+LIMIT\s+(\d+))?$/i);
     if (!match) {
-      // Simple count support e.g. SELECT COUNT(*) as count FROM table
-      const countMatch = sql.match(/SELECT\s+COUNT\(\*\)\s+AS\s+([a-zA-Z0-9_]+)\s+FROM\s+([a-zA-Z0-9_]+)/i);
-      if (countMatch) {
-        const alias = countMatch[1];
-        const tableName = countMatch[2].toLowerCase();
-        const table = this.tables.get(tableName);
-        const count = table ? table.size : 0;
-        return [{ [alias]: count }] as unknown as T[];
-      }
       return [];
     }
 

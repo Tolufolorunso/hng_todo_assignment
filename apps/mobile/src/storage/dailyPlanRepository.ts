@@ -5,6 +5,7 @@ import type {
   CreateDailyPlanInput,
   UpdateDailyPlanInput,
 } from "../types/plan.js";
+import { SyncRepository, type RepositoryOptions } from "./syncRepository.js";
 
 interface DailyPlanRow {
   id: string;
@@ -38,6 +39,10 @@ function mapRowToDailyPlan(row: DailyPlanRow): DailyPlan {
 export class DailyPlanRepository {
   constructor(private db: SqliteDatabase) {}
 
+  private getExecutor(options?: RepositoryOptions): SqliteDatabase {
+    return options?.tx || this.db;
+  }
+
   async getByDate(localDate: string): Promise<DailyPlan | null> {
     const row = await this.db.queryFirst<DailyPlanRow>(
       "SELECT * FROM daily_plans WHERE local_date = ?",
@@ -54,16 +59,17 @@ export class DailyPlanRepository {
     return row ? mapRowToDailyPlan(row) : null;
   }
 
-  async save(input: CreateDailyPlanInput): Promise<DailyPlan> {
+  async save(input: CreateDailyPlanInput, options?: RepositoryOptions): Promise<DailyPlan> {
     if (!input.localDate) {
       throw new Error("localDate is required");
     }
+    const executor = this.getExecutor(options);
     const existing = await this.getByDate(input.localDate);
     const now = new Date().toISOString();
     const itemsJson = JSON.stringify(input.items || []);
 
     if (existing) {
-      await this.db.execute(
+      await executor.execute(
         `UPDATE daily_plans
          SET time_zone = ?, available_minutes = ?, items = ?, accepted_at = ?, updated_at = ?
          WHERE id = ?`,
@@ -76,7 +82,7 @@ export class DailyPlanRepository {
           existing.id,
         ]
       );
-      return {
+      const plan: DailyPlan = {
         id: existing.id,
         localDate: existing.localDate,
         timeZone: input.timeZone || existing.timeZone,
@@ -85,10 +91,24 @@ export class DailyPlanRepository {
         acceptedAt: input.acceptedAt !== undefined ? input.acceptedAt : existing.acceptedAt,
         updatedAt: now,
       };
+
+      if (options?.enqueueOutbox) {
+        const syncRepo = new SyncRepository(executor);
+        const baseRev = await syncRepo.getServerRevision("plan", plan.id);
+        await syncRepo.enqueueOutbox({
+          entityType: "plan",
+          entityId: plan.id,
+          action: "put",
+          baseRevision: baseRev,
+          payload: JSON.stringify(plan),
+        }, executor);
+      }
+
+      return plan;
     }
 
     const id = "plan_" + Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
-    await this.db.execute(
+    await executor.execute(
       `INSERT INTO daily_plans (id, local_date, time_zone, available_minutes, items, accepted_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [
@@ -102,7 +122,7 @@ export class DailyPlanRepository {
       ]
     );
 
-    return {
+    const plan: DailyPlan = {
       id,
       localDate: input.localDate,
       timeZone: input.timeZone || "UTC",
@@ -111,36 +131,63 @@ export class DailyPlanRepository {
       acceptedAt: input.acceptedAt || null,
       updatedAt: now,
     };
+
+    if (options?.enqueueOutbox) {
+      const syncRepo = new SyncRepository(executor);
+      await syncRepo.enqueueOutbox({
+        entityType: "plan",
+        entityId: id,
+        action: "put",
+        payload: JSON.stringify(plan),
+      }, executor);
+    }
+
+    return plan;
   }
 
-  async update(id: string, input: UpdateDailyPlanInput): Promise<DailyPlan> {
+  async update(id: string, input: UpdateDailyPlanInput, options?: RepositoryOptions): Promise<DailyPlan> {
     const existing = await this.getById(id);
     if (!existing) {
       throw new Error(`DailyPlan ${id} not found`);
     }
 
+    const executor = this.getExecutor(options);
     const now = new Date().toISOString();
     const availableMinutes = input.availableMinutes !== undefined ? input.availableMinutes : existing.availableMinutes;
     const items = input.items !== undefined ? input.items : existing.items;
     const acceptedAt = input.acceptedAt !== undefined ? input.acceptedAt : existing.acceptedAt;
 
-    await this.db.execute(
+    await executor.execute(
       `UPDATE daily_plans
        SET available_minutes = ?, items = ?, accepted_at = ?, updated_at = ?
        WHERE id = ?`,
       [availableMinutes, JSON.stringify(items), acceptedAt, now, id]
     );
 
-    return {
+    const updatedPlan: DailyPlan = {
       ...existing,
       availableMinutes,
       items,
       acceptedAt,
       updatedAt: now,
     };
+
+    if (options?.enqueueOutbox) {
+      const syncRepo = new SyncRepository(executor);
+      const baseRev = await syncRepo.getServerRevision("plan", id);
+      await syncRepo.enqueueOutbox({
+        entityType: "plan",
+        entityId: id,
+        action: "put",
+        baseRevision: baseRev,
+        payload: JSON.stringify(updatedPlan),
+      }, executor);
+    }
+
+    return updatedPlan;
   }
 
-  async toggleItem(planId: string, itemId: string): Promise<DailyPlan> {
+  async toggleItem(planId: string, itemId: string, options?: RepositoryOptions): Promise<DailyPlan> {
     const existing = await this.getById(planId);
     if (!existing) {
       throw new Error(`DailyPlan ${planId} not found`);
@@ -153,12 +200,12 @@ export class DailyPlanRepository {
       return item;
     });
 
-    return this.update(planId, { items: updatedItems });
+    return this.update(planId, { items: updatedItems }, options);
   }
 
-  async acceptPlan(id: string): Promise<DailyPlan> {
+  async acceptPlan(id: string, options?: RepositoryOptions): Promise<DailyPlan> {
     const now = new Date().toISOString();
-    return this.update(id, { acceptedAt: now });
+    return this.update(id, { acceptedAt: now }, options);
   }
 
   async listRecent(limit = 14): Promise<DailyPlan[]> {
@@ -168,11 +215,46 @@ export class DailyPlanRepository {
     return rows.map(mapRowToDailyPlan);
   }
 
-  async delete(id: string): Promise<boolean> {
+  async delete(id: string, options?: RepositoryOptions): Promise<boolean> {
     const existing = await this.getById(id);
     if (!existing) return false;
 
-    await this.db.execute("DELETE FROM daily_plans WHERE id = ?", [id]);
+    const executor = this.getExecutor(options);
+    await executor.execute("DELETE FROM daily_plans WHERE id = ?", [id]);
+
+    if (options?.enqueueOutbox) {
+      const syncRepo = new SyncRepository(executor);
+      const baseRev = await syncRepo.getServerRevision("plan", id);
+      await syncRepo.enqueueOutbox({
+        entityType: "plan",
+        entityId: id,
+        action: "delete",
+        baseRevision: baseRev,
+      }, executor);
+      await syncRepo.recordTombstone("local", "plan", id, executor);
+    }
+
     return true;
+  }
+
+  async putRaw(plan: DailyPlan, tx?: SqliteDatabase): Promise<void> {
+    const executor = tx || this.db;
+    const existing = await executor.queryFirst<{ id: string }>("SELECT id FROM daily_plans WHERE id = ?", [plan.id]);
+    const itemsJson = JSON.stringify(plan.items || []);
+
+    if (existing) {
+      await executor.execute(
+        `UPDATE daily_plans
+         SET local_date = ?, time_zone = ?, available_minutes = ?, items = ?, accepted_at = ?, updated_at = ?
+         WHERE id = ?`,
+        [plan.localDate, plan.timeZone, plan.availableMinutes, itemsJson, plan.acceptedAt, plan.updatedAt, plan.id]
+      );
+    } else {
+      await executor.execute(
+        `INSERT INTO daily_plans (id, local_date, time_zone, available_minutes, items, accepted_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [plan.id, plan.localDate, plan.timeZone, plan.availableMinutes, itemsJson, plan.acceptedAt, plan.updatedAt]
+      );
+    }
   }
 }

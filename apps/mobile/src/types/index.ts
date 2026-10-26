@@ -7,3 +7,5 @@ export * from "./plan.js";
 export * from "./inbox.js";
 export * from "./analytics.js";
 export * from "./theme.js";
+export * from "./sync.js";
+export * from "./auth.js";

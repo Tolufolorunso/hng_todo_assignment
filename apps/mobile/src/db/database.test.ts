@@ -14,13 +14,13 @@ describe("Mobile SQLite Database and Migration Runner", () => {
     expect(version).toBe(0);
   });
 
-  it("applies migrations cleanly and sets schema version to 2", async () => {
+  it("applies migrations cleanly and sets schema version to 3", async () => {
     const result = await runMigrations(db);
-    expect(result.applied).toEqual([1, 2]);
+    expect(result.applied).toEqual([1, 2, 3]);
     expect(result.total).toBe(migrations.length);
 
     const version = await getMigrationVersion(db);
-    expect(version).toBe(2);
+    expect(version).toBe(3);
 
     // Verify tasks, notes, followups, daily_plans exist
     await db.execute(
@@ -46,13 +46,13 @@ describe("Mobile SQLite Database and Migration Runner", () => {
 
   it("is idempotent when re-running migrations", async () => {
     const firstRun = await runMigrations(db);
-    expect(firstRun.applied).toEqual([1, 2]);
+    expect(firstRun.applied).toEqual([1, 2, 3]);
 
     const secondRun = await runMigrations(db);
     expect(secondRun.applied).toEqual([]);
 
     const version = await getMigrationVersion(db);
-    expect(version).toBe(2);
+    expect(version).toBe(3);
   });
 
   it("rolls back transactions on error", async () => {
@@ -77,6 +77,6 @@ describe("Mobile SQLite Database and Migration Runner", () => {
     expect(instance).toBeDefined();
     await runMigrations(instance);
     const version = await getMigrationVersion(instance);
-    expect(version).toBe(2);
+    expect(version).toBe(3);
   });
 });

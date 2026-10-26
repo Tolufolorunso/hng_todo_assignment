@@ -1,6 +1,7 @@
 import type { SqliteDatabase } from "../db/driver.js";
 import type { Note, CreateNoteInput, UpdateNoteInput } from "../types/note.js";
 import { validateNoteInput } from "../services/validation.js";
+import { SyncRepository, type RepositoryOptions } from "./syncRepository.js";
 
 interface NoteRow {
   id: string;
@@ -23,29 +24,49 @@ function mapRowToNote(row: NoteRow): Note {
 export class NoteRepository {
   constructor(private db: SqliteDatabase) {}
 
-  async create(input: CreateNoteInput): Promise<Note> {
+  private getExecutor(options?: RepositoryOptions): SqliteDatabase {
+    return options?.tx || this.db;
+  }
+
+  async create(input: CreateNoteInput, options?: RepositoryOptions): Promise<Note> {
     const validation = validateNoteInput(input, true);
     if (!validation.valid) {
       throw new Error(validation.error || "Invalid note input");
     }
 
+    const executor = this.getExecutor(options);
     const id = "note_" + Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
     const now = new Date().toISOString();
     const title = input.title.trim();
     const body = input.body ? input.body.trim() : "";
 
-    await this.db.execute(
+    await executor.execute(
       "INSERT INTO notes (id, title, body, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
       [id, title, body, now, now]
     );
 
-    return {
+    const note: Note = {
       id,
       title,
       body,
       createdAt: now,
       updatedAt: now,
     };
+
+    if (options?.enqueueOutbox) {
+      const syncRepo = new SyncRepository(executor);
+      await syncRepo.enqueueOutbox(
+        {
+          entityType: "note",
+          entityId: id,
+          action: "put",
+          payload: JSON.stringify(note),
+        },
+        executor
+      );
+    }
+
+    return note;
   }
 
   async getById(id: string): Promise<Note | null> {
@@ -72,7 +93,7 @@ export class NoteRepository {
     return notes;
   }
 
-  async update(id: string, input: UpdateNoteInput): Promise<Note> {
+  async update(id: string, input: UpdateNoteInput, options?: RepositoryOptions): Promise<Note> {
     const existing = await this.getById(id);
     if (!existing) {
       throw new Error(`Note ${id} not found`);
@@ -83,29 +104,80 @@ export class NoteRepository {
       throw new Error(validation.error || "Invalid note update");
     }
 
+    const executor = this.getExecutor(options);
     const now = new Date().toISOString();
     const title = input.title !== undefined ? input.title.trim() : existing.title;
     const body = input.body !== undefined ? input.body.trim() : existing.body;
 
-    await this.db.execute(
+    await executor.execute(
       "UPDATE notes SET title = ?, body = ?, updated_at = ? WHERE id = ?",
       [title, body, now, id]
     );
 
-    return {
+    const updatedNote: Note = {
       id,
       title,
       body,
       createdAt: existing.createdAt,
       updatedAt: now,
     };
+
+    if (options?.enqueueOutbox) {
+      const syncRepo = new SyncRepository(executor);
+      const baseRev = await syncRepo.getServerRevision("note", id);
+      await syncRepo.enqueueOutbox(
+        {
+          entityType: "note",
+          entityId: id,
+          action: "put",
+          baseRevision: baseRev,
+          payload: JSON.stringify(updatedNote),
+        },
+        executor
+      );
+    }
+
+    return updatedNote;
   }
 
-  async delete(id: string): Promise<boolean> {
+  async delete(id: string, options?: RepositoryOptions): Promise<boolean> {
     const existing = await this.getById(id);
     if (!existing) return false;
 
-    await this.db.execute("DELETE FROM notes WHERE id = ?", [id]);
+    const executor = this.getExecutor(options);
+    await executor.execute("DELETE FROM notes WHERE id = ?", [id]);
+
+    if (options?.enqueueOutbox) {
+      const syncRepo = new SyncRepository(executor);
+      const baseRev = await syncRepo.getServerRevision("note", id);
+      await syncRepo.enqueueOutbox(
+        {
+          entityType: "note",
+          entityId: id,
+          action: "delete",
+          baseRevision: baseRev,
+        },
+        executor
+      );
+      await syncRepo.recordTombstone("local", "note", id, executor);
+    }
+
     return true;
+  }
+
+  async putRaw(note: Note, tx?: SqliteDatabase): Promise<void> {
+    const executor = tx || this.db;
+    const existing = await executor.queryFirst<{ id: string }>("SELECT id FROM notes WHERE id = ?", [note.id]);
+    if (existing) {
+      await executor.execute(
+        "UPDATE notes SET title = ?, body = ?, updated_at = ? WHERE id = ?",
+        [note.title, note.body, note.updatedAt, note.id]
+      );
+    } else {
+      await executor.execute(
+        "INSERT INTO notes (id, title, body, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
+        [note.id, note.title, note.body, note.createdAt, note.updatedAt]
+      );
+    }
   }
 }

@@ -19,6 +19,10 @@ import { CalendarScreen } from "../screens/CalendarScreen.js";
 import { AnalyticsScreen } from "../screens/AnalyticsScreen.js";
 import { SearchScreen } from "../screens/SearchScreen.js";
 import { BackupScreen } from "../screens/BackupScreen.js";
+import { AccountScreen } from "../screens/AccountScreen.js";
+import type { AuthService } from "../services/auth.js";
+import type { SyncEngine } from "../services/syncEngine.js";
+import type { SyncRepository } from "../storage/syncRepository.js";
 import { useTheme } from "../services/theme.js";
 
 export interface MobileNavigatorProps {
@@ -30,6 +34,9 @@ export interface MobileNavigatorProps {
   triageService: InboxTriageService;
   searchService: SearchService;
   backupService: BackupService;
+  authService?: AuthService;
+  syncEngine?: SyncEngine;
+  syncRepo?: SyncRepository;
 }
 
 const TABS: { id: MobileTab; label: string; icon: string }[] = [
@@ -42,6 +49,7 @@ const TABS: { id: MobileTab; label: string; icon: string }[] = [
   { id: "analytics", label: "Insights", icon: "📊" },
   { id: "search", label: "Search", icon: "🔍" },
   { id: "backup", label: "Backup", icon: "💾" },
+  { id: "account", label: "Account", icon: "👤" },
 ];
 
 export function MobileNavigator({
@@ -53,6 +61,9 @@ export function MobileNavigator({
   triageService,
   searchService,
   backupService,
+  authService,
+  syncEngine,
+  syncRepo,
 }: MobileNavigatorProps): React.JSX.Element {
   const { colors, isTablet, mode, toggleTheme } = useTheme();
   const [activeTab, setActiveTab] = useState<MobileTab>("tasks");
@@ -88,6 +99,9 @@ export function MobileNavigator({
         break;
       case "backup":
         setCurrentScreen({ name: "backup" });
+        break;
+      case "account":
+        setCurrentScreen({ name: "account" });
         break;
     }
   };
@@ -198,6 +212,17 @@ export function MobileNavigator({
             onDataChanged={handleDataChanged}
           />
         );
+      case "account":
+        if (authService && syncEngine && syncRepo) {
+          return (
+            <AccountScreen
+              authService={authService}
+              syncEngine={syncEngine}
+              syncRepo={syncRepo}
+            />
+          );
+        }
+        return <div style={{ padding: "20px", color: colors.textPrimary }}>Account service unavailable</div>;
       default:
         return (
           <TasksScreen
