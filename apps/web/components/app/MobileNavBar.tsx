@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import Link from "next/link";
 import { isPrimaryActive } from "@/lib/navigation";
 
@@ -11,7 +12,7 @@ interface MobileNavBarProps {
   isMoreOpen?: boolean;
 }
 
-export default function MobileNavBar({
+function MobileNavBar({
   active,
   dueCount = 0,
   inboxCount = 0,
@@ -166,3 +167,5 @@ export default function MobileNavBar({
     </nav>
   );
 }
+
+export default memo(MobileNavBar);

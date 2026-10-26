@@ -200,7 +200,7 @@ The Blueprint overlay, `AGENTS.md`, and onboarding setup are already present.
   an interactive draggable bottom sheet on mobile viewports, keyboard shortcut
   navigation (`G I`, `G C`, `G P`), and a global `Cmd+K` / `Ctrl+K` command
   palette for instant tool switching without breaking canvas context.
-- [ ] 45. **Web performance optimization and layout memoization** - eliminate
+- [x] 45. **Web performance optimization and layout memoization** - eliminate
   redundant layout re-renders across `AppHeader`, `AppFooter`, and dialogs; optimize
   task and note list rendering and selector subscriptions to guarantee instantaneous
   filter and search response times.

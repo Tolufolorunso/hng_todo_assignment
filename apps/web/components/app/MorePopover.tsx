@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { memo, useEffect, useRef } from "react";
 import Link from "next/link";
 import ThemeToggle from "@/components/app/ThemeToggle";
 import {
@@ -21,7 +21,7 @@ interface MorePopoverProps {
   onOpenAbout: () => void;
 }
 
-export default function MorePopover({
+function MorePopover({
   isOpen,
   onClose,
   active,
@@ -235,3 +235,5 @@ export default function MorePopover({
     </div>
   );
 }
+
+export default memo(MorePopover);

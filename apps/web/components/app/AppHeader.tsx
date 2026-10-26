@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { memo, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import OfflineIndicator from "@/components/app/OfflineIndicator";
 import BackupModal from "@/components/backup/BackupModal";
@@ -28,7 +28,7 @@ interface AppHeaderProps {
   active?: "tasks" | "notes" | "calendar" | "analytics" | "privacy" | "followups" | "plan" | "inbox";
 }
 
-export default function AppHeader({ active }: AppHeaderProps) {
+function AppHeader({ active }: AppHeaderProps) {
   const { user, isAuthenticated } = useAuth();
   const [isBackupOpen, setIsBackupOpen] = useState(false);
   const [isCaptureOpen, setIsCaptureOpen] = useState(false);
@@ -41,13 +41,38 @@ export default function AppHeader({ active }: AppHeaderProps) {
   const [dueFollowUpsCount, setDueFollowUpsCount] = useState<number>(0);
   const [pendingCapturesCount, setPendingCapturesCount] = useState<number>(0);
 
+  const handleOpenCommandPalette = useCallback(() => setIsCommandPaletteOpen(true), []);
+  const handleCloseCommandPalette = useCallback(() => setIsCommandPaletteOpen(false), []);
+  const handleToggleCommandPalette = useCallback(() => setIsCommandPaletteOpen((prev) => !prev), []);
+
+  const handleOpenQuickCapture = useCallback(() => setIsCaptureOpen(true), []);
+  const handleCloseCapture = useCallback(() => setIsCaptureOpen(false), []);
+
+  const handleOpenBackup = useCallback(() => setIsBackupOpen(true), []);
+  const handleCloseBackup = useCallback(() => setIsBackupOpen(false), []);
+
+  const handleOpenAccount = useCallback(() => setIsAccountOpen(true), []);
+  const handleCloseAccount = useCallback(() => setIsAccountOpen(false), []);
+
+  const handleOpenAbout = useCallback(() => setIsAboutOpen(true), []);
+  const handleCloseAbout = useCallback(() => setIsAboutOpen(false), []);
+
+  const handleOpenMobileMore = useCallback(() => setIsMobileMoreOpen(true), []);
+  const handleCloseMobileMore = useCallback(() => setIsMobileMoreOpen(false), []);
+
+  const handleCloseDesktopMore = useCallback(() => setIsDesktopMoreOpen(false), []);
+  const handleToggleDesktopMore = useCallback(() => setIsDesktopMoreOpen((prev) => !prev), []);
+
+  const handleCloseAdoption = useCallback(() => setIsAdoptionOpen(false), []);
+  const handleCaptured = useCallback(() => setPendingCapturesCount((c) => c + 1), []);
+
   // Global Keyboard Shortcuts (Cmd+K / Ctrl+K, G-sequences, Alt+C)
   useGlobalShortcuts({
-    onToggleCommandPalette: () => setIsCommandPaletteOpen((prev) => !prev),
-    onOpenQuickCapture: () => setIsCaptureOpen(true),
+    onToggleCommandPalette: handleToggleCommandPalette,
+    onOpenQuickCapture: handleOpenQuickCapture,
   });
 
-  async function handleAuthenticated() {
+  const handleAuthenticated = useCallback(async () => {
     if (user) {
       const hasData = await hasLocalDataToAdopt();
       if (hasData) {
@@ -62,7 +87,7 @@ export default function AppHeader({ active }: AppHeaderProps) {
     } else {
       setIsAccountOpen(false);
     }
-  }
+  }, [user]);
 
   useEffect(() => {
     let mounted = true;
@@ -204,7 +229,7 @@ export default function AppHeader({ active }: AppHeaderProps) {
             <div className="relative">
               <button
                 type="button"
-                onClick={() => setIsDesktopMoreOpen((prev) => !prev)}
+                onClick={handleToggleDesktopMore}
                 aria-expanded={isDesktopMoreOpen}
                 aria-haspopup="menu"
                 className={`flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-medium transition-all ${
@@ -239,14 +264,14 @@ export default function AppHeader({ active }: AppHeaderProps) {
 
               <MorePopover
                 isOpen={isDesktopMoreOpen}
-                onClose={() => setIsDesktopMoreOpen(false)}
+                onClose={handleCloseDesktopMore}
                 active={active}
                 inboxCount={pendingCapturesCount}
                 dueCount={dueFollowUpsCount}
-                onOpenCapture={() => setIsCaptureOpen(true)}
-                onOpenBackup={() => setIsBackupOpen(true)}
-                onOpenAccount={() => setIsAccountOpen(true)}
-                onOpenAbout={() => setIsAboutOpen(true)}
+                onOpenCapture={handleOpenQuickCapture}
+                onOpenBackup={handleOpenBackup}
+                onOpenAccount={handleOpenAccount}
+                onOpenAbout={handleOpenAbout}
               />
             </div>
           </nav>
@@ -256,7 +281,7 @@ export default function AppHeader({ active }: AppHeaderProps) {
             {/* Command Palette Button */}
             <button
               type="button"
-              onClick={() => setIsCommandPaletteOpen(true)}
+              onClick={handleOpenCommandPalette}
               title="Search & Commands (Cmd+K)"
               aria-label="Search & Commands (Cmd+K)"
               className="flex items-center gap-1.5 rounded-lg border border-border/80 bg-surface px-2.5 py-1.5 text-xs text-muted shadow-sm transition-all hover:border-border-strong hover:bg-surface-muted hover:text-text active:scale-95"
@@ -284,7 +309,7 @@ export default function AppHeader({ active }: AppHeaderProps) {
             {/* Quick Capture */}
             <button
               type="button"
-              onClick={() => setIsCaptureOpen(true)}
+              onClick={handleOpenQuickCapture}
               title="Quick Capture (Alt+C)"
               aria-label="Quick Capture (Alt+C)"
               className="flex items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-2.5 py-1.5 text-xs font-semibold text-accent shadow-sm transition-all hover:bg-accent/20 active:scale-95"
@@ -316,7 +341,7 @@ export default function AppHeader({ active }: AppHeaderProps) {
             {/* Account / Sign In */}
             <button
               type="button"
-              onClick={() => setIsAccountOpen(true)}
+              onClick={handleOpenAccount}
               aria-label={isAuthenticated ? "Manage Account" : "Sign In"}
               title={isAuthenticated ? user?.email : "Sign In"}
               className="flex items-center gap-1.5 rounded-lg border border-border/80 bg-surface px-2.5 py-1.5 text-xs font-semibold text-text shadow-sm transition-all hover:border-border-strong hover:bg-surface-muted active:scale-95"
@@ -354,61 +379,71 @@ export default function AppHeader({ active }: AppHeaderProps) {
         </div>
 
         {/* Mobile Bottom Sheet for Small Viewports */}
-        <MobileBottomSheet
-          isOpen={isMobileMoreOpen}
-          onClose={() => setIsMobileMoreOpen(false)}
-          active={active}
-          inboxCount={pendingCapturesCount}
-          dueCount={dueFollowUpsCount}
-          onOpenCapture={() => setIsCaptureOpen(true)}
-          onOpenBackup={() => setIsBackupOpen(true)}
-          onOpenAccount={() => setIsAccountOpen(true)}
-          onOpenAbout={() => setIsAboutOpen(true)}
-        />
+        {isMobileMoreOpen && (
+          <MobileBottomSheet
+            isOpen={isMobileMoreOpen}
+            onClose={handleCloseMobileMore}
+            active={active}
+            inboxCount={pendingCapturesCount}
+            dueCount={dueFollowUpsCount}
+            onOpenCapture={handleOpenQuickCapture}
+            onOpenBackup={handleOpenBackup}
+            onOpenAccount={handleOpenAccount}
+            onOpenAbout={handleOpenAbout}
+          />
+        )}
 
         {/* Global Command Palette */}
-        <CommandPalette
-          isOpen={isCommandPaletteOpen}
-          onClose={() => setIsCommandPaletteOpen(false)}
-          dueCount={dueFollowUpsCount}
-          inboxCount={pendingCapturesCount}
-          onOpenCapture={() => setIsCaptureOpen(true)}
-          onOpenBackup={() => setIsBackupOpen(true)}
-          onOpenAccount={() => setIsAccountOpen(true)}
-          onOpenAbout={() => setIsAboutOpen(true)}
-        />
+        {isCommandPaletteOpen && (
+          <CommandPalette
+            isOpen={isCommandPaletteOpen}
+            onClose={handleCloseCommandPalette}
+            dueCount={dueFollowUpsCount}
+            inboxCount={pendingCapturesCount}
+            onOpenCapture={handleOpenQuickCapture}
+            onOpenBackup={handleOpenBackup}
+            onOpenAccount={handleOpenAccount}
+            onOpenAbout={handleOpenAbout}
+          />
+        )}
 
-        <BackupModal
-          isOpen={isBackupOpen}
-          onClose={() => setIsBackupOpen(false)}
-        />
+        {isBackupOpen && (
+          <BackupModal
+            isOpen={isBackupOpen}
+            onClose={handleCloseBackup}
+          />
+        )}
 
         {isCaptureOpen && (
           <FastCaptureModal
             isOpen={isCaptureOpen}
-            onClose={() => setIsCaptureOpen(false)}
-            onCaptured={() => setPendingCapturesCount((c) => c + 1)}
+            onClose={handleCloseCapture}
+            onCaptured={handleCaptured}
           />
         )}
 
-        <AccountModal
-          isOpen={isAccountOpen}
-          onClose={() => setIsAccountOpen(false)}
-          onAuthenticated={handleAuthenticated}
-        />
+        {isAccountOpen && (
+          <AccountModal
+            isOpen={isAccountOpen}
+            onClose={handleCloseAccount}
+            onAuthenticated={handleAuthenticated}
+          />
+        )}
 
-        {user && (
+        {user && isAdoptionOpen && (
           <DataAdoptionModal
             isOpen={isAdoptionOpen}
             accountId={user.id}
-            onClose={() => setIsAdoptionOpen(false)}
+            onClose={handleCloseAdoption}
           />
         )}
 
-        <AboutDeveloperModal
-          isOpen={isAboutOpen}
-          onClose={() => setIsAboutOpen(false)}
-        />
+        {isAboutOpen && (
+          <AboutDeveloperModal
+            isOpen={isAboutOpen}
+            onClose={handleCloseAbout}
+          />
+        )}
       </header>
 
       {/* Mobile Bottom Navigation Bar (strictly 4 tabs) */}
@@ -416,9 +451,11 @@ export default function AppHeader({ active }: AppHeaderProps) {
         active={active}
         dueCount={dueFollowUpsCount}
         inboxCount={pendingCapturesCount}
-        onOpenMore={() => setIsMobileMoreOpen(true)}
+        onOpenMore={handleOpenMobileMore}
         isMoreOpen={isMobileMoreOpen}
       />
     </>
   );
 }
+
+export default memo(AppHeader);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import TaskControls from "@/components/tasks/TaskControls";
 import TaskForm from "@/components/tasks/TaskForm";
@@ -83,75 +83,88 @@ export default function TasksScreen() {
     return load();
   }, [load]);
 
-  async function handleToggle(task: Task, completed: boolean) {
-    setMutationError(null);
-    setPendingId(task.id);
-    try {
-      await updateTask(task.id, { completed });
-      await load();
-    } catch (caught) {
-      setMutationError(
-        caught instanceof TaskNotFoundError
-          ? "That task no longer exists. Reload the page to refresh the list."
-          : "Could not update the task. Please try again.",
-      );
-    } finally {
-      setPendingId(null);
-    }
-  }
-
-  async function handleUpdate(
-    task: Task,
-    patch: {
-      title: string;
-      description: string;
-      priority: TaskPriority;
-      dueDate: string | null;
-      category?: TaskCategory | null;
+  const handleToggle = useCallback(
+    async (task: Task, completed: boolean) => {
+      setMutationError(null);
+      setPendingId(task.id);
+      try {
+        await updateTask(task.id, { completed });
+        await load();
+      } catch (caught) {
+        setMutationError(
+          caught instanceof TaskNotFoundError
+            ? "That task no longer exists. Reload the page to refresh the list."
+            : "Could not update the task. Please try again.",
+        );
+      } finally {
+        setPendingId(null);
+      }
     },
-  ): Promise<boolean> {
-    setMutationError(null);
-    setPendingId(task.id);
-    try {
-      await updateTask(task.id, patch);
-      await load();
-      return true;
-    } catch (caught) {
-      setMutationError(
-        caught instanceof TaskNotFoundError
-          ? "That task no longer exists. Reload the page to refresh the list."
-          : "Could not update the task. Please try again.",
-      );
-      return false;
-    } finally {
-      setPendingId(null);
-    }
-  }
-
-  async function handleDelete(task: Task): Promise<boolean> {
-    setMutationError(null);
-    setPendingId(task.id);
-    try {
-      await deleteTask(task.id);
-      await load();
-      return true;
-    } catch {
-      setMutationError("Could not delete the task. Please try again.");
-      return false;
-    } finally {
-      setPendingId(null);
-    }
-  }
-
-  const visibleTasks = sortTasks(
-    filterTasksByCategory(
-      filterTasksByStatus(searchTasks(tasks, query), statusFilter),
-      categoryFilter,
-    ),
-    sort,
+    [load],
   );
 
-  function handleSortChange(newSort: TaskSortKey) {
+  const handleUpdate = useCallback(
+    async (
+      task: Task,
+      patch: {
+        title: string;
+        description: string;
+        priority: TaskPriority;
+        dueDate: string | null;
+        category?: TaskCategory | null;
+      },
+    ): Promise<boolean> => {
+      setMutationError(null);
+      setPendingId(task.id);
+      try {
+        await updateTask(task.id, patch);
+        await load();
+        return true;
+      } catch (caught) {
+        setMutationError(
+          caught instanceof TaskNotFoundError
+            ? "That task no longer exists. Reload the page to refresh the list."
+            : "Could not update the task. Please try again.",
+        );
+        return false;
+      } finally {
+        setPendingId(null);
+      }
+    },
+    [load],
+  );
+
+  const handleDelete = useCallback(
+    async (task: Task): Promise<boolean> => {
+      setMutationError(null);
+      setPendingId(task.id);
+      try {
+        await deleteTask(task.id);
+        await load();
+        return true;
+      } catch {
+        setMutationError("Could not delete the task. Please try again.");
+        return false;
+      } finally {
+        setPendingId(null);
+      }
+    },
+    [load],
+  );
+
+  const visibleTasks = useMemo(
+    () =>
+      sortTasks(
+        filterTasksByCategory(
+          filterTasksByStatus(searchTasks(tasks, query), statusFilter),
+          categoryFilter,
+        ),
+        sort,
+      ),
+    [tasks, query, statusFilter, categoryFilter, sort],
+  );
+
+  const handleSortChange = useCallback((newSort: TaskSortKey) => {
     setSort(newSort);
     if (typeof window !== "undefined") {
       try {
@@ -160,115 +173,124 @@ export default function TasksScreen() {
         // ignore
       }
     }
-  }
+  }, []);
 
-  function handleDragStart(event: React.DragEvent<HTMLLIElement>, task: Task) {
-    draggingIdRef.current = task.id;
-    event.dataTransfer.setData("text/plain", task.id);
-    event.dataTransfer.effectAllowed = "move";
-    requestAnimationFrame(() => {
-      setDraggingId(task.id);
-    });
-  }
+  const handleDragStart = useCallback(
+    (event: React.DragEvent<HTMLLIElement>, task: Task) => {
+      draggingIdRef.current = task.id;
+      event.dataTransfer.setData("text/plain", task.id);
+      event.dataTransfer.effectAllowed = "move";
+      requestAnimationFrame(() => {
+        setDraggingId(task.id);
+      });
+    },
+    [],
+  );
 
-  function handleDragOver(event: React.DragEvent<HTMLLIElement>, task: Task) {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = "move";
+  const handleDragOver = useCallback(
+    (event: React.DragEvent<HTMLLIElement>, task: Task) => {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "move";
 
-    const sourceId = draggingIdRef.current || draggingId;
-    if (sourceId === task.id) {
-      if (dropIndicator !== null) {
-        setDropIndicator(null);
+      const sourceId = draggingIdRef.current;
+      if (sourceId === task.id) {
+        setDropIndicator((prev) => (prev !== null ? null : prev));
+        return;
       }
-      return;
-    }
 
-    const rect = event.currentTarget.getBoundingClientRect();
-    const midpoint = rect.top + rect.height / 2;
-    const edge: "top" | "bottom" = event.clientY < midpoint ? "top" : "bottom";
+      const rect = event.currentTarget.getBoundingClientRect();
+      const midpoint = rect.top + rect.height / 2;
+      const edge: "top" | "bottom" = event.clientY < midpoint ? "top" : "bottom";
 
-    if (dropIndicator?.id !== task.id || dropIndicator?.edge !== edge) {
-      setDropIndicator({ id: task.id, edge });
-    }
-  }
+      setDropIndicator((prev) => {
+        if (prev?.id === task.id && prev?.edge === edge) return prev;
+        return { id: task.id, edge };
+      });
+    },
+    [],
+  );
 
-  function handleDragLeave(event: React.DragEvent<HTMLLIElement>, task: Task) {
-    const related = event.relatedTarget as Node | null;
-    if (!related || !event.currentTarget.contains(related)) {
-      if (dropIndicator?.id === task.id) {
-        setDropIndicator(null);
+  const handleDragLeave = useCallback(
+    (event: React.DragEvent<HTMLLIElement>, task: Task) => {
+      const related = event.relatedTarget as Node | null;
+      if (!related || !event.currentTarget.contains(related)) {
+        setDropIndicator((prev) => (prev?.id === task.id ? null : prev));
       }
-    }
-  }
+    },
+    [],
+  );
 
-  function handleDragEnd() {
+  const handleDragEnd = useCallback(() => {
     draggingIdRef.current = null;
     setDraggingId(null);
     setDropIndicator(null);
-  }
+  }, []);
 
-  async function handleDrop(
-    event: React.DragEvent<HTMLLIElement>,
-    targetTask: Task,
-  ) {
-    event.preventDefault();
-    const sourceId = draggingIdRef.current || draggingId || event.dataTransfer.getData("text/plain");
-    const currentIndicator = dropIndicator;
+  const handleDrop = useCallback(
+    async (
+      event: React.DragEvent<HTMLLIElement>,
+      targetTask: Task,
+    ) => {
+      event.preventDefault();
+      const sourceId = draggingIdRef.current || draggingId || event.dataTransfer.getData("text/plain");
+      const currentIndicator = dropIndicator;
 
-    draggingIdRef.current = null;
-    setDraggingId(null);
-    setDropIndicator(null);
+      draggingIdRef.current = null;
+      setDraggingId(null);
+      setDropIndicator(null);
 
-    if (!sourceId || sourceId === targetTask.id) {
-      return;
-    }
+      if (!sourceId || sourceId === targetTask.id) {
+        return;
+      }
 
-    const fromIndex = visibleTasks.findIndex((t) => t.id === sourceId);
-    const targetIndex = visibleTasks.findIndex((t) => t.id === targetTask.id);
-    if (fromIndex === -1 || targetIndex === -1) {
-      return;
-    }
+      const fromIndex = visibleTasks.findIndex((t) => t.id === sourceId);
+      const targetIndex = visibleTasks.findIndex((t) => t.id === targetTask.id);
+      if (fromIndex === -1 || targetIndex === -1) {
+        return;
+      }
 
-    const edge = currentIndicator?.id === targetTask.id ? currentIndicator.edge : "top";
+      const edge = currentIndicator?.id === targetTask.id ? currentIndicator.edge : "top";
 
-    const reorderedVisible = [...visibleTasks];
-    const [moved] = reorderedVisible.splice(fromIndex, 1);
-    const newTargetIndex = reorderedVisible.findIndex((t) => t.id === targetTask.id);
-    const insertIndex = edge === "top" ? newTargetIndex : newTargetIndex + 1;
-    reorderedVisible.splice(insertIndex, 0, moved);
+      const reorderedVisible = [...visibleTasks];
+      const [moved] = reorderedVisible.splice(fromIndex, 1);
+      const newTargetIndex = reorderedVisible.findIndex((t) => t.id === targetTask.id);
+      const insertIndex = edge === "top" ? newTargetIndex : newTargetIndex + 1;
+      reorderedVisible.splice(insertIndex, 0, moved);
 
-    const combined = interleaveReorderedTasks(tasks, reorderedVisible);
+      const combined = interleaveReorderedTasks(tasks, reorderedVisible);
 
-    // Synchronize order index directly in memory so UI never snaps back
-    const updatedTasks = combined.map((task, index) => ({
-      ...task,
-      order: index,
-    }));
+      // Synchronize order index directly in memory so UI never snaps back
+      const updatedTasks = combined.map((task, index) => ({
+        ...task,
+        order: index,
+      }));
 
-    setTasks(updatedTasks);
-    setSort("manual");
-    if (typeof window !== "undefined") {
+      setTasks(updatedTasks);
+      setSort("manual");
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem("taskflow:sort-preference", "manual");
+        } catch {
+          // ignore
+        }
+      }
+
       try {
-        localStorage.setItem("taskflow:sort-preference", "manual");
+        await reorderTasks(updatedTasks.map((t) => t.id));
       } catch {
-        // ignore
+        setMutationError("Could not save task order. Please try again.");
+        await load();
       }
-    }
+    },
+    [draggingId, dropIndicator, load, tasks, visibleTasks],
+  );
 
-    try {
-      await reorderTasks(updatedTasks.map((t) => t.id));
-    } catch {
-      setMutationError("Could not save task order. Please try again.");
-      await load();
-    }
-  }
-
-  function clearFilters() {
+  const clearFilters = useCallback(() => {
     setQuery("");
     setStatusFilter("all");
     setCategoryFilter("all");
     handleSortChange("manual");
-  }
+  }, [handleSortChange]);
 
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8 pb-24 sm:px-6 sm:py-10 sm:pb-20">

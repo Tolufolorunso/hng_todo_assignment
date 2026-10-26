@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { memo, useState } from "react";
 import Link from "next/link";
 import TaskEditForm from "@/components/tasks/TaskEditForm";
 import { isOverdue } from "@/lib/tasks";
@@ -71,7 +71,7 @@ function formatDue(iso: string): string {
   });
 }
 
-export default function TaskItem({
+function TaskItem({
   task,
   todayIso,
   disabled,
@@ -424,3 +424,5 @@ export default function TaskItem({
     </li>
   );
 }
+
+export default memo(TaskItem);

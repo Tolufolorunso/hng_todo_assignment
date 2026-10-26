@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import NoteEditor from "@/components/notes/NoteEditor";
 import NoteList from "@/components/notes/NoteList";
@@ -50,9 +50,31 @@ export default function NotesScreen() {
     void load();
   }, [load]);
 
-  const selectedNote =
-    selectedId === null ? null : (notes.find((n) => n.id === selectedId) ?? null);
-  const visibleNotes = filterNotes(notes, query);
+  const selectedNote = useMemo(
+    () => (selectedId === null ? null : (notes.find((n) => n.id === selectedId) ?? null)),
+    [notes, selectedId],
+  );
+
+  const visibleNotes = useMemo(
+    () => filterNotes(notes, query),
+    [notes, query],
+  );
+
+  const handleSelect = useCallback((id: string) => {
+    setSelectedId(id);
+  }, []);
+
+  const handleClearSearch = useCallback(() => {
+    setQuery("");
+  }, []);
+
+  const handleNew = useCallback(() => {
+    setSelectedId(null);
+  }, []);
+
+  const handleQueryChange = useCallback((value: string) => {
+    setQuery(value);
+  }, []);
 
   function reportError(caught: unknown) {
     setMutationError(
@@ -62,31 +84,31 @@ export default function NotesScreen() {
     );
   }
 
-  async function handleSave(values: {
-    title: string;
-    body: string;
-  }): Promise<boolean> {
-    setMutationError(null);
-    setPending(true);
-    try {
-      if (selectedNote === null) {
-        const created = await createNote(values);
-        await load();
-        setSelectedId(created.id);
-      } else {
-        await updateNote(selectedNote.id, values);
-        await load();
+  const handleSave = useCallback(
+    async (values: { title: string; body: string }): Promise<boolean> => {
+      setMutationError(null);
+      setPending(true);
+      try {
+        if (selectedNote === null) {
+          const created = await createNote(values);
+          await load();
+          setSelectedId(created.id);
+        } else {
+          await updateNote(selectedNote.id, values);
+          await load();
+        }
+        return true;
+      } catch (caught) {
+        reportError(caught);
+        return false;
+      } finally {
+        setPending(false);
       }
-      return true;
-    } catch (caught) {
-      reportError(caught);
-      return false;
-    } finally {
-      setPending(false);
-    }
-  }
+    },
+    [load, selectedNote],
+  );
 
-  async function handleDelete(): Promise<boolean> {
+  const handleDelete = useCallback(async (): Promise<boolean> => {
     if (selectedNote === null) {
       return true;
     }
@@ -103,7 +125,7 @@ export default function NotesScreen() {
     } finally {
       setPending(false);
     }
-  }
+  }, [load, selectedNote]);
 
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8 pb-24 sm:px-6 sm:py-10 sm:pb-20">
@@ -127,10 +149,10 @@ export default function NotesScreen() {
             query={query}
             selectedId={selectedId}
             disabled={pending}
-            onQueryChange={setQuery}
-            onSelect={(id) => setSelectedId(id)}
-            onClearSearch={() => setQuery("")}
-            onNew={() => setSelectedId(null)}
+            onQueryChange={handleQueryChange}
+            onSelect={handleSelect}
+            onClearSearch={handleClearSearch}
+            onNew={handleNew}
           />
         </div>
 

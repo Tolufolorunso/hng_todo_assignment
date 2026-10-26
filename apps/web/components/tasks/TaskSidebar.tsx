@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import type { Task, TaskCategory } from "@/types/task";
 import { isOverdue } from "@/lib/tasks";
 
@@ -17,7 +17,7 @@ const CATEGORY_ITEMS: { key: TaskCategory; label: string; dotClass: string }[] =
   { key: "ideas", label: "Ideas", dotClass: "bg-amber-400" },
 ];
 
-export default function TaskSidebar({ tasks, todayIso }: TaskSidebarProps) {
+function TaskSidebar({ tasks, todayIso }: TaskSidebarProps) {
   const stats = useMemo(() => {
     const total = tasks.length;
     const completed = tasks.filter((t) => t.completed).length;
@@ -185,3 +185,5 @@ export default function TaskSidebar({ tasks, todayIso }: TaskSidebarProps) {
     </aside>
   );
 }
+
+export default memo(TaskSidebar);

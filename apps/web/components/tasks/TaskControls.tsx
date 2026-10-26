@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import type { TaskCategoryFilter, TaskSortKey, TaskStatusFilter } from "@/lib/tasks";
 
 interface TaskControlsProps {
@@ -29,7 +30,7 @@ const CATEGORY_OPTIONS: { value: TaskCategoryFilter; label: string; dotClass?: s
   { value: "ideas", label: "Ideas", dotClass: "bg-amber-400" },
 ];
 
-export default function TaskControls({
+function TaskControls({
   query,
   status,
   category,
@@ -155,3 +156,5 @@ export default function TaskControls({
     </div>
   );
 }
+
+export default memo(TaskControls);

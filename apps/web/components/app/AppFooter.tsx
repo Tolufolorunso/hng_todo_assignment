@@ -1,12 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { memo, useCallback, useState } from "react";
 import Link from "next/link";
 import TaskFlowLogo from "@/components/brand/TaskFlowLogo";
 import AboutDeveloperModal from "@/components/app/AboutDeveloperModal";
 
-export default function AppFooter() {
+function AppFooter() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleOpenModal = useCallback(() => setIsModalOpen(true), []);
+  const handleCloseModal = useCallback(() => setIsModalOpen(false), []);
 
   return (
     <footer className="mt-auto border-t border-border bg-surface/30 backdrop-blur-xs py-6 px-4 text-xs text-muted transition-colors mb-16 sm:mb-0 sm:fixed sm:bottom-0 sm:left-0 sm:right-0 sm:z-20 sm:border-t sm:border-border sm:bg-bg/85 sm:backdrop-blur-md sm:py-2.5 sm:px-6 print:hidden">
@@ -42,7 +45,7 @@ export default function AppFooter() {
             <span className="text-muted">Crafted by</span>
             <button
               type="button"
-              onClick={() => setIsModalOpen(true)}
+              onClick={handleOpenModal}
               className="font-semibold text-text underline decoration-accent/60 underline-offset-4 transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-xs"
             >
               Tolulope Folorunso
@@ -52,7 +55,7 @@ export default function AppFooter() {
 
           <button
             type="button"
-            onClick={() => setIsModalOpen(true)}
+            onClick={handleOpenModal}
             aria-label="View developer profile modal"
             className="flex items-center gap-1.5 rounded-lg border border-border/80 bg-surface px-2.5 py-1 text-xs font-semibold text-text shadow-xs transition-all hover:border-border-strong hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
@@ -134,10 +137,14 @@ export default function AppFooter() {
         </div>
       </div>
 
-      <AboutDeveloperModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-      />
+      {isModalOpen && (
+        <AboutDeveloperModal
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+        />
+      )}
     </footer>
   );
 }
+
+export default memo(AppFooter);
