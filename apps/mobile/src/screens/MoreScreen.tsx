@@ -9,6 +9,12 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import type { MobileScreen } from "../types/navigation.js";
 import { useTheme } from "../services/theme.js";
+import { hapticFeedback } from "../services/haptics.js";
+import {
+  getPlatformGroupContainerStyle,
+  getPlatformRipple,
+  getHairlineDividerStyle,
+} from "../styles/platform.js";
 
 export interface MoreScreenProps {
   onNavigate: (screen: MobileScreen) => void;
@@ -20,9 +26,14 @@ interface MoreMenuItem {
   title: string;
   description: string;
   icon: React.ComponentProps<typeof Ionicons>["name"];
-  screen?: MobileScreen;
+  screen: MobileScreen;
   badge?: number;
-  isAction?: boolean;
+}
+
+interface MenuGroup {
+  id: string;
+  title: string;
+  items: MoreMenuItem[];
 }
 
 export function MoreScreen({
@@ -31,58 +42,84 @@ export function MoreScreen({
 }: MoreScreenProps): React.JSX.Element {
   const { colors, mode, toggleTheme } = useTheme();
 
-  const items: MoreMenuItem[] = [
+  const groups: MenuGroup[] = [
     {
-      id: "plan",
-      title: "Plan My Day",
-      description: "Capacity-aware day planning with focus recommendations",
-      icon: "flash-outline",
-      screen: { name: "plan" },
+      id: "productivity",
+      title: "Productivity Tools",
+      items: [
+        {
+          id: "plan",
+          title: "Plan My Day",
+          description: "Capacity-aware day planning with focus recommendations",
+          icon: "flash-outline",
+          screen: { name: "plan" },
+        },
+        {
+          id: "inbox",
+          title: "Fast Capture Inbox",
+          description: "Quick capture items for triage and processing",
+          icon: "file-tray-full-outline",
+          screen: { name: "inbox" },
+          badge: inboxPendingCount,
+        },
+        {
+          id: "calendar",
+          title: "Calendar & Schedule",
+          description: "Monthly calendar view and upcoming deadlines",
+          icon: "calendar-outline",
+          screen: { name: "calendar" },
+        },
+        {
+          id: "analytics",
+          title: "Productivity Insights",
+          description: "Completion velocity, priority breakdown, and trends",
+          icon: "bar-chart-outline",
+          screen: { name: "analytics" },
+        },
+        {
+          id: "search",
+          title: "Search Workspace",
+          description: "Search across tasks, descriptions, and note content",
+          icon: "search-outline",
+          screen: { name: "search" },
+        },
+      ],
     },
     {
-      id: "inbox",
-      title: "Fast Capture Inbox",
-      description: "Quick capture items for triage and processing",
-      icon: "file-tray-full-outline",
-      screen: { name: "inbox" },
-      badge: inboxPendingCount,
-    },
-    {
-      id: "calendar",
-      title: "Calendar & Schedule",
-      description: "Monthly calendar view and upcoming deadlines",
-      icon: "calendar-outline",
-      screen: { name: "calendar" },
-    },
-    {
-      id: "analytics",
-      title: "Productivity Insights",
-      description: "Completion velocity, priority breakdown, and trends",
-      icon: "bar-chart-outline",
-      screen: { name: "analytics" },
-    },
-    {
-      id: "search",
-      title: "Search Workspace",
-      description: "Search across tasks, descriptions, and note content",
-      icon: "search-outline",
-      screen: { name: "search" },
-    },
-    {
-      id: "backup",
-      title: "Data Backup & Restore",
-      description: "Export and restore portable JSON data snapshots",
-      icon: "save-outline",
-      screen: { name: "backup" },
-    },
-    {
-      id: "account",
-      title: "Account & Cloud Sync",
-      description: "Sign in with email OTP and sync across devices",
-      icon: "person-circle-outline",
-      screen: { name: "account" },
+      id: "workspace",
+      title: "Data & Workspace",
+      items: [
+        {
+          id: "backup",
+          title: "Data Backup & Restore",
+          description: "Export and restore portable JSON data snapshots",
+          icon: "save-outline",
+          screen: { name: "backup" },
+        },
+        {
+          id: "account",
+          title: "Account & Cloud Sync",
+          description: "Sign in with email OTP and sync across devices",
+          icon: "person-circle-outline",
+          screen: { name: "account" },
+        },
+      ],
     },
   ];
+
+  const rippleConfig = getPlatformRipple(
+    mode === "dark" ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.08)"
+  );
+
+  const handleNavigate = (screen: MobileScreen) => {
+    hapticFeedback.selection();
+    onNavigate(screen);
+  };
+
+  const handleToggleTheme = () => {
+    hapticFeedback.selection();
+    toggleTheme();
+  };
 
   return (
     <ScrollView
@@ -90,25 +127,110 @@ export function MoreScreen({
       contentContainerStyle={styles.contentContainer}
     >
       <View style={styles.header}>
-        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>More Tools</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
+          More Tools
+        </Text>
         <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
-          Secondary productivity tools and preferences
+          Productivity tools, data management, and settings
         </Text>
       </View>
 
-      <View style={styles.section}>
-        {items.map((item) => (
+      {groups.map((group) => (
+        <View key={group.id} style={styles.groupSection}>
+          <Text style={[styles.groupHeaderTitle, { color: colors.textMuted }]}>
+            {group.title.toUpperCase()}
+          </Text>
+
+          <View
+            style={[
+              styles.groupContainer,
+              getPlatformGroupContainerStyle(colors.surface, colors.surfaceBorder),
+            ]}
+          >
+            {group.items.map((item, index) => {
+              const isLast = index === group.items.length - 1;
+              return (
+                <React.Fragment key={item.id}>
+                  <Pressable
+                    onPress={() => handleNavigate(item.screen)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${item.title}. ${item.description}`}
+                    android_ripple={rippleConfig}
+                    style={({ pressed }) => [
+                      styles.itemRow,
+                      pressed && styles.itemRowPressed,
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.itemIconContainer,
+                        { backgroundColor: "rgba(59, 130, 246, 0.12)" },
+                      ]}
+                    >
+                      <Ionicons name={item.icon} size={20} color={colors.accent} />
+                    </View>
+
+                    <View style={styles.itemTextContainer}>
+                      <View style={styles.titleRow}>
+                        <Text style={[styles.itemTitle, { color: colors.textPrimary }]}>
+                          {item.title}
+                        </Text>
+                        {item.badge && item.badge > 0 ? (
+                          <View style={styles.badge}>
+                            <Text style={styles.badgeText}>{item.badge}</Text>
+                          </View>
+                        ) : null}
+                      </View>
+                      <Text
+                        style={[styles.itemDescription, { color: colors.textSecondary }]}
+                        numberOfLines={1}
+                      >
+                        {item.description}
+                      </Text>
+                    </View>
+
+                    <Ionicons
+                      name="chevron-forward"
+                      size={18}
+                      color={colors.textMuted}
+                      style={styles.chevronIcon}
+                    />
+                  </Pressable>
+
+                  {!isLast && (
+                    <View
+                      style={[
+                        getHairlineDividerStyle(colors.surfaceBorder),
+                        styles.dividerIndent,
+                      ]}
+                    />
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </View>
+        </View>
+      ))}
+
+      {/* Preferences Section */}
+      <View style={styles.groupSection}>
+        <Text style={[styles.groupHeaderTitle, { color: colors.textMuted }]}>
+          PREFERENCES
+        </Text>
+
+        <View
+          style={[
+            styles.groupContainer,
+            getPlatformGroupContainerStyle(colors.surface, colors.surfaceBorder),
+          ]}
+        >
           <Pressable
-            key={item.id}
-            onPress={() => item.screen && onNavigate(item.screen)}
+            onPress={handleToggleTheme}
             accessibilityRole="button"
-            accessibilityLabel={`${item.title}. ${item.description}`}
+            accessibilityLabel={`Toggle theme. Current theme is ${mode}`}
+            android_ripple={rippleConfig}
             style={({ pressed }) => [
               styles.itemRow,
-              {
-                backgroundColor: colors.surface,
-                borderColor: colors.surfaceBorder,
-              },
               pressed && styles.itemRowPressed,
             ]}
           >
@@ -118,71 +240,35 @@ export function MoreScreen({
                 { backgroundColor: "rgba(59, 130, 246, 0.12)" },
               ]}
             >
-              <Ionicons name={item.icon} size={20} color={colors.accent} />
+              <Ionicons
+                name={mode === "dark" ? "moon-outline" : "sunny-outline"}
+                size={20}
+                color={colors.accent}
+              />
             </View>
-
             <View style={styles.itemTextContainer}>
-              <View style={styles.titleRow}>
-                <Text style={[styles.itemTitle, { color: colors.textPrimary }]}>
-                  {item.title}
-                </Text>
-                {item.badge && item.badge > 0 ? (
-                  <View style={styles.badge}>
-                    <Text style={styles.badgeText}>{item.badge}</Text>
-                  </View>
-                ) : null}
-              </View>
-              <Text
-                style={[styles.itemDescription, { color: colors.textSecondary }]}
-                numberOfLines={2}
-              >
-                {item.description}
+              <Text style={[styles.itemTitle, { color: colors.textPrimary }]}>
+                Appearance
+              </Text>
+              <Text style={[styles.itemDescription, { color: colors.textSecondary }]}>
+                Switch between dark and light appearance
               </Text>
             </View>
-
-            <Ionicons
-              name="chevron-forward"
-              size={18}
-              color={colors.textSecondary}
-              style={styles.chevronIcon}
-            />
+            <View
+              style={[
+                styles.themeModePill,
+                {
+                  backgroundColor:
+                    mode === "dark" ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.05)",
+                },
+              ]}
+            >
+              <Text style={[styles.themeModePillText, { color: colors.textPrimary }]}>
+                {mode === "dark" ? "Dark" : "Light"}
+              </Text>
+            </View>
           </Pressable>
-        ))}
-      </View>
-
-      <View style={styles.section}>
-        <Pressable
-          onPress={toggleTheme}
-          accessibilityRole="button"
-          accessibilityLabel={`Toggle theme. Current theme is ${mode}`}
-          style={({ pressed }) => [
-            styles.itemRow,
-            {
-              backgroundColor: colors.surface,
-              borderColor: colors.surfaceBorder,
-            },
-            pressed && styles.itemRowPressed,
-          ]}
-        >
-          <View
-            style={[
-              styles.itemIconContainer,
-              { backgroundColor: "rgba(59, 130, 246, 0.12)" },
-            ]}
-          >
-            <Ionicons
-              name={mode === "dark" ? "moon-outline" : "sunny-outline"}
-              size={20}
-              color={colors.accent}
-            />
-          </View>
-          <View style={styles.itemTextContainer}>
-            <Text style={[styles.itemTitle, { color: colors.textPrimary }]}>Theme</Text>
-            <Text style={[styles.itemDescription, { color: colors.textSecondary }]}>
-              Switch between dark and light appearance (Current: {mode})
-            </Text>
-          </View>
-        </Pressable>
+        </View>
       </View>
     </ScrollView>
   );
@@ -207,21 +293,31 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: 14,
   },
-  section: {
+  groupSection: {
     marginBottom: 24,
-    gap: 8,
+  },
+  groupHeaderTitle: {
+    fontSize: 12,
+    fontWeight: "600",
+    letterSpacing: 0.5,
+    marginBottom: 8,
+    marginLeft: 8,
+  },
+  groupContainer: {
+    width: "100%",
   },
   itemRow: {
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 14,
     paddingHorizontal: 16,
-    borderRadius: 12,
-    borderWidth: 1,
     minHeight: 56,
   },
   itemRowPressed: {
     opacity: 0.7,
+  },
+  dividerIndent: {
+    marginLeft: 66,
   },
   itemIconContainer: {
     width: 36,
@@ -230,9 +326,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginRight: 14,
-  },
-  itemIcon: {
-    fontSize: 20,
   },
   itemTextContainer: {
     flex: 1,
@@ -264,5 +357,15 @@ const styles = StyleSheet.create({
   },
   chevronIcon: {
     marginLeft: 8,
+  },
+  themeModePill: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    marginLeft: 8,
+  },
+  themeModePillText: {
+    fontSize: 12,
+    fontWeight: "600",
   },
 });

@@ -213,7 +213,7 @@ The Blueprint overlay, `AGENTS.md`, and onboarding setup are already present.
   `tasks.tsx`, `followups.tsx`, `notes.tsx`, `more.tsx`, and native stack modal screens),
   preserving scroll states and deep linking, and replacing all unicode emojis with
   `@expo/vector-icons`.
-- [ ] 47. **Mobile native aesthetics, haptics, and FlatList virtualization** - implement
+- [x] 47. **Mobile native aesthetics, haptics, and FlatList virtualization** - implement
   platform-specific native styling (iOS inset grouped cards, Apple Settings style More
   hub, translucent Cupertino navigation bars; Android Material 3 elevation and ripples),
   integrate tactile feedback via `expo-haptics`, and virtualize task and note lists with

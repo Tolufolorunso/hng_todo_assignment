@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   FlatList,
   ActivityIndicator,
   StyleSheet,
+  Platform,
 } from "react-native";
 import type { Note } from "../types/note.js";
 import type { NoteRepository } from "../storage/noteRepository.js";
@@ -27,7 +28,7 @@ export function NotesScreen({
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
 
-  const loadNotes = async () => {
+  const loadNotes = useCallback(async () => {
     setLoading(true);
     try {
       const all = await noteRepo.list(searchQuery || undefined);
@@ -35,11 +36,18 @@ export function NotesScreen({
     } finally {
       setLoading(false);
     }
-  };
+  }, [noteRepo, searchQuery]);
 
   useEffect(() => {
     loadNotes();
-  }, [searchQuery]);
+  }, [loadNotes]);
+
+  const renderItem = useCallback(
+    ({ item }: { item: Note }) => (
+      <NoteItemCard note={item} onPress={onNavigateToEdit} />
+    ),
+    [onNavigateToEdit]
+  );
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -97,9 +105,11 @@ export function NotesScreen({
         <FlatList
           data={notes}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <NoteItemCard note={item} onPress={onNavigateToEdit} />
-          )}
+          renderItem={renderItem}
+          initialNumToRender={10}
+          maxToRenderPerBatch={10}
+          windowSize={5}
+          removeClippedSubviews={Platform.OS === "android"}
           contentContainerStyle={styles.listContent}
         />
       )}

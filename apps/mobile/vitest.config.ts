@@ -17,6 +17,7 @@ export default defineConfig({
       "@expo/vector-icons": path.resolve(__dirname, "./src/test/vector-icons-mock.ts"),
       "react-native-safe-area-context": path.resolve(__dirname, "./src/test/safe-area-mock.ts"),
       "react-native-screens": path.resolve(__dirname, "./src/test/screens-mock.ts"),
+      "expo-haptics": path.resolve(__dirname, "./src/test/haptics-mock.ts"),
     },
   },
 });

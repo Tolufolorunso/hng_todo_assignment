@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
   TextInput,
-  ScrollView,
+  FlatList,
   Pressable,
   StyleSheet,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import type {
@@ -19,10 +20,163 @@ import { TouchButton, Badge, EmptyState } from "../components/primitives.js";
 import { launchAction } from "../services/launchers.js";
 import { notificationScheduler } from "../services/notifications.js";
 import { useTheme } from "../services/theme.js";
+import { hapticFeedback } from "../services/haptics.js";
+import { getPlatformCardStyle } from "../styles/platform.js";
 
 export interface FollowUpsScreenProps {
   followUpRepo: FollowUpRepository;
 }
+
+interface FollowUpItemCardProps {
+  item: FollowUp;
+  onComplete: (id: string) => void;
+  onSnooze: (id: string) => void;
+  onDelete: (id: string) => void;
+}
+
+const FollowUpItemCard = React.memo(function FollowUpItemCard({
+  item,
+  onComplete,
+  onSnooze,
+  onDelete,
+}: FollowUpItemCardProps): React.JSX.Element {
+  const { colors } = useTheme();
+  const cardStyle = getPlatformCardStyle(colors.surface, colors.surfaceBorder);
+
+  const handleEmail = () => {
+    hapticFeedback.light();
+    launchAction("email", item.emailAddress!, {
+      subject: `Follow-up: ${item.commitment}`,
+    });
+  };
+
+  const handlePhone = () => {
+    hapticFeedback.light();
+    launchAction("phone", item.phoneNumber!);
+  };
+
+  const handleWhatsApp = () => {
+    hapticFeedback.light();
+    launchAction("whatsapp", item.whatsAppNumber!, {
+      body: `Hi ${item.personName}, following up on: ${item.commitment}`,
+    });
+  };
+
+  const handleItemComplete = () => {
+    hapticFeedback.medium();
+    onComplete(item.id);
+  };
+
+  const handleItemSnooze = () => {
+    hapticFeedback.light();
+    onSnooze(item.id);
+  };
+
+  const handleItemDelete = () => {
+    hapticFeedback.warning();
+    onDelete(item.id);
+  };
+
+  return (
+    <View style={[styles.itemCard, cardStyle]}>
+      <View style={styles.cardHeader}>
+        <View style={styles.cardHeaderMain}>
+          <Text style={[styles.personNameText, { color: colors.textPrimary }]}>
+            {item.personName}
+          </Text>
+          <Text style={[styles.commitmentText, { color: colors.textSecondary }]}>
+            {item.commitment}
+          </Text>
+        </View>
+        <Badge
+          label={item.status}
+          variant={item.status === "completed" ? "low" : "high"}
+        />
+      </View>
+
+      <View style={styles.metaRow}>
+        <Text style={[styles.metaText, { color: colors.textMuted }]}>
+          Due: {item.dueAt.slice(0, 10)}
+        </Text>
+        {item.recurrence && (
+          <Badge
+            label={`${item.recurrence.frequency} (${item.recurrence.mode})`}
+            variant="neutral"
+          />
+        )}
+        {item.sourceExcerpt && (
+          <Text style={[styles.linkedNoteText, { color: colors.accent }]}>
+            Linked Note
+          </Text>
+        )}
+      </View>
+
+      {/* Native communication launchers */}
+      <View style={styles.launchersRow}>
+        {item.emailAddress && (
+          <Pressable
+            onPress={handleEmail}
+            accessibilityRole="button"
+            accessibilityLabel={`Email ${item.personName}`}
+            style={[styles.launcherBtn, { backgroundColor: "rgba(59, 130, 246, 0.15)" }]}
+          >
+            <Ionicons name="mail-outline" size={14} color={colors.accent} />
+            <Text style={[styles.launcherBtnText, { color: colors.accent, marginLeft: 4 }]}>
+              Email
+            </Text>
+          </Pressable>
+        )}
+        {item.phoneNumber && (
+          <Pressable
+            onPress={handlePhone}
+            accessibilityRole="button"
+            accessibilityLabel={`Call ${item.personName}`}
+            style={[styles.launcherBtn, { backgroundColor: "rgba(16, 185, 129, 0.15)" }]}
+          >
+            <Ionicons name="call-outline" size={14} color={colors.success} />
+            <Text style={[styles.launcherBtnText, { color: colors.success, marginLeft: 4 }]}>
+              Call
+            </Text>
+          </Pressable>
+        )}
+        {item.whatsAppNumber && (
+          <Pressable
+            onPress={handleWhatsApp}
+            accessibilityRole="button"
+            accessibilityLabel={`WhatsApp ${item.personName}`}
+            style={[styles.launcherBtn, { backgroundColor: "rgba(37, 211, 102, 0.15)" }]}
+          >
+            <Ionicons name="chatbubble-ellipses-outline" size={14} color="#25d366" />
+            <Text style={[styles.launcherBtnText, { color: "#25d366", marginLeft: 4 }]}>
+              WhatsApp
+            </Text>
+          </Pressable>
+        )}
+      </View>
+
+      {/* Action buttons */}
+      {item.status === "open" && (
+        <View style={styles.actionsRow}>
+          <TouchButton
+            label="Complete"
+            onPress={handleItemComplete}
+            variant="primary"
+          />
+          <TouchButton
+            label="Snooze +24h"
+            onPress={handleItemSnooze}
+            variant="secondary"
+          />
+          <TouchButton
+            label="Delete"
+            onPress={handleItemDelete}
+            variant="ghost"
+          />
+        </View>
+      )}
+    </View>
+  );
+});
 
 export function FollowUpsScreen({ followUpRepo }: FollowUpsScreenProps): React.JSX.Element {
   const { colors } = useTheme();
@@ -38,10 +192,12 @@ export function FollowUpsScreen({ followUpRepo }: FollowUpsScreenProps): React.J
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
-  const [recurrenceInterval, setRecurrenceInterval] = useState<"none" | "daily" | "weekly" | "monthly">("none");
+  const [recurrenceInterval, setRecurrenceInterval] = useState<
+    "none" | "daily" | "weekly" | "monthly"
+  >("none");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const loadFollowUps = async () => {
+  const loadFollowUps = useCallback(async () => {
     setLoading(true);
     try {
       const all = await followUpRepo.list();
@@ -49,11 +205,11 @@ export function FollowUpsScreen({ followUpRepo }: FollowUpsScreenProps): React.J
     } finally {
       setLoading(false);
     }
-  };
+  }, [followUpRepo]);
 
   useEffect(() => {
     loadFollowUps();
-  }, []);
+  }, [loadFollowUps]);
 
   const handleCreate = async () => {
     if (!personName.trim() || !commitment.trim()) {
@@ -83,6 +239,8 @@ export function FollowUpsScreen({ followUpRepo }: FollowUpsScreenProps): React.J
       recurrence,
     });
 
+    hapticFeedback.success();
+
     // Schedule local push notification reminder
     try {
       await notificationScheduler.scheduleFollowUpReminder(created);
@@ -100,21 +258,31 @@ export function FollowUpsScreen({ followUpRepo }: FollowUpsScreenProps): React.J
     await loadFollowUps();
   };
 
-  const handleComplete = async (id: string) => {
+  const handleComplete = useCallback(async (id: string) => {
     await followUpRepo.completeOccurrence(id, "completed");
     await notificationScheduler.cancelByTargetId(id);
     await loadFollowUps();
-  };
+  }, [followUpRepo, loadFollowUps]);
 
-  const handleSnooze = async (id: string) => {
+  const handleSnooze = useCallback(async (id: string) => {
     await followUpRepo.snooze(id, 24);
     await loadFollowUps();
-  };
+  }, [followUpRepo, loadFollowUps]);
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = useCallback(async (id: string) => {
     await followUpRepo.delete(id);
     await notificationScheduler.cancelByTargetId(id);
     await loadFollowUps();
+  }, [followUpRepo, loadFollowUps]);
+
+  const handleStatusFilterChange = (st: FollowUpStatus | "all") => {
+    hapticFeedback.selection();
+    setStatusFilter(st);
+  };
+
+  const handleRecurrenceSelect = (r: "none" | "daily" | "weekly" | "monthly") => {
+    hapticFeedback.selection();
+    setRecurrenceInterval(r);
   };
 
   const filtered = followups.filter((f) => {
@@ -122,12 +290,20 @@ export function FollowUpsScreen({ followUpRepo }: FollowUpsScreenProps): React.J
     return f.status === statusFilter;
   });
 
-  return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={styles.contentContainer}
-      testID="followups-screen"
-    >
+  const renderItem = useCallback(
+    ({ item }: { item: FollowUp }) => (
+      <FollowUpItemCard
+        item={item}
+        onComplete={handleComplete}
+        onSnooze={handleSnooze}
+        onDelete={handleDelete}
+      />
+    ),
+    [handleComplete, handleSnooze, handleDelete]
+  );
+
+  const renderHeader = () => (
+    <View>
       <View style={styles.headerRow}>
         <Text style={[styles.screenTitle, { color: colors.textPrimary }]}>
           Follow Ups
@@ -204,10 +380,10 @@ export function FollowUpsScreen({ followUpRepo }: FollowUpsScreenProps): React.J
           <TextInput
             placeholder="Email address (optional)"
             placeholderTextColor={colors.textMuted}
-            keyboardType="email-address"
-            autoCapitalize="none"
             value={email}
             onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
             style={[
               styles.input,
               {
@@ -221,9 +397,9 @@ export function FollowUpsScreen({ followUpRepo }: FollowUpsScreenProps): React.J
           <TextInput
             placeholder="Phone number (optional)"
             placeholderTextColor={colors.textMuted}
-            keyboardType="phone-pad"
             value={phone}
             onChangeText={setPhone}
+            keyboardType="phone-pad"
             style={[
               styles.input,
               {
@@ -237,9 +413,9 @@ export function FollowUpsScreen({ followUpRepo }: FollowUpsScreenProps): React.J
           <TextInput
             placeholder="WhatsApp number (optional)"
             placeholderTextColor={colors.textMuted}
-            keyboardType="phone-pad"
             value={whatsapp}
             onChangeText={setWhatsapp}
+            keyboardType="phone-pad"
             style={[
               styles.input,
               {
@@ -260,7 +436,7 @@ export function FollowUpsScreen({ followUpRepo }: FollowUpsScreenProps): React.J
                 return (
                   <Pressable
                     key={r}
-                    onPress={() => setRecurrenceInterval(r)}
+                    onPress={() => handleRecurrenceSelect(r)}
                     accessibilityRole="button"
                     accessibilityLabel={`Recurrence ${r}`}
                     style={[
@@ -296,7 +472,7 @@ export function FollowUpsScreen({ followUpRepo }: FollowUpsScreenProps): React.J
           return (
             <Pressable
               key={st}
-              onPress={() => setStatusFilter(st)}
+              onPress={() => handleStatusFilterChange(st)}
               accessibilityRole="button"
               accessibilityLabel={`Filter ${st}`}
               style={[
@@ -319,139 +495,49 @@ export function FollowUpsScreen({ followUpRepo }: FollowUpsScreenProps): React.J
           );
         })}
       </View>
+    </View>
+  );
 
-      {loading ? (
+  const renderEmpty = () => {
+    if (loading) {
+      return (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.accent} />
           <Text style={[styles.loadingText, { color: colors.textMuted }]}>
             Loading commitments...
           </Text>
         </View>
-      ) : filtered.length === 0 ? (
-        <EmptyState
-          title="No follow ups found"
-          description={
-            statusFilter === "open"
-              ? "You have zero pending follow-up commitments."
-              : "No follow-ups match this status."
-          }
-          actionLabel="+ Add Follow Up"
-          onAction={() => setShowAddForm(true)}
-        />
-      ) : (
-        <View style={styles.listContainer}>
-          {filtered.map((fu) => (
-            <View
-              key={fu.id}
-              style={[
-                styles.itemCard,
-                { backgroundColor: colors.surface, borderColor: colors.surfaceBorder },
-              ]}
-            >
-              <View style={styles.cardHeader}>
-                <View style={styles.cardHeaderMain}>
-                  <Text style={[styles.personNameText, { color: colors.textPrimary }]}>
-                    {fu.personName}
-                  </Text>
-                  <Text style={[styles.commitmentText, { color: colors.textSecondary }]}>
-                    {fu.commitment}
-                  </Text>
-                </View>
-                <Badge
-                  label={fu.status}
-                  variant={fu.status === "completed" ? "low" : "high"}
-                />
-              </View>
+      );
+    }
+    return (
+      <EmptyState
+        title="No follow ups found"
+        description={
+          statusFilter === "open"
+            ? "You have zero pending follow-up commitments."
+            : "No follow-ups match this status."
+        }
+        actionLabel="+ Add Follow Up"
+        onAction={() => setShowAddForm(true)}
+      />
+    );
+  };
 
-              <View style={styles.metaRow}>
-                <Text style={[styles.metaText, { color: colors.textMuted }]}>
-                  Due: {fu.dueAt.slice(0, 10)}
-                </Text>
-                {fu.recurrence && (
-                  <Badge
-                    label={`${fu.recurrence.frequency} (${fu.recurrence.mode})`}
-                    variant="neutral"
-                  />
-                )}
-                {fu.sourceExcerpt && (
-                  <Text style={[styles.linkedNoteText, { color: colors.accent }]}>
-                    Linked Note
-                  </Text>
-                )}
-              </View>
-
-              {/* Native communication launchers */}
-              <View style={styles.launchersRow}>
-                {fu.emailAddress && (
-                  <Pressable
-                    onPress={() => launchAction("email", fu.emailAddress!, { subject: `Follow-up: ${fu.commitment}` })}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Email ${fu.personName}`}
-                    style={[styles.launcherBtn, { backgroundColor: "rgba(59, 130, 246, 0.15)" }]}
-                  >
-                    <Ionicons name="mail-outline" size={14} color={colors.accent} />
-                    <Text style={[styles.launcherBtnText, { color: colors.accent, marginLeft: 4 }]}>
-                      Email
-                    </Text>
-                  </Pressable>
-                )}
-                {fu.phoneNumber && (
-                  <Pressable
-                    onPress={() => launchAction("phone", fu.phoneNumber!)}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Call ${fu.personName}`}
-                    style={[styles.launcherBtn, { backgroundColor: "rgba(16, 185, 129, 0.15)" }]}
-                  >
-                    <Ionicons name="call-outline" size={14} color={colors.success} />
-                    <Text style={[styles.launcherBtnText, { color: colors.success, marginLeft: 4 }]}>
-                      Call
-                    </Text>
-                  </Pressable>
-                )}
-                {fu.whatsAppNumber && (
-                  <Pressable
-                    onPress={() =>
-                      launchAction("whatsapp", fu.whatsAppNumber!, {
-                        body: `Hi ${fu.personName}, following up on: ${fu.commitment}`,
-                      })
-                    }
-                    accessibilityRole="button"
-                    accessibilityLabel={`WhatsApp ${fu.personName}`}
-                    style={[styles.launcherBtn, { backgroundColor: "rgba(37, 211, 102, 0.15)" }]}
-                  >
-                    <Ionicons name="chatbubble-ellipses-outline" size={14} color="#25d366" />
-                    <Text style={[styles.launcherBtnText, { color: "#25d366", marginLeft: 4 }]}>
-                      WhatsApp
-                    </Text>
-                  </Pressable>
-                )}
-              </View>
-
-              {/* Action buttons */}
-              {fu.status === "open" && (
-                <View style={styles.actionsRow}>
-                  <TouchButton
-                    label="Complete"
-                    onPress={() => handleComplete(fu.id)}
-                    variant="primary"
-                  />
-                  <TouchButton
-                    label="Snooze +24h"
-                    onPress={() => handleSnooze(fu.id)}
-                    variant="secondary"
-                  />
-                  <TouchButton
-                    label="Delete"
-                    onPress={() => handleDelete(fu.id)}
-                    variant="ghost"
-                  />
-                </View>
-              )}
-            </View>
-          ))}
-        </View>
-      )}
-    </ScrollView>
+  return (
+    <FlatList
+      testID="followups-screen"
+      style={[styles.container, { backgroundColor: colors.background }]}
+      contentContainerStyle={styles.contentContainer}
+      data={loading ? [] : filtered}
+      keyExtractor={(item) => item.id}
+      renderItem={renderItem}
+      ListHeaderComponent={renderHeader}
+      ListEmptyComponent={renderEmpty}
+      initialNumToRender={10}
+      maxToRenderPerBatch={10}
+      windowSize={5}
+      removeClippedSubviews={Platform.OS === "android"}
+    />
   );
 }
 
@@ -546,13 +632,9 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 14,
   },
-  listContainer: {
-    gap: 12,
-  },
   itemCard: {
-    borderWidth: 1,
-    borderRadius: 12,
     padding: 16,
+    marginBottom: 12,
     gap: 10,
   },
   cardHeader: {

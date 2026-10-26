@@ -7,6 +7,12 @@ import {
 } from "react-native";
 import type { Task } from "../types/task.js";
 import { Badge } from "./primitives.js";
+import { useTheme } from "../services/theme.js";
+import { hapticFeedback } from "../services/haptics.js";
+import {
+  getPlatformCardStyle,
+  getPlatformRipple,
+} from "../styles/platform.js";
 
 export interface TaskItemCardProps {
   task: Task;
@@ -14,14 +20,35 @@ export interface TaskItemCardProps {
   onPress: (id: string) => void;
 }
 
-export function TaskItemCard({
+export const TaskItemCard = React.memo(function TaskItemCard({
   task,
   onToggleComplete,
   onPress,
 }: TaskItemCardProps): React.JSX.Element {
+  const { colors, mode } = useTheme();
+
+  const handleToggle = () => {
+    hapticFeedback.medium();
+    onToggleComplete(task.id);
+  };
+
+  const handlePress = () => {
+    hapticFeedback.light();
+    onPress(task.id);
+  };
+
+  const rippleConfig = getPlatformRipple(
+    mode === "dark" ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.08)"
+  );
+
+  const cardPlatformStyle = getPlatformCardStyle(
+    colors.surface,
+    colors.surfaceBorder
+  );
+
   return (
     <View
-      style={styles.card}
+      style={[styles.card, cardPlatformStyle]}
       accessibilityRole="none"
       accessibilityLabel={`Task: ${task.title}`}
     >
@@ -29,13 +56,16 @@ export function TaskItemCard({
         accessibilityRole="checkbox"
         accessibilityState={{ checked: task.completed }}
         accessibilityLabel={`Mark "${task.title}" as ${task.completed ? "incomplete" : "complete"}`}
-        onPress={() => onToggleComplete(task.id)}
+        onPress={handleToggle}
+        android_ripple={rippleConfig}
         style={styles.checkboxTouchTarget}
       >
         <View
           style={[
             styles.checkboxBox,
-            task.completed ? styles.checkboxCompleted : styles.checkboxIncomplete,
+            task.completed
+              ? [styles.checkboxCompleted, { backgroundColor: colors.accent }]
+              : [styles.checkboxIncomplete, { borderColor: colors.surfaceBorder }],
           ]}
         >
           {task.completed ? <Text style={styles.checkmark}>✓</Text> : null}
@@ -43,15 +73,18 @@ export function TaskItemCard({
       </Pressable>
 
       <Pressable
-        onPress={() => onPress(task.id)}
+        onPress={handlePress}
         accessibilityRole="button"
         accessibilityLabel={`Edit task ${task.title}`}
+        android_ripple={rippleConfig}
         style={styles.contentArea}
       >
         <Text
           style={[
             styles.title,
-            task.completed ? styles.titleCompleted : styles.titleActive,
+            task.completed
+              ? [styles.titleCompleted, { color: colors.textMuted }]
+              : [styles.titleActive, { color: colors.textPrimary }],
           ]}
         >
           {task.title}
@@ -59,7 +92,7 @@ export function TaskItemCard({
 
         {task.description ? (
           <Text
-            style={styles.description}
+            style={[styles.description, { color: colors.textSecondary }]}
             numberOfLines={2}
           >
             {task.description}
@@ -72,13 +105,15 @@ export function TaskItemCard({
             <Badge label={task.category} variant="category" />
           ) : null}
           {task.dueDate ? (
-            <Text style={styles.dueDateText}>Due {task.dueDate}</Text>
+            <Text style={[styles.dueDateText, { color: colors.textMuted }]}>
+              Due {task.dueDate}
+            </Text>
           ) : null}
         </View>
       </Pressable>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   card: {
@@ -86,10 +121,6 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     padding: 12,
     marginBottom: 8,
-    backgroundColor: "#18181b",
-    borderWidth: 1,
-    borderColor: "#27272a",
-    borderRadius: 12,
     gap: 8,
   },
   checkboxTouchTarget: {
@@ -107,7 +138,6 @@ const styles = StyleSheet.create({
   },
   checkboxIncomplete: {
     borderWidth: 2,
-    borderColor: "#52525b",
     backgroundColor: "transparent",
   },
   checkboxCompleted: {
@@ -132,12 +162,10 @@ const styles = StyleSheet.create({
     color: "#f4f4f5",
   },
   titleCompleted: {
-    color: "#71717a",
     textDecorationLine: "line-through",
   },
   description: {
     fontSize: 13,
-    color: "#a1a1aa",
     marginBottom: 8,
     lineHeight: 18,
   },
@@ -149,7 +177,6 @@ const styles = StyleSheet.create({
   },
   dueDateText: {
     fontSize: 11,
-    color: "#a1a1aa",
     marginLeft: 4,
   },
 });

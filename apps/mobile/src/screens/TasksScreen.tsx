@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -7,12 +7,14 @@ import {
   FlatList,
   ActivityIndicator,
   StyleSheet,
+  Platform,
 } from "react-native";
 import type { Task, TaskCategory } from "../types/task.js";
 import type { TaskRepository } from "../storage/taskRepository.js";
 import { TaskItemCard } from "../components/TaskItemCard.js";
 import { TouchButton, EmptyState } from "../components/primitives.js";
 import { useTheme } from "../services/theme.js";
+import { hapticFeedback } from "../services/haptics.js";
 
 export interface TasksScreenProps {
   taskRepo: TaskRepository;
@@ -40,7 +42,7 @@ export function TasksScreen({
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "completed">("all");
   const [categoryFilter, setCategoryFilter] = useState<TaskCategory | "all">("all");
 
-  const loadTasks = async () => {
+  const loadTasks = useCallback(async () => {
     setLoading(true);
     try {
       const all = await taskRepo.list();
@@ -48,15 +50,25 @@ export function TasksScreen({
     } finally {
       setLoading(false);
     }
-  };
+  }, [taskRepo]);
 
   useEffect(() => {
     loadTasks();
-  }, []);
+  }, [loadTasks]);
 
-  const handleToggleComplete = async (id: string) => {
+  const handleToggleComplete = useCallback(async (id: string) => {
     await taskRepo.toggleComplete(id);
     await loadTasks();
+  }, [taskRepo, loadTasks]);
+
+  const handleStatusSelect = (status: "all" | "active" | "completed") => {
+    hapticFeedback.selection();
+    setStatusFilter(status);
+  };
+
+  const handleCategorySelect = (cat: TaskCategory | "all") => {
+    hapticFeedback.selection();
+    setCategoryFilter(cat);
   };
 
   const filteredTasks = tasks.filter((t) => {
@@ -65,6 +77,17 @@ export function TasksScreen({
     if (categoryFilter !== "all" && t.category !== categoryFilter) return false;
     return true;
   });
+
+  const renderItem = useCallback(
+    ({ item }: { item: Task }) => (
+      <TaskItemCard
+        task={item}
+        onToggleComplete={handleToggleComplete}
+        onPress={onNavigateToEdit}
+      />
+    ),
+    [handleToggleComplete, onNavigateToEdit]
+  );
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -119,7 +142,7 @@ export function TasksScreen({
               accessibilityRole="tab"
               accessibilityState={{ selected: isSelected }}
               accessibilityLabel={`Filter ${status}`}
-              onPress={() => setStatusFilter(status)}
+              onPress={() => handleStatusSelect(status)}
               style={[
                 styles.statusTab,
                 isSelected && { backgroundColor: colors.accent },
@@ -149,7 +172,7 @@ export function TasksScreen({
           return (
             <Pressable
               key={cat}
-              onPress={() => setCategoryFilter(cat)}
+              onPress={() => handleCategorySelect(cat)}
               accessibilityRole="button"
               accessibilityLabel={`Category ${cat}`}
               style={[
@@ -196,13 +219,11 @@ export function TasksScreen({
         <FlatList
           data={filteredTasks}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <TaskItemCard
-              task={item}
-              onToggleComplete={handleToggleComplete}
-              onPress={onNavigateToEdit}
-            />
-          )}
+          renderItem={renderItem}
+          initialNumToRender={10}
+          maxToRenderPerBatch={10}
+          windowSize={5}
+          removeClippedSubviews={Platform.OS === "android"}
           contentContainerStyle={styles.listContent}
         />
       )}
