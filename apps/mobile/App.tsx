@@ -1,7 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { createDatabase, runMigrations } from "./src/db/index.js";
-import { TaskRepository, NoteRepository } from "./src/storage/index.js";
-import { SearchService, BackupService } from "./src/services/index.js";
+import {
+  TaskRepository,
+  NoteRepository,
+  FollowUpRepository,
+  DailyPlanRepository,
+  InboxRepository,
+} from "./src/storage/index.js";
+import {
+  SearchService,
+  BackupService,
+  InboxTriageService,
+  ThemeProvider,
+} from "./src/services/index.js";
 import { MobileNavigator } from "./src/navigation/Navigator.js";
 
 export function App(): React.JSX.Element {
@@ -10,6 +21,10 @@ export function App(): React.JSX.Element {
   const [services, setServices] = useState<{
     taskRepo: TaskRepository;
     noteRepo: NoteRepository;
+    followUpRepo: FollowUpRepository;
+    dailyPlanRepo: DailyPlanRepository;
+    inboxRepo: InboxRepository;
+    triageService: InboxTriageService;
     searchService: SearchService;
     backupService: BackupService;
   } | null>(null);
@@ -22,12 +37,20 @@ export function App(): React.JSX.Element {
 
         const taskRepo = new TaskRepository(db);
         const noteRepo = new NoteRepository(db);
+        const followUpRepo = new FollowUpRepository(db);
+        const dailyPlanRepo = new DailyPlanRepository(db);
+        const inboxRepo = new InboxRepository(db);
+        const triageService = new InboxTriageService(inboxRepo, taskRepo, noteRepo, followUpRepo);
         const searchService = new SearchService(taskRepo, noteRepo);
         const backupService = new BackupService(db, taskRepo, noteRepo);
 
         setServices({
           taskRepo,
           noteRepo,
+          followUpRepo,
+          dailyPlanRepo,
+          inboxRepo,
+          triageService,
           searchService,
           backupService,
         });
@@ -87,23 +110,29 @@ export function App(): React.JSX.Element {
   }
 
   return (
-    <div
-      style={{
-        width: "100vw",
-        height: "100vh",
-        backgroundColor: "#000000",
-        display: "flex",
-        flexDirection: "column",
-        overflow: "hidden",
-      }}
-    >
-      <MobileNavigator
-        taskRepo={services.taskRepo}
-        noteRepo={services.noteRepo}
-        searchService={services.searchService}
-        backupService={services.backupService}
-      />
-    </div>
+    <ThemeProvider>
+      <div
+        style={{
+          width: "100vw",
+          height: "100vh",
+          backgroundColor: "#000000",
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+        }}
+      >
+        <MobileNavigator
+          taskRepo={services.taskRepo}
+          noteRepo={services.noteRepo}
+          followUpRepo={services.followUpRepo}
+          dailyPlanRepo={services.dailyPlanRepo}
+          inboxRepo={services.inboxRepo}
+          triageService={services.triageService}
+          searchService={services.searchService}
+          backupService={services.backupService}
+        />
+      </div>
+    </ThemeProvider>
   );
 }
 

@@ -3,6 +3,7 @@ import type { Note } from "../types/note.js";
 import type { NoteRepository } from "../storage/noteRepository.js";
 import { NoteItemCard } from "../components/NoteItemCard.js";
 import { TouchButton, EmptyState } from "../components/primitives.js";
+import { useTheme } from "../services/theme.js";
 
 export interface NotesScreenProps {
   noteRepo: NoteRepository;
@@ -10,6 +11,7 @@ export interface NotesScreenProps {
 }
 
 export function NotesScreen({ noteRepo, onNavigateToEdit }: NotesScreenProps): React.JSX.Element {
+  const { colors } = useTheme();
   const [notes, setNotes] = useState<Note[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
@@ -36,8 +38,8 @@ export function NotesScreen({ noteRepo, onNavigateToEdit }: NotesScreenProps): R
         display: "flex",
         flexDirection: "column",
         height: "100%",
-        backgroundColor: "#09090b",
-        color: "#f4f4f5",
+        backgroundColor: colors.background,
+        color: colors.textPrimary,
         padding: "16px",
         overflowY: "auto",
       }}
@@ -72,9 +74,9 @@ export function NotesScreen({ noteRepo, onNavigateToEdit }: NotesScreenProps): R
             minHeight: "44px",
             padding: "10px 12px",
             borderRadius: "8px",
-            border: "1px solid #3f3f46",
-            backgroundColor: "#18181b",
-            color: "#ffffff",
+            border: `1px solid ${colors.surfaceBorder}`,
+            backgroundColor: colors.surface,
+            color: colors.textPrimary,
             fontSize: "14px",
             boxSizing: "border-box",
           }}
@@ -83,7 +85,7 @@ export function NotesScreen({ noteRepo, onNavigateToEdit }: NotesScreenProps): R
 
       {/* Notes List */}
       {loading ? (
-        <div style={{ textAlign: "center", padding: "32px", color: "#a1a1aa" }}>Loading notes...</div>
+        <div style={{ textAlign: "center", padding: "32px", color: colors.textMuted }}>Loading notes...</div>
       ) : notes.length === 0 ? (
         <EmptyState
           title="No notes yet"

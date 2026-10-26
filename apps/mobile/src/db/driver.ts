@@ -15,7 +15,7 @@ export class InMemorySqliteDatabase implements SqliteDatabase {
   private inTransaction = false;
 
   async execute(sql: string, params: unknown[] = []): Promise<void> {
-    const trimmed = sql.trim();
+    const trimmed = sql.replace(/\s+/g, " ").trim();
     const upper = trimmed.toUpperCase();
 
     if (upper.startsWith("CREATE TABLE")) {
@@ -23,8 +23,8 @@ export class InMemorySqliteDatabase implements SqliteDatabase {
       return;
     }
 
-    if (upper.startsWith("CREATE INDEX") || upper.startsWith("DROP INDEX")) {
-      // Indexes are no-ops in memory map implementation
+    if (upper.startsWith("CREATE INDEX") || upper.startsWith("DROP INDEX") || upper.startsWith("ALTER TABLE")) {
+      // Indexes and column additions are no-ops in memory map implementation
       return;
     }
 
@@ -47,7 +47,7 @@ export class InMemorySqliteDatabase implements SqliteDatabase {
   }
 
   async query<T = Record<string, unknown>>(sql: string, params: unknown[] = []): Promise<T[]> {
-    const trimmed = sql.trim();
+    const trimmed = sql.replace(/\s+/g, " ").trim();
     const upper = trimmed.toUpperCase();
 
     if (upper.startsWith("SELECT")) {

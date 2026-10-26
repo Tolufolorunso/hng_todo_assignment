@@ -14,45 +14,45 @@ describe("Mobile SQLite Database and Migration Runner", () => {
     expect(version).toBe(0);
   });
 
-  it("applies migrations cleanly and sets schema version to 1", async () => {
+  it("applies migrations cleanly and sets schema version to 2", async () => {
     const result = await runMigrations(db);
-    expect(result.applied).toEqual([1]);
+    expect(result.applied).toEqual([1, 2]);
     expect(result.total).toBe(migrations.length);
 
     const version = await getMigrationVersion(db);
-    expect(version).toBe(1);
+    expect(version).toBe(2);
 
-    // Verify tasks and notes tables exist by inserting test rows
+    // Verify tasks, notes, followups, daily_plans exist
     await db.execute(
-      "INSERT INTO tasks (id, title, priority, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
-      ["t1", "Test Task", "high", "2026-10-25T00:00:00.000Z", "2026-10-25T00:00:00.000Z"]
+      "INSERT INTO tasks (id, title, priority, estimated_minutes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
+      ["t1", "Test Task", "high", 45, "2026-10-25T00:00:00.000Z", "2026-10-25T00:00:00.000Z"]
     );
-    const task = await db.queryFirst<{ id: string; title: string }>(
-      "SELECT id, title FROM tasks WHERE id = ?",
+    const task = await db.queryFirst<{ id: string; title: string; estimated_minutes: number }>(
+      "SELECT id, title, estimated_minutes FROM tasks WHERE id = ?",
       ["t1"]
     );
-    expect(task).toEqual({ id: "t1", title: "Test Task" });
+    expect(task).toEqual({ id: "t1", title: "Test Task", estimated_minutes: 45 });
 
     await db.execute(
-      "INSERT INTO notes (id, title, body, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
-      ["n1", "Test Note", "Sample body", "2026-10-25T00:00:00.000Z", "2026-10-25T00:00:00.000Z"]
+      "INSERT INTO followups (id, person_name, commitment, due_at, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      ["fu1", "Alice", "Review contract", "2026-10-28T14:00:00.000Z", "open", "2026-10-25T00:00:00.000Z", "2026-10-25T00:00:00.000Z"]
     );
-    const note = await db.queryFirst<{ id: string; title: string; body: string }>(
-      "SELECT id, title, body FROM notes WHERE id = ?",
-      ["n1"]
+    const followup = await db.queryFirst<{ id: string; person_name: string; commitment: string }>(
+      "SELECT id, person_name, commitment FROM followups WHERE id = ?",
+      ["fu1"]
     );
-    expect(note).toEqual({ id: "n1", title: "Test Note", body: "Sample body" });
+    expect(followup).toEqual({ id: "fu1", person_name: "Alice", commitment: "Review contract" });
   });
 
   it("is idempotent when re-running migrations", async () => {
     const firstRun = await runMigrations(db);
-    expect(firstRun.applied).toEqual([1]);
+    expect(firstRun.applied).toEqual([1, 2]);
 
     const secondRun = await runMigrations(db);
     expect(secondRun.applied).toEqual([]);
 
     const version = await getMigrationVersion(db);
-    expect(version).toBe(1);
+    expect(version).toBe(2);
   });
 
   it("rolls back transactions on error", async () => {
@@ -77,6 +77,6 @@ describe("Mobile SQLite Database and Migration Runner", () => {
     expect(instance).toBeDefined();
     await runMigrations(instance);
     const version = await getMigrationVersion(instance);
-    expect(version).toBe(1);
+    expect(version).toBe(2);
   });
 });

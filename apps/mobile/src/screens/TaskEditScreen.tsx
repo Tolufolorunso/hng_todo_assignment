@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import type { TaskPriority, TaskCategory } from "../types/task.js";
 import type { TaskRepository } from "../storage/taskRepository.js";
 import { TouchButton } from "../components/primitives.js";
+import { useTheme } from "../services/theme.js";
 
 export interface TaskEditScreenProps {
   taskRepo: TaskRepository;
@@ -19,11 +20,13 @@ export function TaskEditScreen({
   onDone,
   onCancel,
 }: TaskEditScreenProps): React.JSX.Element {
+  const { colors } = useTheme();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<TaskPriority>("medium");
   const [category, setCategory] = useState<TaskCategory | null>(null);
   const [dueDate, setDueDate] = useState("");
+  const [estimatedMinutes, setEstimatedMinutes] = useState<number | undefined>(undefined);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -36,6 +39,7 @@ export function TaskEditScreen({
           setPriority(task.priority);
           setCategory(task.category);
           setDueDate(task.dueDate || "");
+          setEstimatedMinutes(task.estimatedMinutes ?? undefined);
         }
       });
     }
@@ -52,6 +56,7 @@ export function TaskEditScreen({
           priority,
           category,
           dueDate: dueDate ? dueDate : null,
+          estimatedMinutes: estimatedMinutes || null,
         });
       } else {
         await taskRepo.create({
@@ -60,6 +65,7 @@ export function TaskEditScreen({
           priority,
           category,
           dueDate: dueDate ? dueDate : null,
+          estimatedMinutes: estimatedMinutes || null,
         });
       }
       onDone();
@@ -72,10 +78,8 @@ export function TaskEditScreen({
 
   const handleDelete = async () => {
     if (!taskId) return;
-    if (confirm("Are you sure you want to delete this task?")) {
-      await taskRepo.delete(taskId);
-      onDone();
-    }
+    await taskRepo.delete(taskId);
+    onDone();
   };
 
   return (
@@ -86,8 +90,8 @@ export function TaskEditScreen({
         display: "flex",
         flexDirection: "column",
         height: "100%",
-        backgroundColor: "#09090b",
-        color: "#f4f4f5",
+        backgroundColor: colors.background,
+        color: colors.textPrimary,
         padding: "16px",
         overflowY: "auto",
       }}
@@ -100,8 +104,8 @@ export function TaskEditScreen({
           marginBottom: "20px",
         }}
       >
-        <TouchButton label="← Back" onPress={onCancel} variant="ghost" accessibilityLabel="Cancel and return to tasks" />
-        <h1 style={{ fontSize: "20px", fontWeight: "bold", margin: 0 }}>
+        <TouchButton label="← Back" onPress={onCancel} variant="ghost" accessibilityLabel="Cancel task editing" />
+        <h1 style={{ fontSize: "18px", fontWeight: "bold", margin: 0 }}>
           {taskId ? "Edit Task" : "New Task"}
         </h1>
         <TouchButton
@@ -129,11 +133,11 @@ export function TaskEditScreen({
         </div>
       )}
 
-      {/* Title Input */}
+      {/* Task Title Input */}
       <div style={{ marginBottom: "16px" }}>
         <label
           htmlFor="task-title"
-          style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#a1a1aa", marginBottom: "6px" }}
+          style={{ display: "block", fontSize: "13px", fontWeight: 600, color: colors.textMuted, marginBottom: "6px" }}
         >
           Title *
         </label>
@@ -142,43 +146,42 @@ export function TaskEditScreen({
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Task title (e.g. Finish report)"
+          placeholder="What needs to be done?"
           style={{
             width: "100%",
             minHeight: "44px",
             padding: "10px 12px",
             borderRadius: "8px",
-            border: "1px solid #3f3f46",
-            backgroundColor: "#18181b",
-            color: "#ffffff",
+            border: `1px solid ${colors.surfaceBorder}`,
+            backgroundColor: colors.surface,
+            color: colors.textPrimary,
             fontSize: "15px",
             boxSizing: "border-box",
           }}
         />
       </div>
 
-      {/* Description Input */}
+      {/* Task Description Textarea */}
       <div style={{ marginBottom: "16px" }}>
         <label
-          htmlFor="task-desc"
-          style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#a1a1aa", marginBottom: "6px" }}
+          htmlFor="task-description"
+          style={{ display: "block", fontSize: "13px", fontWeight: 600, color: colors.textMuted, marginBottom: "6px" }}
         >
           Description
         </label>
         <textarea
-          id="task-desc"
+          id="task-description"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="Optional notes or details"
-          rows={3}
+          placeholder="Add details, links, or notes..."
+          rows={4}
           style={{
             width: "100%",
-            minHeight: "88px",
             padding: "10px 12px",
             borderRadius: "8px",
-            border: "1px solid #3f3f46",
-            backgroundColor: "#18181b",
-            color: "#ffffff",
+            border: `1px solid ${colors.surfaceBorder}`,
+            backgroundColor: colors.surface,
+            color: colors.textPrimary,
             fontSize: "14px",
             boxSizing: "border-box",
             resize: "vertical",
@@ -188,7 +191,7 @@ export function TaskEditScreen({
 
       {/* Priority Selector */}
       <div style={{ marginBottom: "16px" }}>
-        <div style={{ fontSize: "13px", fontWeight: 600, color: "#a1a1aa", marginBottom: "6px" }}>
+        <div style={{ fontSize: "13px", fontWeight: 600, color: colors.textMuted, marginBottom: "6px" }}>
           Priority
         </div>
         <div style={{ display: "flex", gap: "8px" }}>
@@ -203,10 +206,9 @@ export function TaskEditScreen({
                 flex: 1,
                 minHeight: "44px",
                 borderRadius: "8px",
-                border: "1px solid",
-                borderColor: priority === p ? "#3b82f6" : "#3f3f46",
-                backgroundColor: priority === p ? "#1e3a8a" : "#18181b",
-                color: priority === p ? "#93c5fd" : "#a1a1aa",
+                border: `1px solid ${priority === p ? colors.accent : colors.surfaceBorder}`,
+                backgroundColor: priority === p ? colors.accent : colors.surface,
+                color: priority === p ? "#ffffff" : colors.textMuted,
                 fontSize: "13px",
                 fontWeight: 600,
                 cursor: "pointer",
@@ -221,7 +223,7 @@ export function TaskEditScreen({
 
       {/* Category Selector */}
       <div style={{ marginBottom: "16px" }}>
-        <div style={{ fontSize: "13px", fontWeight: 600, color: "#a1a1aa", marginBottom: "6px" }}>
+        <div style={{ fontSize: "13px", fontWeight: 600, color: colors.textMuted, marginBottom: "6px" }}>
           Category
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
@@ -232,10 +234,9 @@ export function TaskEditScreen({
               minHeight: "44px",
               padding: "6px 12px",
               borderRadius: "9999px",
-              border: "1px solid",
-              borderColor: category === null ? "#3b82f6" : "#3f3f46",
-              backgroundColor: category === null ? "#1e3a8a" : "#18181b",
-              color: category === null ? "#93c5fd" : "#a1a1aa",
+              border: `1px solid ${category === null ? colors.accent : colors.surfaceBorder}`,
+              backgroundColor: category === null ? colors.accent : colors.surface,
+              color: category === null ? "#ffffff" : colors.textMuted,
               fontSize: "12px",
               fontWeight: 600,
               cursor: "pointer",
@@ -252,10 +253,9 @@ export function TaskEditScreen({
                 minHeight: "44px",
                 padding: "6px 12px",
                 borderRadius: "9999px",
-                border: "1px solid",
-                borderColor: category === cat ? "#3b82f6" : "#3f3f46",
-                backgroundColor: category === cat ? "#1e3a8a" : "#18181b",
-                color: category === cat ? "#93c5fd" : "#a1a1aa",
+                border: `1px solid ${category === cat ? colors.accent : colors.surfaceBorder}`,
+                backgroundColor: category === cat ? colors.accent : colors.surface,
+                color: category === cat ? "#ffffff" : colors.textMuted,
                 fontSize: "12px",
                 fontWeight: 600,
                 cursor: "pointer",
@@ -268,31 +268,62 @@ export function TaskEditScreen({
         </div>
       </div>
 
-      {/* Due Date Input */}
-      <div style={{ marginBottom: "24px" }}>
-        <label
-          htmlFor="task-due-date"
-          style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#a1a1aa", marginBottom: "6px" }}
-        >
-          Due Date (YYYY-MM-DD)
-        </label>
-        <input
-          id="task-due-date"
-          type="date"
-          value={dueDate}
-          onChange={(e) => setDueDate(e.target.value)}
-          style={{
-            width: "100%",
-            minHeight: "44px",
-            padding: "10px 12px",
-            borderRadius: "8px",
-            border: "1px solid #3f3f46",
-            backgroundColor: "#18181b",
-            color: "#ffffff",
-            fontSize: "14px",
-            boxSizing: "border-box",
-          }}
-        />
+      {/* Due Date & Estimate Inputs */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "24px" }}>
+        <div>
+          <label
+            htmlFor="task-due-date"
+            style={{ display: "block", fontSize: "13px", fontWeight: 600, color: colors.textMuted, marginBottom: "6px" }}
+          >
+            Due Date
+          </label>
+          <input
+            id="task-due-date"
+            type="date"
+            value={dueDate}
+            onChange={(e) => setDueDate(e.target.value)}
+            style={{
+              width: "100%",
+              minHeight: "44px",
+              padding: "10px 12px",
+              borderRadius: "8px",
+              border: `1px solid ${colors.surfaceBorder}`,
+              backgroundColor: colors.surface,
+              color: colors.textPrimary,
+              fontSize: "14px",
+              boxSizing: "border-box",
+            }}
+          />
+        </div>
+
+        <div>
+          <label
+            htmlFor="task-estimate"
+            style={{ display: "block", fontSize: "13px", fontWeight: 600, color: colors.textMuted, marginBottom: "6px" }}
+          >
+            Est. Minutes
+          </label>
+          <input
+            id="task-estimate"
+            type="number"
+            min="5"
+            step="5"
+            placeholder="30"
+            value={estimatedMinutes ?? ""}
+            onChange={(e) => setEstimatedMinutes(e.target.value ? parseInt(e.target.value, 10) : undefined)}
+            style={{
+              width: "100%",
+              minHeight: "44px",
+              padding: "10px 12px",
+              borderRadius: "8px",
+              border: `1px solid ${colors.surfaceBorder}`,
+              backgroundColor: colors.surface,
+              color: colors.textPrimary,
+              fontSize: "14px",
+              boxSizing: "border-box",
+            }}
+          />
+        </div>
       </div>
 
       {/* Delete Action if editing */}

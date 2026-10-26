@@ -158,7 +158,7 @@ The Blueprint overlay, `AGENTS.md`, and onboarding setup are already present.
   application with native navigation, mobile-owned SQLite migrations, task and
   note CRUD, search, backup import and export, accessible touch interaction, and
   offline restart behavior.
-- [ ] 38. **React Native product and differentiated feature parity** -
+- [x] 38. **React Native product and differentiated feature parity** -
   independently implement priorities, due dates, categories, ordering, calendar,
   analytics, rich-text editing, note reading, themes, Plan My Day, actionable
   notes, Follow Up recurrence, local closed-app notifications, communication

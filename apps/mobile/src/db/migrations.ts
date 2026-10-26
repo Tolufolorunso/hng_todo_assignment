@@ -56,6 +56,101 @@ export const migrations: Migration[] = [
       await db.execute("CREATE INDEX IF NOT EXISTS idx_notes_updated_at ON notes(updated_at)");
     },
   },
+  {
+    version: 2,
+    name: "002_differentiated_features",
+    up: async (db: SqliteDatabase) => {
+      // 1. followups table
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS followups (
+          id TEXT PRIMARY KEY,
+          person_name TEXT NOT NULL,
+          commitment TEXT NOT NULL,
+          details TEXT,
+          due_at TEXT NOT NULL,
+          time_zone TEXT NOT NULL DEFAULT 'UTC',
+          email_address TEXT,
+          phone_number TEXT,
+          whatsapp_number TEXT,
+          preferred_action TEXT,
+          recurrence TEXT,
+          status TEXT NOT NULL DEFAULT 'open',
+          source_note_id TEXT,
+          source_excerpt TEXT,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL
+        )
+      `);
+      await db.execute("CREATE INDEX IF NOT EXISTS idx_followups_due_at ON followups(due_at)");
+      await db.execute("CREATE INDEX IF NOT EXISTS idx_followups_status ON followups(status)");
+      await db.execute("CREATE INDEX IF NOT EXISTS idx_followups_source_note ON followups(source_note_id)");
+
+      // 2. followup_occurrences table
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS followup_occurrences (
+          id TEXT PRIMARY KEY,
+          followup_id TEXT NOT NULL,
+          scheduled_due_at TEXT NOT NULL,
+          outcome TEXT NOT NULL DEFAULT 'unresolved',
+          resolved_at TEXT,
+          next_due_at TEXT
+        )
+      `);
+      await db.execute("CREATE INDEX IF NOT EXISTS idx_occurrences_followup ON followup_occurrences(followup_id)");
+
+      // 3. daily_plans table
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS daily_plans (
+          id TEXT PRIMARY KEY,
+          local_date TEXT NOT NULL,
+          time_zone TEXT NOT NULL,
+          available_minutes INTEGER NOT NULL DEFAULT 480,
+          items TEXT NOT NULL DEFAULT '[]',
+          accepted_at TEXT,
+          updated_at TEXT NOT NULL
+        )
+      `);
+      await db.execute("CREATE INDEX IF NOT EXISTS idx_daily_plans_date ON daily_plans(local_date)");
+
+      // 4. inbox_captures table
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS inbox_captures (
+          id TEXT PRIMARY KEY,
+          text TEXT NOT NULL,
+          shared_url TEXT,
+          source_app_label TEXT,
+          captured_at TEXT NOT NULL,
+          state TEXT NOT NULL DEFAULT 'pending',
+          result_entity_type TEXT,
+          result_entity_id TEXT,
+          processed_at TEXT
+        )
+      `);
+      await db.execute("CREATE INDEX IF NOT EXISTS idx_inbox_state ON inbox_captures(state)");
+
+      // 5. task_order table
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS task_order (
+          id TEXT PRIMARY KEY,
+          ordered_ids TEXT NOT NULL DEFAULT '[]'
+        )
+      `);
+
+      // 6. preferences table
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS preferences (
+          key TEXT PRIMARY KEY,
+          value TEXT NOT NULL
+        )
+      `);
+
+      // 7. Alter tasks to add differentiated columns
+      await db.execute("ALTER TABLE tasks ADD COLUMN estimated_minutes INTEGER");
+      await db.execute("ALTER TABLE tasks ADD COLUMN source_note_id TEXT");
+      await db.execute("ALTER TABLE tasks ADD COLUMN source_excerpt TEXT");
+      await db.execute("CREATE INDEX IF NOT EXISTS idx_tasks_source_note ON tasks(source_note_id)");
+    },
+  },
 ];
 
 export async function runMigrations(db: SqliteDatabase): Promise<{ applied: number[]; total: number }> {

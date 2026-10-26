@@ -3,15 +3,22 @@ import type { Task, TaskCategory } from "../types/task.js";
 import type { TaskRepository } from "../storage/taskRepository.js";
 import { TaskItemCard } from "../components/TaskItemCard.js";
 import { TouchButton, EmptyState } from "../components/primitives.js";
+import { useTheme } from "../services/theme.js";
 
 export interface TasksScreenProps {
   taskRepo: TaskRepository;
   onNavigateToEdit: (taskId?: string) => void;
+  onNavigateToPlan?: () => void;
 }
 
 const CATEGORIES: (TaskCategory | "all")[] = ["all", "work", "personal", "urgent", "study", "ideas"];
 
-export function TasksScreen({ taskRepo, onNavigateToEdit }: TasksScreenProps): React.JSX.Element {
+export function TasksScreen({
+  taskRepo,
+  onNavigateToEdit,
+  onNavigateToPlan,
+}: TasksScreenProps): React.JSX.Element {
+  const { colors } = useTheme();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "completed">("all");
@@ -51,8 +58,8 @@ export function TasksScreen({ taskRepo, onNavigateToEdit }: TasksScreenProps): R
         display: "flex",
         flexDirection: "column",
         height: "100%",
-        backgroundColor: "#09090b",
-        color: "#f4f4f5",
+        backgroundColor: colors.background,
+        color: colors.textPrimary,
         padding: "16px",
         overflowY: "auto",
       }}
@@ -74,6 +81,32 @@ export function TasksScreen({ taskRepo, onNavigateToEdit }: TasksScreenProps): R
         />
       </div>
 
+      {/* Plan My Day Quick Banner */}
+      {onNavigateToPlan && (
+        <div
+          style={{
+            backgroundColor: colors.surface,
+            border: `1px solid ${colors.surfaceBorder}`,
+            borderRadius: "10px",
+            padding: "12px 14px",
+            marginBottom: "16px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <div>
+            <div style={{ fontSize: "14px", fontWeight: 600, color: colors.textPrimary }}>
+              Plan My Day
+            </div>
+            <div style={{ fontSize: "12px", color: colors.textMuted }}>
+              Score tasks against today's available capacity
+            </div>
+          </div>
+          <TouchButton label="Open Plan" onPress={onNavigateToPlan} variant="secondary" />
+        </div>
+      )}
+
       {/* Status Filter Tabs */}
       <div
         role="tablist"
@@ -82,7 +115,7 @@ export function TasksScreen({ taskRepo, onNavigateToEdit }: TasksScreenProps): R
           display: "flex",
           gap: "8px",
           marginBottom: "12px",
-          backgroundColor: "#18181b",
+          backgroundColor: colors.surface,
           padding: "4px",
           borderRadius: "8px",
         }}
@@ -98,8 +131,8 @@ export function TasksScreen({ taskRepo, onNavigateToEdit }: TasksScreenProps): R
               minHeight: "44px",
               border: "none",
               borderRadius: "6px",
-              backgroundColor: statusFilter === status ? "#27272a" : "transparent",
-              color: statusFilter === status ? "#ffffff" : "#a1a1aa",
+              backgroundColor: statusFilter === status ? colors.accent : "transparent",
+              color: statusFilter === status ? "#ffffff" : colors.textMuted,
               fontSize: "13px",
               fontWeight: 600,
               cursor: "pointer",
@@ -129,10 +162,9 @@ export function TasksScreen({ taskRepo, onNavigateToEdit }: TasksScreenProps): R
               minHeight: "44px",
               padding: "4px 12px",
               borderRadius: "9999px",
-              border: "1px solid",
-              borderColor: categoryFilter === cat ? "#3b82f6" : "#27272a",
-              backgroundColor: categoryFilter === cat ? "#1e3a8a" : "#18181b",
-              color: categoryFilter === cat ? "#93c5fd" : "#a1a1aa",
+              border: `1px solid ${categoryFilter === cat ? colors.accent : colors.surfaceBorder}`,
+              backgroundColor: categoryFilter === cat ? colors.accent : colors.surface,
+              color: categoryFilter === cat ? "#ffffff" : colors.textMuted,
               fontSize: "12px",
               fontWeight: 600,
               cursor: "pointer",
@@ -147,7 +179,7 @@ export function TasksScreen({ taskRepo, onNavigateToEdit }: TasksScreenProps): R
 
       {/* Task List */}
       {loading ? (
-        <div style={{ textAlign: "center", padding: "32px", color: "#a1a1aa" }}>Loading tasks...</div>
+        <div style={{ textAlign: "center", padding: "32px", color: colors.textMuted }}>Loading tasks...</div>
       ) : filteredTasks.length === 0 ? (
         <EmptyState
           title="No tasks found"

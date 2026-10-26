@@ -2,3 +2,8 @@ export * from "./task.js";
 export * from "./note.js";
 export * from "./backup.js";
 export * from "./navigation.js";
+export * from "./followup.js";
+export * from "./plan.js";
+export * from "./inbox.js";
+export * from "./analytics.js";
+export * from "./theme.js";

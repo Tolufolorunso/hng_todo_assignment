@@ -11,6 +11,9 @@ interface TaskRow {
   priority: string;
   due_date: string | null;
   category: string | null;
+  estimated_minutes?: number | null;
+  source_note_id?: string | null;
+  source_excerpt?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -25,6 +28,12 @@ function mapRowToTask(row: TaskRow): Task {
     priority: (row.priority as Task["priority"]) || "medium",
     dueDate: row.due_date,
     category: (row.category as Task["category"]) || null,
+    estimatedMinutes:
+      row.estimated_minutes !== undefined && row.estimated_minutes !== null
+        ? Number(row.estimated_minutes)
+        : null,
+    sourceNoteId: row.source_note_id || null,
+    sourceExcerpt: row.source_excerpt || null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -46,11 +55,30 @@ export class TaskRepository {
     const priority = input.priority || "medium";
     const dueDate = input.dueDate || null;
     const category = input.category || null;
+    const estimatedMinutes = input.estimatedMinutes !== undefined ? input.estimatedMinutes : null;
+    const sourceNoteId = input.sourceNoteId || null;
+    const sourceExcerpt = input.sourceExcerpt || null;
 
     await this.db.execute(
-      `INSERT INTO tasks (id, title, description, completed, completed_at, priority, due_date, category, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [id, title, description, 0, null, priority, dueDate, category, now, now]
+      `INSERT INTO tasks (
+        id, title, description, completed, completed_at, priority, due_date, category,
+        estimated_minutes, source_note_id, source_excerpt, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        id,
+        title,
+        description,
+        0,
+        null,
+        priority,
+        dueDate,
+        category,
+        estimatedMinutes,
+        sourceNoteId,
+        sourceExcerpt,
+        now,
+        now,
+      ]
     );
 
     return {
@@ -62,6 +90,9 @@ export class TaskRepository {
       priority,
       dueDate,
       category,
+      estimatedMinutes,
+      sourceNoteId,
+      sourceExcerpt,
       createdAt: now,
       updatedAt: now,
     };
@@ -126,10 +157,17 @@ export class TaskRepository {
     const priority = input.priority !== undefined ? input.priority : existing.priority;
     const dueDate = input.dueDate !== undefined ? input.dueDate : existing.dueDate;
     const category = input.category !== undefined ? input.category : existing.category;
+    const estimatedMinutes =
+      input.estimatedMinutes !== undefined ? input.estimatedMinutes : existing.estimatedMinutes;
+    const sourceNoteId =
+      input.sourceNoteId !== undefined ? input.sourceNoteId : existing.sourceNoteId;
+    const sourceExcerpt =
+      input.sourceExcerpt !== undefined ? input.sourceExcerpt : existing.sourceExcerpt;
 
     await this.db.execute(
       `UPDATE tasks
-       SET title = ?, description = ?, completed = ?, completed_at = ?, priority = ?, due_date = ?, category = ?, updated_at = ?
+       SET title = ?, description = ?, completed = ?, completed_at = ?, priority = ?, due_date = ?,
+           category = ?, estimated_minutes = ?, source_note_id = ?, source_excerpt = ?, updated_at = ?
        WHERE id = ?`,
       [
         title,
@@ -139,6 +177,9 @@ export class TaskRepository {
         priority,
         dueDate,
         category,
+        estimatedMinutes,
+        sourceNoteId,
+        sourceExcerpt,
         now,
         id,
       ]
@@ -153,6 +194,9 @@ export class TaskRepository {
       priority,
       dueDate,
       category,
+      estimatedMinutes,
+      sourceNoteId,
+      sourceExcerpt,
       createdAt: existing.createdAt,
       updatedAt: now,
     };

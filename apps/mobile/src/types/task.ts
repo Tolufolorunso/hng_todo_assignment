@@ -10,6 +10,9 @@ export interface Task {
   priority: TaskPriority;
   dueDate: string | null;
   category: TaskCategory | null;
+  estimatedMinutes?: number | null;
+  sourceNoteId?: string | null;
+  sourceExcerpt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -20,6 +23,9 @@ export interface CreateTaskInput {
   priority?: TaskPriority;
   dueDate?: string | null;
   category?: TaskCategory | null;
+  estimatedMinutes?: number | null;
+  sourceNoteId?: string | null;
+  sourceExcerpt?: string | null;
 }
 
 export interface UpdateTaskInput {
@@ -29,6 +35,9 @@ export interface UpdateTaskInput {
   priority?: TaskPriority;
   dueDate?: string | null;
   category?: TaskCategory | null;
+  estimatedMinutes?: number | null;
+  sourceNoteId?: string | null;
+  sourceExcerpt?: string | null;
 }
 
 export interface TaskFilter {
