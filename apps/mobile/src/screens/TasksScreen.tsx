@@ -1,4 +1,13 @@
 import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  Pressable,
+  ScrollView,
+  FlatList,
+  ActivityIndicator,
+  StyleSheet,
+} from "react-native";
 import type { Task, TaskCategory } from "../types/task.js";
 import type { TaskRepository } from "../storage/taskRepository.js";
 import { TaskItemCard } from "../components/TaskItemCard.js";
@@ -11,7 +20,14 @@ export interface TasksScreenProps {
   onNavigateToPlan?: () => void;
 }
 
-const CATEGORIES: (TaskCategory | "all")[] = ["all", "work", "personal", "urgent", "study", "ideas"];
+const CATEGORIES: (TaskCategory | "all")[] = [
+  "all",
+  "work",
+  "personal",
+  "urgent",
+  "study",
+  "ideas",
+];
 
 export function TasksScreen({
   taskRepo,
@@ -51,135 +67,120 @@ export function TasksScreen({
   });
 
   return (
-    <div
-      role="region"
-      aria-label="Tasks screen"
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        height: "100%",
-        backgroundColor: colors.background,
-        color: colors.textPrimary,
-        padding: "16px",
-        overflowY: "auto",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "16px",
-        }}
-      >
-        <h1 style={{ fontSize: "24px", fontWeight: "bold", margin: 0 }}>Tasks</h1>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={styles.header}>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Tasks</Text>
         <TouchButton
           label="+ New Task"
           onPress={() => onNavigateToEdit()}
           variant="primary"
           accessibilityLabel="Create a new task"
         />
-      </div>
+      </View>
 
       {/* Plan My Day Quick Banner */}
       {onNavigateToPlan && (
-        <div
-          style={{
-            backgroundColor: colors.surface,
-            border: `1px solid ${colors.surfaceBorder}`,
-            borderRadius: "10px",
-            padding: "12px 14px",
-            marginBottom: "16px",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
+        <View
+          style={[
+            styles.banner,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.surfaceBorder,
+            },
+          ]}
         >
-          <div>
-            <div style={{ fontSize: "14px", fontWeight: 600, color: colors.textPrimary }}>
+          <View style={styles.bannerTextContainer}>
+            <Text style={[styles.bannerTitle, { color: colors.textPrimary }]}>
               Plan My Day
-            </div>
-            <div style={{ fontSize: "12px", color: colors.textMuted }}>
+            </Text>
+            <Text style={[styles.bannerSubtitle, { color: colors.textMuted }]}>
               Score tasks against today's available capacity
-            </div>
-          </div>
-          <TouchButton label="Open Plan" onPress={onNavigateToPlan} variant="secondary" />
-        </div>
+            </Text>
+          </View>
+          <TouchButton
+            label="Open Plan"
+            onPress={onNavigateToPlan}
+            variant="secondary"
+          />
+        </View>
       )}
 
       {/* Status Filter Tabs */}
-      <div
-        role="tablist"
-        aria-label="Filter tasks by completion status"
-        style={{
-          display: "flex",
-          gap: "8px",
-          marginBottom: "12px",
-          backgroundColor: colors.surface,
-          padding: "4px",
-          borderRadius: "8px",
-        }}
+      <View
+        accessibilityRole="tablist"
+        accessibilityLabel="Filter tasks by completion status"
+        style={[styles.statusTabList, { backgroundColor: colors.surface }]}
       >
-        {(["all", "active", "completed"] as const).map((status) => (
-          <button
-            key={status}
-            role="tab"
-            aria-selected={statusFilter === status}
-            onClick={() => setStatusFilter(status)}
-            style={{
-              flex: 1,
-              minHeight: "44px",
-              border: "none",
-              borderRadius: "6px",
-              backgroundColor: statusFilter === status ? colors.accent : "transparent",
-              color: statusFilter === status ? "#ffffff" : colors.textMuted,
-              fontSize: "13px",
-              fontWeight: 600,
-              cursor: "pointer",
-              textTransform: "capitalize",
-            }}
-          >
-            {status}
-          </button>
-        ))}
-      </div>
+        {(["all", "active", "completed"] as const).map((status) => {
+          const isSelected = statusFilter === status;
+          return (
+            <Pressable
+              key={status}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: isSelected }}
+              accessibilityLabel={`Filter ${status}`}
+              onPress={() => setStatusFilter(status)}
+              style={[
+                styles.statusTab,
+                isSelected && { backgroundColor: colors.accent },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.statusTabText,
+                  { color: isSelected ? "#ffffff" : colors.textMuted },
+                ]}
+              >
+                {status}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
 
       {/* Category Filter Chips */}
-      <div
-        style={{
-          display: "flex",
-          gap: "6px",
-          overflowX: "auto",
-          paddingBottom: "12px",
-          marginBottom: "12px",
-        }}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.categoryScroll}
       >
-        {CATEGORIES.map((cat) => (
-          <button
-            key={cat}
-            onClick={() => setCategoryFilter(cat)}
-            style={{
-              minHeight: "44px",
-              padding: "4px 12px",
-              borderRadius: "9999px",
-              border: `1px solid ${categoryFilter === cat ? colors.accent : colors.surfaceBorder}`,
-              backgroundColor: categoryFilter === cat ? colors.accent : colors.surface,
-              color: categoryFilter === cat ? "#ffffff" : colors.textMuted,
-              fontSize: "12px",
-              fontWeight: 600,
-              cursor: "pointer",
-              whiteSpace: "nowrap",
-              textTransform: "capitalize",
-            }}
-          >
-            {cat}
-          </button>
-        ))}
-      </div>
+        {CATEGORIES.map((cat) => {
+          const isSelected = categoryFilter === cat;
+          return (
+            <Pressable
+              key={cat}
+              onPress={() => setCategoryFilter(cat)}
+              accessibilityRole="button"
+              accessibilityLabel={`Category ${cat}`}
+              style={[
+                styles.categoryChip,
+                {
+                  backgroundColor: isSelected ? colors.accent : colors.surface,
+                  borderColor: isSelected ? colors.accent : colors.surfaceBorder,
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.categoryChipText,
+                  { color: isSelected ? "#ffffff" : colors.textMuted },
+                ]}
+              >
+                {cat}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
 
       {/* Task List */}
       {loading ? (
-        <div style={{ textAlign: "center", padding: "32px", color: colors.textMuted }}>Loading tasks...</div>
+        <View style={styles.loadingArea}>
+          <ActivityIndicator size="small" color={colors.accent} />
+          <Text style={[styles.loadingText, { color: colors.textMuted }]}>
+            Loading tasks...
+          </Text>
+        </View>
       ) : filteredTasks.length === 0 ? (
         <EmptyState
           title="No tasks found"
@@ -192,17 +193,106 @@ export function TasksScreen({
           onAction={() => onNavigateToEdit()}
         />
       ) : (
-        <div style={{ display: "flex", flexDirection: "column" }}>
-          {filteredTasks.map((task) => (
+        <FlatList
+          data={filteredTasks}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
             <TaskItemCard
-              key={task.id}
-              task={task}
+              task={item}
               onToggleComplete={handleToggleComplete}
               onPress={onNavigateToEdit}
             />
-          ))}
-        </div>
+          )}
+          contentContainerStyle={styles.listContent}
+        />
       )}
-    </div>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 16,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+  },
+  banner: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 16,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  bannerTextContainer: {
+    flex: 1,
+    marginRight: 8,
+  },
+  bannerTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  bannerSubtitle: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  statusTabList: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 12,
+    padding: 4,
+    borderRadius: 8,
+  },
+  statusTab: {
+    flex: 1,
+    minHeight: 44,
+    borderRadius: 6,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  statusTabText: {
+    fontSize: 13,
+    fontWeight: "600",
+    textTransform: "capitalize",
+  },
+  categoryScroll: {
+    flexDirection: "row",
+    gap: 6,
+    paddingBottom: 12,
+  },
+  categoryChip: {
+    minHeight: 44,
+    paddingHorizontal: 14,
+    borderRadius: 9999,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  categoryChipText: {
+    fontSize: 12,
+    fontWeight: "600",
+    textTransform: "capitalize",
+  },
+  loadingArea: {
+    padding: 32,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loadingText: {
+    marginTop: 8,
+    fontSize: 14,
+  },
+  listContent: {
+    paddingBottom: 24,
+  },
+});

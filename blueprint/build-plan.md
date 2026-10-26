@@ -177,7 +177,7 @@ The Blueprint overlay, `AGENTS.md`, and onboarding setup are already present.
   and More), moving secondary tools (Inbox, Plan My Day, Calendar, Analytics,
   Backup, and Settings) into an intuitive, responsive slide-over drawer and modal,
   ensuring clean mobile viewport responsiveness and zero overcrowding.
-- [ ] 41. **Expo and React Native mobile foundation with four-tab native navigation** -
+- [x] 41. **Expo and React Native mobile foundation with four-tab native navigation** -
   re-scaffold `apps/mobile` with official Expo and Expo Router, implementing a
   strict four-tab bottom navigation bar (Tasks, Follow Ups, Notes, and More),
   native `expo-sqlite` persistence with an in-memory test driver, native primitives

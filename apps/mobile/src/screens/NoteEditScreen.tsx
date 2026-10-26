@@ -1,4 +1,11 @@
 import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  ScrollView,
+  StyleSheet,
+} from "react-native";
 import type { NoteRepository } from "../storage/noteRepository.js";
 import type { TaskRepository } from "../storage/taskRepository.js";
 import type { FollowUpRepository } from "../storage/followUpRepository.js";
@@ -112,31 +119,20 @@ export function NoteEditScreen({
   };
 
   return (
-    <div
-      role="region"
-      aria-label={noteId ? "Edit note screen" : "New note screen"}
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        height: "100%",
-        backgroundColor: colors.background,
-        color: colors.textPrimary,
-        padding: "16px",
-        overflowY: "auto",
-      }}
+    <ScrollView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      contentContainerStyle={styles.contentContainer}
     >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "16px",
-        }}
-      >
-        <TouchButton label="← Back" onPress={onCancel} variant="ghost" accessibilityLabel="Cancel note editing" />
-        <h1 style={{ fontSize: "18px", fontWeight: "bold", margin: 0 }}>
+      <View style={styles.topBar}>
+        <TouchButton
+          label="← Back"
+          onPress={onCancel}
+          variant="ghost"
+          accessibilityLabel="Cancel note editing"
+        />
+        <Text style={[styles.screenTitle, { color: colors.textPrimary }]}>
           {noteId ? "Edit Note" : "New Note"}
-        </h1>
+        </Text>
         <TouchButton
           label={saving ? "Saving..." : "Save"}
           onPress={handleSave}
@@ -144,115 +140,97 @@ export function NoteEditScreen({
           variant="primary"
           accessibilityLabel="Save note"
         />
-      </div>
+      </View>
 
       {errorMessage && (
-        <div
-          role="alert"
-          style={{
-            padding: "10px",
-            backgroundColor: "#7f1d1d",
-            color: "#fecaca",
-            borderRadius: "8px",
-            marginBottom: "12px",
-            fontSize: "13px",
-          }}
-        >
-          {errorMessage}
-        </div>
+        <View style={styles.errorBanner} accessibilityRole="alert">
+          <Text style={styles.errorText}>{errorMessage}</Text>
+        </View>
       )}
 
       {actionSuccess && (
-        <div
-          role="status"
-          style={{
-            padding: "10px",
-            backgroundColor: "#064e3b",
-            color: "#a7f3d0",
-            borderRadius: "8px",
-            marginBottom: "12px",
-            fontSize: "13px",
-          }}
-        >
-          {actionSuccess}
-        </div>
+        <View style={styles.successBanner} accessibilityRole="status">
+          <Text style={styles.successText}>{actionSuccess}</Text>
+        </View>
       )}
 
       {/* Note Title Input */}
-      <div style={{ marginBottom: "12px" }}>
-        <input
-          id="note-title"
-          type="text"
+      <View style={styles.inputGroup}>
+        <Text style={[styles.inputLabel, { color: colors.textMuted }]}>
+          Title *
+        </Text>
+        <TextInput
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChangeText={setTitle}
           placeholder="Note title *"
-          style={{
-            width: "100%",
-            minHeight: "44px",
-            padding: "10px 12px",
-            borderRadius: "8px",
-            border: `1px solid ${colors.surfaceBorder}`,
-            backgroundColor: colors.surface,
-            color: colors.textPrimary,
-            fontSize: "15px",
-            boxSizing: "border-box",
-          }}
+          placeholderTextColor="#71717a"
+          accessibilityLabel="Note title"
+          style={[
+            styles.textInput,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.surfaceBorder,
+              color: colors.textPrimary,
+            },
+          ]}
         />
-      </div>
+      </View>
 
       {/* Note Body Textarea */}
-      <div style={{ marginBottom: "16px" }}>
-        <textarea
-          id="note-body"
+      <View style={styles.inputGroup}>
+        <Text style={[styles.inputLabel, { color: colors.textMuted }]}>
+          Content
+        </Text>
+        <TextInput
           value={body}
-          onChange={(e) => setBody(e.target.value)}
+          onChangeText={setBody}
           placeholder="Write your note content here..."
-          rows={8}
-          style={{
-            width: "100%",
-            padding: "12px",
-            borderRadius: "8px",
-            border: `1px solid ${colors.surfaceBorder}`,
-            backgroundColor: colors.surface,
-            color: colors.textPrimary,
-            fontSize: "14px",
-            boxSizing: "border-box",
-            resize: "vertical",
-            lineHeight: 1.5,
-          }}
+          placeholderTextColor="#71717a"
+          accessibilityLabel="Note body"
+          multiline
+          numberOfLines={8}
+          style={[
+            styles.textArea,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.surfaceBorder,
+              color: colors.textPrimary,
+            },
+          ]}
         />
-      </div>
+      </View>
 
       {/* Actionable Notes: Convert text to Task or FollowUp */}
       {noteId && taskRepo && followUpRepo && (
-        <div
-          style={{
-            backgroundColor: colors.surface,
-            border: `1px solid ${colors.surfaceBorder}`,
-            borderRadius: "10px",
-            padding: "14px",
-            marginBottom: "16px",
-            display: "flex",
-            flexDirection: "column",
-            gap: "8px",
-          }}
+        <View
+          style={[
+            styles.actionCard,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.surfaceBorder,
+            },
+          ]}
         >
-          <div style={{ fontSize: "14px", fontWeight: 600 }}>Create Action from Note</div>
-          <input
-            type="text"
+          <Text style={[styles.actionTitle, { color: colors.textPrimary }]}>
+            Create Action from Note
+          </Text>
+          <TextInput
             placeholder="Type or paste excerpt from note..."
+            placeholderTextColor="#71717a"
             value={excerptText}
-            onChange={(e) => setExcerptText(e.target.value)}
-            style={{
-              padding: "8px 10px",
-              borderRadius: "6px",
-              border: `1px solid ${colors.surfaceBorder}`,
-              backgroundColor: colors.background,
-              color: colors.textPrimary,
-              fontSize: "13px",
-            }}
+            onChangeText={setExcerptText}
+            accessibilityLabel="Actionable note excerpt"
+            style={[
+              styles.textInput,
+              {
+                backgroundColor: colors.background,
+                borderColor: colors.surfaceBorder,
+                color: colors.textPrimary,
+                marginBottom: 8,
+              },
+            ]}
           />
-          <div style={{ display: "flex", gap: "8px" }}>
+          <View style={styles.buttonRow}>
             <TouchButton
               label="+ Spawn Task"
               onPress={handleSpawnTask}
@@ -265,72 +243,164 @@ export function NoteEditScreen({
               disabled={!excerptText.trim()}
               variant="secondary"
             />
-          </div>
-        </div>
+          </View>
+        </View>
       )}
 
       {/* Backlinks Display */}
       {noteId && backlinks && (backlinks.tasks.length > 0 || backlinks.followups.length > 0) && (
-        <div
-          style={{
-            backgroundColor: colors.surface,
-            border: `1px solid ${colors.surfaceBorder}`,
-            borderRadius: "10px",
-            padding: "14px",
-            marginBottom: "16px",
-            display: "flex",
-            flexDirection: "column",
-            gap: "8px",
-          }}
+        <View
+          style={[
+            styles.actionCard,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.surfaceBorder,
+            },
+          ]}
         >
-          <div style={{ fontSize: "14px", fontWeight: 600 }}>Linked Actions (Backlinks)</div>
+          <Text style={[styles.actionTitle, { color: colors.textPrimary }]}>
+            Linked Actions (Backlinks)
+          </Text>
           {backlinks.tasks.map((t) => (
-            <div
+            <View
               key={t.id}
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                padding: "6px 8px",
-                backgroundColor: colors.background,
-                borderRadius: "6px",
-              }}
+              style={[styles.backlinkRow, { backgroundColor: colors.background }]}
             >
-              <span style={{ fontSize: "13px" }}>Task: {t.title}</span>
-              <Badge label={t.completed ? "Done" : "Open"} variant={t.completed ? "low" : "high"} />
-            </div>
+              <Text style={[styles.backlinkText, { color: colors.textPrimary }]}>
+                Task: {t.title}
+              </Text>
+              <Badge
+                label={t.completed ? "Done" : "Open"}
+                variant={t.completed ? "low" : "high"}
+              />
+            </View>
           ))}
           {backlinks.followups.map((f) => (
-            <div
+            <View
               key={f.id}
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                padding: "6px 8px",
-                backgroundColor: colors.background,
-                borderRadius: "6px",
-              }}
+              style={[styles.backlinkRow, { backgroundColor: colors.background }]}
             >
-              <span style={{ fontSize: "13px" }}>
+              <Text style={[styles.backlinkText, { color: colors.textPrimary }]}>
                 Follow Up: {f.personName} ({f.commitment})
-              </span>
-              <Badge label={f.status} variant={f.status === "completed" ? "low" : "high"} />
-            </div>
+              </Text>
+              <Badge
+                label={f.status}
+                variant={f.status === "completed" ? "low" : "high"}
+              />
+            </View>
           ))}
-        </div>
+        </View>
       )}
 
       {noteId && (
-        <div style={{ marginTop: "auto", paddingTop: "16px" }}>
+        <View style={styles.deleteSection}>
           <TouchButton
             label="Delete Note"
             onPress={handleDelete}
             variant="danger"
             accessibilityLabel="Delete this note permanently"
           />
-        </div>
+        </View>
       )}
-    </div>
+    </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  contentContainer: {
+    padding: 16,
+    paddingBottom: 40,
+  },
+  topBar: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  screenTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  errorBanner: {
+    padding: 10,
+    backgroundColor: "#7f1d1d",
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  errorText: {
+    color: "#fecaca",
+    fontSize: 13,
+  },
+  successBanner: {
+    padding: 10,
+    backgroundColor: "#064e3b",
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  successText: {
+    color: "#a7f3d0",
+    fontSize: 13,
+  },
+  inputGroup: {
+    marginBottom: 14,
+  },
+  inputLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    marginBottom: 6,
+  },
+  textInput: {
+    minHeight: 44,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    fontSize: 15,
+  },
+  textArea: {
+    minHeight: 140,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    fontSize: 14,
+    textAlignVertical: "top",
+  },
+  actionCard: {
+    borderRadius: 10,
+    borderWidth: 1,
+    padding: 14,
+    marginBottom: 16,
+  },
+  actionTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    marginBottom: 8,
+  },
+  buttonRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  backlinkRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 8,
+    borderRadius: 6,
+    marginBottom: 4,
+  },
+  backlinkText: {
+    fontSize: 13,
+    flex: 1,
+    marginRight: 8,
+  },
+  deleteSection: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#27272a",
+  },
+});

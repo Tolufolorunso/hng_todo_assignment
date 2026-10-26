@@ -1,4 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  Pressable,
+  StyleSheet,
+} from "react-native";
 import type { MobileScreen, MobileTab } from "../types/navigation.js";
 import type { TaskRepository } from "../storage/taskRepository.js";
 import type { NoteRepository } from "../storage/noteRepository.js";
@@ -8,6 +14,11 @@ import type { InboxRepository } from "../storage/inboxRepository.js";
 import type { InboxTriageService } from "../services/inbox.js";
 import type { SearchService } from "../services/search.js";
 import type { BackupService } from "../services/backup.js";
+import type { AuthService } from "../services/auth.js";
+import type { SyncEngine } from "../services/syncEngine.js";
+import type { SyncRepository } from "../storage/syncRepository.js";
+import { useTheme } from "../services/theme.js";
+
 import { TasksScreen } from "../screens/TasksScreen.js";
 import { TaskEditScreen } from "../screens/TaskEditScreen.js";
 import { FollowUpsScreen } from "../screens/FollowUpsScreen.js";
@@ -20,10 +31,7 @@ import { AnalyticsScreen } from "../screens/AnalyticsScreen.js";
 import { SearchScreen } from "../screens/SearchScreen.js";
 import { BackupScreen } from "../screens/BackupScreen.js";
 import { AccountScreen } from "../screens/AccountScreen.js";
-import type { AuthService } from "../services/auth.js";
-import type { SyncEngine } from "../services/syncEngine.js";
-import type { SyncRepository } from "../storage/syncRepository.js";
-import { useTheme } from "../services/theme.js";
+import { MoreScreen } from "../screens/MoreScreen.js";
 
 export interface MobileNavigatorProps {
   taskRepo: TaskRepository;
@@ -39,17 +47,17 @@ export interface MobileNavigatorProps {
   syncRepo?: SyncRepository;
 }
 
-const TABS: { id: MobileTab; label: string; icon: string }[] = [
+export interface NavTabItem {
+  id: MobileTab;
+  label: string;
+  icon: string;
+}
+
+export const PRIMARY_TABS: NavTabItem[] = [
   { id: "tasks", label: "Tasks", icon: "✓" },
   { id: "followups", label: "Follow Ups", icon: "🤝" },
-  { id: "plan", label: "Plan", icon: "⚡" },
   { id: "notes", label: "Notes", icon: "📝" },
-  { id: "inbox", label: "Inbox", icon: "📥" },
-  { id: "calendar", label: "Calendar", icon: "📅" },
-  { id: "analytics", label: "Insights", icon: "📊" },
-  { id: "search", label: "Search", icon: "🔍" },
-  { id: "backup", label: "Backup", icon: "💾" },
-  { id: "account", label: "Account", icon: "👤" },
+  { id: "more", label: "More", icon: "⋯" },
 ];
 
 export function MobileNavigator({
@@ -65,10 +73,34 @@ export function MobileNavigator({
   syncEngine,
   syncRepo,
 }: MobileNavigatorProps): React.JSX.Element {
-  const { colors, isTablet, mode, toggleTheme } = useTheme();
+  const { colors } = useTheme();
   const [activeTab, setActiveTab] = useState<MobileTab>("tasks");
   const [currentScreen, setCurrentScreen] = useState<MobileScreen>({ name: "tasks" });
   const [refreshKey, setRefreshKey] = useState(0);
+  const [inboxPendingCount, setInboxPendingCount] = useState(0);
+  const [dueFollowUpsCount, setDueFollowUpsCount] = useState(0);
+
+  useEffect(() => {
+    async function loadBadges() {
+      try {
+        const pending = await inboxRepo.list({ state: "pending" });
+        setInboxPendingCount(pending.length);
+      } catch {
+        // Safe badge fallback
+      }
+      try {
+        const allFollowUps = await followUpRepo.list();
+        const now = new Date().toISOString();
+        const due = allFollowUps.filter(
+          (f) => f.status === "open" && f.dueAt <= now
+        );
+        setDueFollowUpsCount(due.length);
+      } catch {
+        // Safe badge fallback
+      }
+    }
+    loadBadges();
+  }, [refreshKey, currentScreen]);
 
   const handleTabChange = (tab: MobileTab) => {
     setActiveTab(tab);
@@ -79,29 +111,11 @@ export function MobileNavigator({
       case "followups":
         setCurrentScreen({ name: "followups" });
         break;
-      case "plan":
-        setCurrentScreen({ name: "plan" });
-        break;
       case "notes":
         setCurrentScreen({ name: "notes" });
         break;
-      case "inbox":
-        setCurrentScreen({ name: "inbox" });
-        break;
-      case "calendar":
-        setCurrentScreen({ name: "calendar" });
-        break;
-      case "analytics":
-        setCurrentScreen({ name: "analytics" });
-        break;
-      case "search":
-        setCurrentScreen({ name: "search" });
-        break;
-      case "backup":
-        setCurrentScreen({ name: "backup" });
-        break;
-      case "account":
-        setCurrentScreen({ name: "account" });
+      case "more":
+        setCurrentScreen({ name: "more" });
         break;
     }
   };
@@ -109,6 +123,20 @@ export function MobileNavigator({
   const handleDataChanged = () => {
     setRefreshKey((k) => k + 1);
   };
+
+  const isEditingScreen =
+    currentScreen.name === "task-edit" ||
+    currentScreen.name === "note-edit" ||
+    currentScreen.name === "followup-edit";
+
+  const isSecondaryScreen =
+    currentScreen.name === "plan" ||
+    currentScreen.name === "inbox" ||
+    currentScreen.name === "calendar" ||
+    currentScreen.name === "analytics" ||
+    currentScreen.name === "search" ||
+    currentScreen.name === "backup" ||
+    currentScreen.name === "account";
 
   const renderScreen = () => {
     switch (currentScreen.name) {
@@ -118,7 +146,7 @@ export function MobileNavigator({
             key={`tasks_${refreshKey}`}
             taskRepo={taskRepo}
             onNavigateToEdit={(taskId) => setCurrentScreen({ name: "task-edit", taskId })}
-            onNavigateToPlan={() => handleTabChange("plan")}
+            onNavigateToPlan={() => setCurrentScreen({ name: "plan" })}
           />
         );
       case "task-edit":
@@ -140,15 +168,6 @@ export function MobileNavigator({
             followUpRepo={followUpRepo}
           />
         );
-      case "plan":
-        return (
-          <PlanScreen
-            key={`plan_${refreshKey}`}
-            taskRepo={taskRepo}
-            followUpRepo={followUpRepo}
-            dailyPlanRepo={dailyPlanRepo}
-          />
-        );
       case "notes":
         return (
           <NotesScreen
@@ -161,14 +180,28 @@ export function MobileNavigator({
         return (
           <NoteEditScreen
             noteRepo={noteRepo}
-            taskRepo={taskRepo}
-            followUpRepo={followUpRepo}
             noteId={currentScreen.noteId}
             onDone={() => {
               handleDataChanged();
               setCurrentScreen({ name: "notes" });
             }}
             onCancel={() => setCurrentScreen({ name: "notes" })}
+          />
+        );
+      case "more":
+        return (
+          <MoreScreen
+            onNavigate={(screen) => setCurrentScreen(screen)}
+            inboxPendingCount={inboxPendingCount}
+          />
+        );
+      case "plan":
+        return (
+          <PlanScreen
+            key={`plan_${refreshKey}`}
+            taskRepo={taskRepo}
+            followUpRepo={followUpRepo}
+            dailyPlanRepo={dailyPlanRepo}
           />
         );
       case "inbox":
@@ -182,7 +215,7 @@ export function MobileNavigator({
       case "calendar":
         return (
           <CalendarScreen
-            key={`calendar_${refreshKey}`}
+            key={`cal_${refreshKey}`}
             taskRepo={taskRepo}
             followUpRepo={followUpRepo}
           />
@@ -198,11 +231,10 @@ export function MobileNavigator({
       case "search":
         return (
           <SearchScreen
-            key={`search_${refreshKey}`}
             searchService={searchService}
             taskRepo={taskRepo}
-            onNavigateToTask={(taskId) => setCurrentScreen({ name: "task-edit", taskId })}
-            onNavigateToNote={(noteId) => setCurrentScreen({ name: "note-edit", noteId })}
+            onNavigateToTask={(taskId: string) => setCurrentScreen({ name: "task-edit", taskId })}
+            onNavigateToNote={(noteId: string) => setCurrentScreen({ name: "note-edit", noteId })}
           />
         );
       case "backup":
@@ -213,184 +245,198 @@ export function MobileNavigator({
           />
         );
       case "account":
-        if (authService && syncEngine && syncRepo) {
-          return (
-            <AccountScreen
-              authService={authService}
-              syncEngine={syncEngine}
-              syncRepo={syncRepo}
-            />
-          );
-        }
-        return <div style={{ padding: "20px", color: colors.textPrimary }}>Account service unavailable</div>;
+        return authService && syncEngine && syncRepo ? (
+          <AccountScreen
+            authService={authService}
+            syncEngine={syncEngine}
+            syncRepo={syncRepo}
+          />
+        ) : (
+          <MoreScreen onNavigate={setCurrentScreen} />
+        );
       default:
         return (
           <TasksScreen
+            key={`tasks_${refreshKey}`}
             taskRepo={taskRepo}
             onNavigateToEdit={(taskId) => setCurrentScreen({ name: "task-edit", taskId })}
+            onNavigateToPlan={() => setCurrentScreen({ name: "plan" })}
           />
         );
     }
   };
 
-  const isDetailScreen = currentScreen.name === "task-edit" || currentScreen.name === "note-edit";
+  const getTabBadge = (tabId: MobileTab): number => {
+    if (tabId === "followups") return dueFollowUpsCount;
+    if (tabId === "more") return inboxPendingCount;
+    return 0;
+  };
 
-  // Tablet Layout: Dual-column master detail with side navigation
-  if (isTablet) {
-    return (
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "row",
-          width: "100%",
-          height: "100%",
-          maxWidth: "1100px",
-          margin: "0 auto",
-          backgroundColor: colors.background,
-          fontFamily: "system-ui, -apple-system, sans-serif",
-          position: "relative",
-          borderLeft: `1px solid ${colors.surfaceBorder}`,
-          borderRight: `1px solid ${colors.surfaceBorder}`,
-        }}
-      >
-        {/* Tablet Left Sidebar */}
-        <nav
-          role="navigation"
-          aria-label="Tablet navigation sidebar"
-          style={{
-            width: "220px",
-            backgroundColor: colors.surface,
-            borderRight: `1px solid ${colors.surfaceBorder}`,
-            display: "flex",
-            flexDirection: "column",
-            padding: "16px 8px",
-            gap: "4px",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", marginBottom: "12px" }}>
-            <span style={{ fontSize: "16px", fontWeight: 800, color: colors.textPrimary }}>TaskFlow</span>
-            <button
-              type="button"
-              onClick={toggleTheme}
-              style={{
-                background: "transparent",
-                border: "none",
-                fontSize: "16px",
-                cursor: "pointer",
-              }}
-              title="Toggle theme"
-            >
-              {mode === "dark" ? "☀" : "🌙"}
-            </button>
-          </div>
-
-          {TABS.map((tab) => {
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                role="tab"
-                aria-selected={isActive}
-                aria-label={tab.label}
-                onClick={() => handleTabChange(tab.id)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                  padding: "10px 14px",
-                  borderRadius: "8px",
-                  border: "none",
-                  backgroundColor: isActive ? "rgba(59, 130, 246, 0.15)" : "transparent",
-                  color: isActive ? colors.accent : colors.textMuted,
-                  fontWeight: isActive ? 700 : 500,
-                  fontSize: "14px",
-                  cursor: "pointer",
-                  textAlign: "left",
-                  minHeight: "44px",
-                }}
-              >
-                <span style={{ fontSize: "16px" }}>{tab.icon}</span>
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </nav>
-
-        {/* Tablet Main Content Area */}
-        <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
-          {renderScreen()}
-        </div>
-      </div>
-    );
-  }
-
-  // Phone Layout: Single column with bottom tab bar
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        width: "100%",
-        height: "100%",
-        maxWidth: "500px",
-        margin: "0 auto",
-        backgroundColor: colors.background,
-        fontFamily: "system-ui, -apple-system, sans-serif",
-        position: "relative",
-      }}
-    >
-      {/* Screen Viewport */}
-      <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
-        {renderScreen()}
-      </div>
-
-      {/* Bottom Tab Bar (hidden when editing modal) */}
-      {!isDetailScreen && (
-        <nav
-          role="navigation"
-          aria-label="Mobile main navigation"
-          style={{
-            display: "flex",
-            borderTop: `1px solid ${colors.tabBarBorder}`,
-            backgroundColor: colors.tabBarBackground,
-            minHeight: "56px",
-            overflowX: "auto",
-          }}
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
+      {isSecondaryScreen && (
+        <View
+          style={[
+            styles.secondaryHeader,
+            {
+              backgroundColor: colors.surface,
+              borderBottomColor: colors.surfaceBorder,
+            },
+          ]}
         >
-          {TABS.map((tab) => {
+          <Pressable
+            onPress={() => setCurrentScreen({ name: "more" })}
+            accessibilityRole="button"
+            accessibilityLabel="Back to more tools"
+            style={styles.backButton}
+          >
+            <Text style={[styles.backText, { color: colors.accent }]}>‹ More Tools</Text>
+          </Pressable>
+        </View>
+      )}
+
+      <View style={styles.contentViewport}>
+        {renderScreen()}
+      </View>
+
+      {!isEditingScreen && (
+        <View
+          accessibilityRole="tablist"
+          accessibilityLabel="Mobile bottom navigation"
+          style={[
+            styles.tabBar,
+            {
+              backgroundColor: colors.tabBarBackground,
+              borderTopColor: colors.tabBarBorder,
+            },
+          ]}
+        >
+          {PRIMARY_TABS.map((tab) => {
             const isActive = activeTab === tab.id;
+            const badge = getTabBadge(tab.id);
+
             return (
-              <button
+              <Pressable
                 key={tab.id}
-                type="button"
-                role="tab"
-                aria-selected={isActive}
-                aria-label={tab.label}
-                onClick={() => handleTabChange(tab.id)}
-                style={{
-                  flex: "0 0 62px",
-                  minHeight: "48px",
-                  border: "none",
-                  backgroundColor: "transparent",
-                  color: isActive ? colors.accent : colors.textMuted,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                  gap: "2px",
-                  padding: "6px 0",
-                  touchAction: "manipulation",
-                }}
+                onPress={() => handleTabChange(tab.id)}
+                accessibilityRole="tab"
+                accessibilityLabel={badge > 0 ? `${tab.label}, ${badge} pending` : tab.label}
+                accessibilityState={{ selected: isActive }}
+                style={({ pressed }) => [
+                  styles.tabButton,
+                  pressed && styles.tabButtonPressed,
+                ]}
               >
-                <span style={{ fontSize: "15px" }}>{tab.icon}</span>
-                <span style={{ fontSize: "10px", fontWeight: isActive ? 700 : 400 }}>{tab.label}</span>
-              </button>
+                <View style={styles.tabIconWrapper}>
+                  <Text
+                    style={[
+                      styles.tabIcon,
+                      { color: isActive ? colors.accent : colors.textMuted },
+                    ]}
+                  >
+                    {tab.icon}
+                  </Text>
+                  {badge > 0 ? (
+                    <View style={styles.tabBadge}>
+                      <Text style={styles.tabBadgeText}>
+                        {badge > 99 ? "99+" : badge}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+                <Text
+                  style={[
+                    styles.tabLabel,
+                    {
+                      color: isActive ? colors.accent : colors.textMuted,
+                      fontWeight: isActive ? "700" : "500",
+                    },
+                  ]}
+                >
+                  {tab.label}
+                </Text>
+              </Pressable>
             );
           })}
-        </nav>
+        </View>
       )}
-    </div>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    width: "100%",
+    height: "100%",
+  },
+  contentViewport: {
+    flex: 1,
+  },
+  secondaryHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    minHeight: 48,
+  },
+  backButton: {
+    minHeight: 44,
+    minWidth: 44,
+    justifyContent: "center",
+  },
+  backText: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  tabBar: {
+    flexDirection: "row",
+    borderTopWidth: 1,
+    minHeight: 56,
+    paddingBottom: 4,
+    paddingTop: 4,
+  },
+  tabButton: {
+    flex: 1,
+    minHeight: 48,
+    minWidth: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 4,
+  },
+  tabButtonPressed: {
+    opacity: 0.7,
+  },
+  tabIconWrapper: {
+    position: "relative",
+    width: 28,
+    height: 24,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  tabIcon: {
+    fontSize: 18,
+  },
+  tabBadge: {
+    position: "absolute",
+    top: -4,
+    right: -8,
+    backgroundColor: "#ef4444",
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 3,
+  },
+  tabBadgeText: {
+    color: "#ffffff",
+    fontSize: 9,
+    fontWeight: "700",
+  },
+  tabLabel: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+});

@@ -1,4 +1,12 @@
 import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  ActivityIndicator,
+  StyleSheet,
+  SafeAreaView,
+  StatusBar,
+} from "react-native";
 import { createDatabase, runMigrations } from "./src/db/index.js";
 import {
   TaskRepository,
@@ -91,62 +99,29 @@ export function App(): React.JSX.Element {
 
   if (initError) {
     return (
-      <div
-        role="alert"
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          height: "100vh",
-          backgroundColor: "#09090b",
-          color: "#fecaca",
-          padding: "24px",
-          textAlign: "center",
-        }}
-      >
-        <div style={{ fontSize: "20px", fontWeight: "bold", marginBottom: "8px" }}>
-          Database Initialization Error
-        </div>
-        <div style={{ fontSize: "14px", color: "#f87171" }}>{initError}</div>
-      </div>
+      <SafeAreaView style={styles.errorContainer}>
+        <StatusBar barStyle="light-content" />
+        <Text style={styles.errorTitle}>Database Initialization Error</Text>
+        <Text style={styles.errorMessage}>{initError}</Text>
+      </SafeAreaView>
     );
   }
 
   if (!isReady || !services) {
     return (
-      <div
-        role="status"
-        aria-label="Loading TaskFlow Mobile"
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          height: "100vh",
-          backgroundColor: "#09090b",
-          color: "#a1a1aa",
-          fontSize: "16px",
-        }}
-      >
-        <div style={{ fontSize: "32px", marginBottom: "16px" }}>✓</div>
-        <div>Loading TaskFlow...</div>
-      </div>
+      <SafeAreaView style={styles.loadingContainer}>
+        <StatusBar barStyle="light-content" />
+        <Text style={styles.brandIcon}>✓</Text>
+        <Text style={styles.brandTitle}>TaskFlow</Text>
+        <ActivityIndicator size="small" color="#3b82f6" style={styles.spinner} />
+      </SafeAreaView>
     );
   }
 
   return (
     <ThemeProvider>
-      <div
-        style={{
-          width: "100vw",
-          height: "100vh",
-          backgroundColor: "#000000",
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
-        }}
-      >
+      <SafeAreaView style={styles.rootContainer}>
+        <StatusBar barStyle="light-content" />
         <MobileNavigator
           taskRepo={services.taskRepo}
           noteRepo={services.noteRepo}
@@ -160,9 +135,56 @@ export function App(): React.JSX.Element {
           syncEngine={services.syncEngine}
           syncRepo={services.syncRepo}
         />
-      </div>
+      </SafeAreaView>
     </ThemeProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  rootContainer: {
+    flex: 1,
+    backgroundColor: "#09090b",
+  },
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: "#09090b",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  brandIcon: {
+    fontSize: 40,
+    color: "#3b82f6",
+    fontWeight: "bold",
+    marginBottom: 8,
+  },
+  brandTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#e5e7eb",
+    marginBottom: 16,
+  },
+  spinner: {
+    marginTop: 8,
+  },
+  errorContainer: {
+    flex: 1,
+    backgroundColor: "#09090b",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 24,
+  },
+  errorTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#fecaca",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  errorMessage: {
+    fontSize: 14,
+    color: "#f87171",
+    textAlign: "center",
+  },
+});
 
 export default App;

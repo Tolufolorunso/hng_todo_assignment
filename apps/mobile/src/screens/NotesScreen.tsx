@@ -1,4 +1,12 @@
 import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  FlatList,
+  ActivityIndicator,
+  StyleSheet,
+} from "react-native";
 import type { Note } from "../types/note.js";
 import type { NoteRepository } from "../storage/noteRepository.js";
 import { NoteItemCard } from "../components/NoteItemCard.js";
@@ -10,7 +18,10 @@ export interface NotesScreenProps {
   onNavigateToEdit: (noteId?: string) => void;
 }
 
-export function NotesScreen({ noteRepo, onNavigateToEdit }: NotesScreenProps): React.JSX.Element {
+export function NotesScreen({
+  noteRepo,
+  onNavigateToEdit,
+}: NotesScreenProps): React.JSX.Element {
   const { colors } = useTheme();
   const [notes, setNotes] = useState<Note[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -31,77 +42,107 @@ export function NotesScreen({ noteRepo, onNavigateToEdit }: NotesScreenProps): R
   }, [searchQuery]);
 
   return (
-    <div
-      role="region"
-      aria-label="Notes screen"
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        height: "100%",
-        backgroundColor: colors.background,
-        color: colors.textPrimary,
-        padding: "16px",
-        overflowY: "auto",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "16px",
-        }}
-      >
-        <h1 style={{ fontSize: "24px", fontWeight: "bold", margin: 0 }}>Notes</h1>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={styles.header}>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
+          Notes
+        </Text>
         <TouchButton
           label="+ New Note"
           onPress={() => onNavigateToEdit()}
           variant="primary"
           accessibilityLabel="Create a new note"
         />
-      </div>
+      </View>
 
       {/* Note Search Input */}
-      <div style={{ marginBottom: "16px" }}>
-        <input
-          type="text"
+      <View style={styles.searchContainer}>
+        <TextInput
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChangeText={setSearchQuery}
           placeholder="Filter notes..."
-          aria-label="Filter notes by title or body"
-          style={{
-            width: "100%",
-            minHeight: "44px",
-            padding: "10px 12px",
-            borderRadius: "8px",
-            border: `1px solid ${colors.surfaceBorder}`,
-            backgroundColor: colors.surface,
-            color: colors.textPrimary,
-            fontSize: "14px",
-            boxSizing: "border-box",
-          }}
+          placeholderTextColor="#71717a"
+          accessibilityLabel="Filter notes by title or body"
+          style={[
+            styles.searchInput,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.surfaceBorder,
+              color: colors.textPrimary,
+            },
+          ]}
         />
-      </div>
+      </View>
 
       {/* Notes List */}
       {loading ? (
-        <div style={{ textAlign: "center", padding: "32px", color: colors.textMuted }}>Loading notes...</div>
+        <View style={styles.loadingArea}>
+          <ActivityIndicator size="small" color={colors.accent} />
+          <Text style={[styles.loadingText, { color: colors.textMuted }]}>
+            Loading notes...
+          </Text>
+        </View>
       ) : notes.length === 0 ? (
         <EmptyState
           title="No notes yet"
           description={
-            searchQuery ? "No notes matched your search query." : "Capture thoughts and ideas in standalone notes."
+            searchQuery
+              ? "No notes matched your search query."
+              : "Capture thoughts and ideas in standalone notes."
           }
           actionLabel="+ Create Note"
           onAction={() => onNavigateToEdit()}
         />
       ) : (
-        <div style={{ display: "flex", flexDirection: "column" }}>
-          {notes.map((note) => (
-            <NoteItemCard key={note.id} note={note} onPress={onNavigateToEdit} />
-          ))}
-        </div>
+        <FlatList
+          data={notes}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <NoteItemCard note={item} onPress={onNavigateToEdit} />
+          )}
+          contentContainerStyle={styles.listContent}
+        />
       )}
-    </div>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 16,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+  },
+  searchContainer: {
+    marginBottom: 16,
+  },
+  searchInput: {
+    minHeight: 44,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    fontSize: 14,
+  },
+  loadingArea: {
+    padding: 32,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loadingText: {
+    marginTop: 8,
+    fontSize: 14,
+  },
+  listContent: {
+    paddingBottom: 24,
+  },
+});

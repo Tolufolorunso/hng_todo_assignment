@@ -1,4 +1,12 @@
 import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+} from "react-native";
 import type { TaskPriority, TaskCategory } from "../types/task.js";
 import type { TaskRepository } from "../storage/taskRepository.js";
 import { TouchButton } from "../components/primitives.js";
@@ -83,31 +91,20 @@ export function TaskEditScreen({
   };
 
   return (
-    <div
-      role="region"
-      aria-label={taskId ? "Edit task screen" : "New task screen"}
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        height: "100%",
-        backgroundColor: colors.background,
-        color: colors.textPrimary,
-        padding: "16px",
-        overflowY: "auto",
-      }}
+    <ScrollView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      contentContainerStyle={styles.contentContainer}
     >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "20px",
-        }}
-      >
-        <TouchButton label="← Back" onPress={onCancel} variant="ghost" accessibilityLabel="Cancel task editing" />
-        <h1 style={{ fontSize: "18px", fontWeight: "bold", margin: 0 }}>
+      <View style={styles.topBar}>
+        <TouchButton
+          label="← Back"
+          onPress={onCancel}
+          variant="ghost"
+          accessibilityLabel="Cancel task editing"
+        />
+        <Text style={[styles.screenTitle, { color: colors.textPrimary }]}>
           {taskId ? "Edit Task" : "New Task"}
-        </h1>
+        </Text>
         <TouchButton
           label={saving ? "Saving..." : "Save"}
           onPress={handleSave}
@@ -115,228 +112,318 @@ export function TaskEditScreen({
           variant="primary"
           accessibilityLabel="Save task"
         />
-      </div>
+      </View>
 
       {errorMessage && (
-        <div
-          role="alert"
-          style={{
-            padding: "12px",
-            backgroundColor: "#7f1d1d",
-            color: "#fecaca",
-            borderRadius: "8px",
-            marginBottom: "16px",
-            fontSize: "14px",
-          }}
-        >
-          {errorMessage}
-        </div>
+        <View style={styles.errorBanner} accessibilityRole="alert">
+          <Text style={styles.errorText}>{errorMessage}</Text>
+        </View>
       )}
 
       {/* Task Title Input */}
-      <div style={{ marginBottom: "16px" }}>
-        <label
-          htmlFor="task-title"
-          style={{ display: "block", fontSize: "13px", fontWeight: 600, color: colors.textMuted, marginBottom: "6px" }}
-        >
+      <View style={styles.inputGroup}>
+        <Text style={[styles.inputLabel, { color: colors.textMuted }]}>
           Title *
-        </label>
-        <input
-          id="task-title"
-          type="text"
+        </Text>
+        <TextInput
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChangeText={setTitle}
           placeholder="What needs to be done?"
-          style={{
-            width: "100%",
-            minHeight: "44px",
-            padding: "10px 12px",
-            borderRadius: "8px",
-            border: `1px solid ${colors.surfaceBorder}`,
-            backgroundColor: colors.surface,
-            color: colors.textPrimary,
-            fontSize: "15px",
-            boxSizing: "border-box",
-          }}
+          placeholderTextColor="#71717a"
+          accessibilityLabel="Task title"
+          style={[
+            styles.textInput,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.surfaceBorder,
+              color: colors.textPrimary,
+            },
+          ]}
         />
-      </div>
+      </View>
 
       {/* Task Description Textarea */}
-      <div style={{ marginBottom: "16px" }}>
-        <label
-          htmlFor="task-description"
-          style={{ display: "block", fontSize: "13px", fontWeight: 600, color: colors.textMuted, marginBottom: "6px" }}
-        >
+      <View style={styles.inputGroup}>
+        <Text style={[styles.inputLabel, { color: colors.textMuted }]}>
           Description
-        </label>
-        <textarea
-          id="task-description"
+        </Text>
+        <TextInput
           value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          onChangeText={setDescription}
           placeholder="Add details, links, or notes..."
-          rows={4}
-          style={{
-            width: "100%",
-            padding: "10px 12px",
-            borderRadius: "8px",
-            border: `1px solid ${colors.surfaceBorder}`,
-            backgroundColor: colors.surface,
-            color: colors.textPrimary,
-            fontSize: "14px",
-            boxSizing: "border-box",
-            resize: "vertical",
-          }}
+          placeholderTextColor="#71717a"
+          accessibilityLabel="Task description"
+          multiline
+          numberOfLines={4}
+          style={[
+            styles.textArea,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.surfaceBorder,
+              color: colors.textPrimary,
+            },
+          ]}
         />
-      </div>
+      </View>
 
       {/* Priority Selector */}
-      <div style={{ marginBottom: "16px" }}>
-        <div style={{ fontSize: "13px", fontWeight: 600, color: colors.textMuted, marginBottom: "6px" }}>
+      <View style={styles.inputGroup}>
+        <Text style={[styles.inputLabel, { color: colors.textMuted }]}>
           Priority
-        </div>
-        <div style={{ display: "flex", gap: "8px" }}>
-          {PRIORITIES.map((p) => (
-            <button
-              key={p}
-              type="button"
-              role="radio"
-              aria-checked={priority === p}
-              onClick={() => setPriority(p)}
-              style={{
-                flex: 1,
-                minHeight: "44px",
-                borderRadius: "8px",
-                border: `1px solid ${priority === p ? colors.accent : colors.surfaceBorder}`,
-                backgroundColor: priority === p ? colors.accent : colors.surface,
-                color: priority === p ? "#ffffff" : colors.textMuted,
-                fontSize: "13px",
-                fontWeight: 600,
-                cursor: "pointer",
-                textTransform: "capitalize",
-              }}
-            >
-              {p}
-            </button>
-          ))}
-        </div>
-      </div>
+        </Text>
+        <View style={styles.priorityRow}>
+          {PRIORITIES.map((p) => {
+            const isSelected = priority === p;
+            return (
+              <Pressable
+                key={p}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: isSelected }}
+                accessibilityLabel={`Priority ${p}`}
+                onPress={() => setPriority(p)}
+                style={[
+                  styles.priorityButton,
+                  {
+                    backgroundColor: isSelected ? colors.accent : colors.surface,
+                    borderColor: isSelected ? colors.accent : colors.surfaceBorder,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.priorityText,
+                    { color: isSelected ? "#ffffff" : colors.textMuted },
+                  ]}
+                >
+                  {p}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
 
       {/* Category Selector */}
-      <div style={{ marginBottom: "16px" }}>
-        <div style={{ fontSize: "13px", fontWeight: 600, color: colors.textMuted, marginBottom: "6px" }}>
+      <View style={styles.inputGroup}>
+        <Text style={[styles.inputLabel, { color: colors.textMuted }]}>
           Category
-        </div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-          <button
-            type="button"
-            onClick={() => setCategory(null)}
-            style={{
-              minHeight: "44px",
-              padding: "6px 12px",
-              borderRadius: "9999px",
-              border: `1px solid ${category === null ? colors.accent : colors.surfaceBorder}`,
-              backgroundColor: category === null ? colors.accent : colors.surface,
-              color: category === null ? "#ffffff" : colors.textMuted,
-              fontSize: "12px",
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
+        </Text>
+        <View style={styles.categoryRow}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="No category"
+            onPress={() => setCategory(null)}
+            style={[
+              styles.categoryChip,
+              {
+                backgroundColor: category === null ? colors.accent : colors.surface,
+                borderColor: category === null ? colors.accent : colors.surfaceBorder,
+              },
+            ]}
           >
-            None
-          </button>
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat}
-              type="button"
-              onClick={() => setCategory(cat)}
-              style={{
-                minHeight: "44px",
-                padding: "6px 12px",
-                borderRadius: "9999px",
-                border: `1px solid ${category === cat ? colors.accent : colors.surfaceBorder}`,
-                backgroundColor: category === cat ? colors.accent : colors.surface,
-                color: category === cat ? "#ffffff" : colors.textMuted,
-                fontSize: "12px",
-                fontWeight: 600,
-                cursor: "pointer",
-                textTransform: "capitalize",
-              }}
+            <Text
+              style={[
+                styles.categoryText,
+                { color: category === null ? "#ffffff" : colors.textMuted },
+              ]}
             >
-              {cat}
-            </button>
-          ))}
-        </div>
-      </div>
+              None
+            </Text>
+          </Pressable>
+          {CATEGORIES.map((cat) => {
+            const isSelected = category === cat;
+            return (
+              <Pressable
+                key={cat}
+                accessibilityRole="button"
+                accessibilityLabel={`Category ${cat}`}
+                onPress={() => setCategory(cat)}
+                style={[
+                  styles.categoryChip,
+                  {
+                    backgroundColor: isSelected ? colors.accent : colors.surface,
+                    borderColor: isSelected ? colors.accent : colors.surfaceBorder,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.categoryText,
+                    { color: isSelected ? "#ffffff" : colors.textMuted },
+                  ]}
+                >
+                  {cat}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
 
       {/* Due Date & Estimate Inputs */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "24px" }}>
-        <div>
-          <label
-            htmlFor="task-due-date"
-            style={{ display: "block", fontSize: "13px", fontWeight: 600, color: colors.textMuted, marginBottom: "6px" }}
-          >
-            Due Date
-          </label>
-          <input
-            id="task-due-date"
-            type="date"
+      <View style={styles.rowInputs}>
+        <View style={styles.halfInput}>
+          <Text style={[styles.inputLabel, { color: colors.textMuted }]}>
+            Due Date (YYYY-MM-DD)
+          </Text>
+          <TextInput
             value={dueDate}
-            onChange={(e) => setDueDate(e.target.value)}
-            style={{
-              width: "100%",
-              minHeight: "44px",
-              padding: "10px 12px",
-              borderRadius: "8px",
-              border: `1px solid ${colors.surfaceBorder}`,
-              backgroundColor: colors.surface,
-              color: colors.textPrimary,
-              fontSize: "14px",
-              boxSizing: "border-box",
-            }}
+            onChangeText={setDueDate}
+            placeholder="2026-10-31"
+            placeholderTextColor="#71717a"
+            accessibilityLabel="Due date"
+            style={[
+              styles.textInput,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.surfaceBorder,
+                color: colors.textPrimary,
+              },
+            ]}
           />
-        </div>
+        </View>
 
-        <div>
-          <label
-            htmlFor="task-estimate"
-            style={{ display: "block", fontSize: "13px", fontWeight: 600, color: colors.textMuted, marginBottom: "6px" }}
-          >
+        <View style={styles.halfInput}>
+          <Text style={[styles.inputLabel, { color: colors.textMuted }]}>
             Est. Minutes
-          </label>
-          <input
-            id="task-estimate"
-            type="number"
-            min="5"
-            step="5"
-            placeholder="30"
-            value={estimatedMinutes ?? ""}
-            onChange={(e) => setEstimatedMinutes(e.target.value ? parseInt(e.target.value, 10) : undefined)}
-            style={{
-              width: "100%",
-              minHeight: "44px",
-              padding: "10px 12px",
-              borderRadius: "8px",
-              border: `1px solid ${colors.surfaceBorder}`,
-              backgroundColor: colors.surface,
-              color: colors.textPrimary,
-              fontSize: "14px",
-              boxSizing: "border-box",
+          </Text>
+          <TextInput
+            value={estimatedMinutes !== undefined ? String(estimatedMinutes) : ""}
+            onChangeText={(val) => {
+              const num = parseInt(val, 10);
+              setEstimatedMinutes(isNaN(num) ? undefined : num);
             }}
+            placeholder="30"
+            placeholderTextColor="#71717a"
+            keyboardType="numeric"
+            accessibilityLabel="Estimated minutes"
+            style={[
+              styles.textInput,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.surfaceBorder,
+                color: colors.textPrimary,
+              },
+            ]}
           />
-        </div>
-      </div>
+        </View>
+      </View>
 
       {/* Delete Action if editing */}
       {taskId && (
-        <div style={{ marginTop: "auto", paddingTop: "24px" }}>
+        <View style={styles.deleteSection}>
           <TouchButton
             label="Delete Task"
             onPress={handleDelete}
             variant="danger"
             accessibilityLabel="Delete this task permanently"
           />
-        </div>
+        </View>
       )}
-    </div>
+    </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  contentContainer: {
+    padding: 16,
+    paddingBottom: 40,
+  },
+  topBar: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  screenTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  errorBanner: {
+    padding: 12,
+    backgroundColor: "#7f1d1d",
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  errorText: {
+    color: "#fecaca",
+    fontSize: 14,
+  },
+  inputGroup: {
+    marginBottom: 16,
+  },
+  inputLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    marginBottom: 6,
+  },
+  textInput: {
+    minHeight: 44,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    fontSize: 15,
+  },
+  textArea: {
+    minHeight: 90,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    fontSize: 14,
+    textAlignVertical: "top",
+  },
+  priorityRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  priorityButton: {
+    flex: 1,
+    minHeight: 44,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  priorityText: {
+    fontSize: 13,
+    fontWeight: "600",
+    textTransform: "capitalize",
+  },
+  categoryRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+  },
+  categoryChip: {
+    minHeight: 44,
+    paddingHorizontal: 14,
+    borderRadius: 9999,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  categoryText: {
+    fontSize: 12,
+    fontWeight: "600",
+    textTransform: "capitalize",
+  },
+  rowInputs: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 24,
+  },
+  halfInput: {
+    flex: 1,
+  },
+  deleteSection: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#27272a",
+  },
+});

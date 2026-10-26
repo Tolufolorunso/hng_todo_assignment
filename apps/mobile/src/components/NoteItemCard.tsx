@@ -1,4 +1,10 @@
 import React from "react";
+import {
+  View,
+  Text,
+  Pressable,
+  StyleSheet,
+} from "react-native";
 import type { Note } from "../types/note.js";
 
 export interface NoteItemCardProps {
@@ -8,51 +14,57 @@ export interface NoteItemCardProps {
 
 export function NoteItemCard({ note, onPress }: NoteItemCardProps): React.JSX.Element {
   return (
-    <div
-      role="article"
-      aria-label={`Note: ${note.title}`}
-      onClick={() => onPress(note.id)}
-      style={{
-        padding: "16px",
-        marginBottom: "8px",
-        backgroundColor: "#18181b",
-        border: "1px solid #27272a",
-        borderRadius: "12px",
-        cursor: "pointer",
-        minHeight: "44px",
-      }}
+    <Pressable
+      onPress={() => onPress(note.id)}
+      accessibilityRole="button"
+      accessibilityLabel={`Note: ${note.title}`}
+      style={({ pressed }) => [
+        styles.card,
+        pressed && styles.cardPressed,
+      ]}
     >
-      <div
-        style={{
-          fontSize: "15px",
-          fontWeight: 600,
-          color: "#f4f4f5",
-          marginBottom: "4px",
-        }}
-      >
-        {note.title}
-      </div>
+      <Text style={styles.title}>{note.title}</Text>
 
       {note.body ? (
-        <div
-          style={{
-            fontSize: "13px",
-            color: "#a1a1aa",
-            marginBottom: "8px",
-            display: "-webkit-box",
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: "vertical",
-            overflow: "hidden",
-            lineHeight: 1.4,
-          }}
-        >
+        <Text style={styles.body} numberOfLines={2}>
           {note.body}
-        </div>
+        </Text>
       ) : null}
 
-      <div style={{ fontSize: "11px", color: "#71717a" }}>
+      <Text style={styles.dateText}>
         Updated {new Date(note.updatedAt).toLocaleDateString()}
-      </div>
-    </div>
+      </Text>
+    </Pressable>
   );
 }
+
+const styles = StyleSheet.create({
+  card: {
+    padding: 16,
+    marginBottom: 8,
+    backgroundColor: "#18181b",
+    borderWidth: 1,
+    borderColor: "#27272a",
+    borderRadius: 12,
+    minHeight: 52,
+  },
+  cardPressed: {
+    opacity: 0.8,
+  },
+  title: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#f4f4f5",
+    marginBottom: 4,
+  },
+  body: {
+    fontSize: 13,
+    color: "#a1a1aa",
+    marginBottom: 8,
+    lineHeight: 18,
+  },
+  dateText: {
+    fontSize: 11,
+    color: "#71717a",
+  },
+});

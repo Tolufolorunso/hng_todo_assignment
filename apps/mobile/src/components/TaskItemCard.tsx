@@ -1,4 +1,10 @@
 import React from "react";
+import {
+  View,
+  Text,
+  Pressable,
+  StyleSheet,
+} from "react-native";
 import type { Task } from "../types/task.js";
 import { Badge } from "./primitives.js";
 
@@ -14,116 +20,136 @@ export function TaskItemCard({
   onPress,
 }: TaskItemCardProps): React.JSX.Element {
   return (
-    <div
-      role="article"
-      aria-label={`Task: ${task.title}`}
-      style={{
-        display: "flex",
-        alignItems: "flex-start",
-        padding: "12px",
-        marginBottom: "8px",
-        backgroundColor: "#18181b",
-        border: "1px solid #27272a",
-        borderRadius: "12px",
-        gap: "12px",
-      }}
+    <View
+      style={styles.card}
+      accessibilityRole="none"
+      accessibilityLabel={`Task: ${task.title}`}
     >
-      <button
-        type="button"
-        role="checkbox"
-        aria-checked={task.completed}
-        aria-label={`Mark "${task.title}" as ${task.completed ? "incomplete" : "complete"}`}
-        onClick={() => onToggleComplete(task.id)}
-        style={{
-          width: "44px",
-          height: "44px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "none",
-          border: "none",
-          cursor: "pointer",
-          touchAction: "manipulation",
-          padding: 0,
-        }}
+      <Pressable
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: task.completed }}
+        accessibilityLabel={`Mark "${task.title}" as ${task.completed ? "incomplete" : "complete"}`}
+        onPress={() => onToggleComplete(task.id)}
+        style={styles.checkboxTouchTarget}
       >
-        <div
-          style={{
-            width: "22px",
-            height: "22px",
-            borderRadius: "6px",
-            border: task.completed ? "none" : "2px solid #52525b",
-            backgroundColor: task.completed ? "#3b82f6" : "transparent",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "#ffffff",
-            fontSize: "13px",
-            fontWeight: "bold",
-          }}
+        <View
+          style={[
+            styles.checkboxBox,
+            task.completed ? styles.checkboxCompleted : styles.checkboxIncomplete,
+          ]}
         >
-          {task.completed ? "✓" : ""}
-        </div>
-      </button>
+          {task.completed ? <Text style={styles.checkmark}>✓</Text> : null}
+        </View>
+      </Pressable>
 
-      <div
-        onClick={() => onPress(task.id)}
-        role="button"
-        tabIndex={0}
-        aria-label={`Edit task ${task.title}`}
-        style={{
-          flex: 1,
-          cursor: "pointer",
-          minHeight: "44px",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-        }}
+      <Pressable
+        onPress={() => onPress(task.id)}
+        accessibilityRole="button"
+        accessibilityLabel={`Edit task ${task.title}`}
+        style={styles.contentArea}
       >
-        <div
-          style={{
-            fontSize: "15px",
-            fontWeight: 500,
-            color: task.completed ? "#71717a" : "#f4f4f5",
-            textDecoration: task.completed ? "line-through" : "none",
-            marginBottom: "4px",
-          }}
+        <Text
+          style={[
+            styles.title,
+            task.completed ? styles.titleCompleted : styles.titleActive,
+          ]}
         >
           {task.title}
-        </div>
+        </Text>
 
         {task.description ? (
-          <div
-            style={{
-              fontSize: "13px",
-              color: "#a1a1aa",
-              marginBottom: "8px",
-              display: "-webkit-box",
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: "vertical",
-              overflow: "hidden",
-            }}
+          <Text
+            style={styles.description}
+            numberOfLines={2}
           >
             {task.description}
-          </div>
+          </Text>
         ) : null}
 
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", alignItems: "center" }}>
+        <View style={styles.badgeRow}>
           <Badge label={task.priority} variant={task.priority} />
-          {task.category ? <Badge label={task.category} variant="category" /> : null}
-          {task.dueDate ? (
-            <span
-              style={{
-                fontSize: "11px",
-                color: "#a1a1aa",
-                marginLeft: "4px",
-              }}
-            >
-              Due {task.dueDate}
-            </span>
+          {task.category ? (
+            <Badge label={task.category} variant="category" />
           ) : null}
-        </div>
-      </div>
-    </div>
+          {task.dueDate ? (
+            <Text style={styles.dueDateText}>Due {task.dueDate}</Text>
+          ) : null}
+        </View>
+      </Pressable>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  card: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    padding: 12,
+    marginBottom: 8,
+    backgroundColor: "#18181b",
+    borderWidth: 1,
+    borderColor: "#27272a",
+    borderRadius: 12,
+    gap: 8,
+  },
+  checkboxTouchTarget: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  checkboxBox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  checkboxIncomplete: {
+    borderWidth: 2,
+    borderColor: "#52525b",
+    backgroundColor: "transparent",
+  },
+  checkboxCompleted: {
+    backgroundColor: "#3b82f6",
+  },
+  checkmark: {
+    color: "#ffffff",
+    fontSize: 13,
+    fontWeight: "bold",
+  },
+  contentArea: {
+    flex: 1,
+    minHeight: 44,
+    justifyContent: "center",
+  },
+  title: {
+    fontSize: 15,
+    fontWeight: "500",
+    marginBottom: 4,
+  },
+  titleActive: {
+    color: "#f4f4f5",
+  },
+  titleCompleted: {
+    color: "#71717a",
+    textDecorationLine: "line-through",
+  },
+  description: {
+    fontSize: 13,
+    color: "#a1a1aa",
+    marginBottom: 8,
+    lineHeight: 18,
+  },
+  badgeRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    alignItems: "center",
+  },
+  dueDateText: {
+    fontSize: 11,
+    color: "#a1a1aa",
+    marginLeft: 4,
+  },
+});

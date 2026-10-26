@@ -3,15 +3,22 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "react": "^19.0.0"
+    "expo": "^58.0.19",
+    "expo-sqlite": "^58.0.14",
+    "react": "^19.0.0",
+    "react-native": "^0.88.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "@types/react": "^19.0.0",
+    "@types/react-native": "^0.72.8",
     "typescript": "^5.0.0",
     "vitest": "^3.2.7"
   }

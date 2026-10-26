@@ -303,10 +303,79 @@ export class InMemorySqliteDatabase implements SqliteDatabase {
   }
 }
 
-export function createDatabase(type: "memory" | "native" = "memory"): SqliteDatabase {
-  if (type === "memory") {
-    return new InMemorySqliteDatabase();
+export class ExpoSqliteDatabase implements SqliteDatabase {
+  private dbPromise: Promise<unknown> | null = null;
+  private databaseName: string;
+
+  constructor(databaseName = "taskflow.db") {
+    this.databaseName = databaseName;
   }
-  // Native fallback driver can be injected in React Native runtime
+
+  private async getDb(): Promise<{
+    execAsync: (sql: string) => Promise<void>;
+    runAsync: (sql: string, ...params: unknown[]) => Promise<unknown>;
+    getAllAsync: <T>(sql: string, ...params: unknown[]) => Promise<T[]>;
+    getFirstAsync: <T>(sql: string, ...params: unknown[]) => Promise<T | null>;
+    withTransactionAsync: (action: () => Promise<void>) => Promise<void>;
+    closeAsync: () => Promise<void>;
+  }> {
+    if (!this.dbPromise) {
+      this.dbPromise = (async () => {
+        // Dynamic import so headless tests do not fail on native module load
+        const sqlite = await import("expo-sqlite");
+        return await sqlite.openDatabaseAsync(this.databaseName);
+      })();
+    }
+    return (await this.dbPromise) as {
+      execAsync: (sql: string) => Promise<void>;
+      runAsync: (sql: string, ...params: unknown[]) => Promise<unknown>;
+      getAllAsync: <T>(sql: string, ...params: unknown[]) => Promise<T[]>;
+      getFirstAsync: <T>(sql: string, ...params: unknown[]) => Promise<T | null>;
+      withTransactionAsync: (action: () => Promise<void>) => Promise<void>;
+      closeAsync: () => Promise<void>;
+    };
+  }
+
+  async execute(sql: string, params: unknown[] = []): Promise<void> {
+    const db = await this.getDb();
+    if (params.length === 0) {
+      await db.execAsync(sql);
+    } else {
+      await db.runAsync(sql, ...params);
+    }
+  }
+
+  async query<T = Record<string, unknown>>(sql: string, params: unknown[] = []): Promise<T[]> {
+    const db = await this.getDb();
+    return await db.getAllAsync<T>(sql, ...params);
+  }
+
+  async queryFirst<T = Record<string, unknown>>(sql: string, params: unknown[] = []): Promise<T | null> {
+    const db = await this.getDb();
+    return await db.getFirstAsync<T>(sql, ...params);
+  }
+
+  async transaction<T>(action: (tx: SqliteDatabase) => Promise<T>): Promise<T> {
+    const db = await this.getDb();
+    let result: T;
+    await db.withTransactionAsync(async () => {
+      result = await action(this);
+    });
+    return result!;
+  }
+
+  async close(): Promise<void> {
+    if (this.dbPromise) {
+      const db = await this.getDb();
+      await db.closeAsync();
+      this.dbPromise = null;
+    }
+  }
+}
+
+export function createDatabase(type: "memory" | "native" = "memory", dbName = "taskflow.db"): SqliteDatabase {
+  if (type === "native") {
+    return new ExpoSqliteDatabase(dbName);
+  }
   return new InMemorySqliteDatabase();
 }
