@@ -8,6 +8,7 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import type {
   FollowUp,
   FollowUpStatus,
@@ -388,8 +389,9 @@ export function FollowUpsScreen({ followUpRepo }: FollowUpsScreenProps): React.J
                     accessibilityLabel={`Email ${fu.personName}`}
                     style={[styles.launcherBtn, { backgroundColor: "rgba(59, 130, 246, 0.15)" }]}
                   >
-                    <Text style={[styles.launcherBtnText, { color: colors.accent }]}>
-                      ✉ Email
+                    <Ionicons name="mail-outline" size={14} color={colors.accent} />
+                    <Text style={[styles.launcherBtnText, { color: colors.accent, marginLeft: 4 }]}>
+                      Email
                     </Text>
                   </Pressable>
                 )}
@@ -400,8 +402,9 @@ export function FollowUpsScreen({ followUpRepo }: FollowUpsScreenProps): React.J
                     accessibilityLabel={`Call ${fu.personName}`}
                     style={[styles.launcherBtn, { backgroundColor: "rgba(16, 185, 129, 0.15)" }]}
                   >
-                    <Text style={[styles.launcherBtnText, { color: colors.success }]}>
-                      📞 Call
+                    <Ionicons name="call-outline" size={14} color={colors.success} />
+                    <Text style={[styles.launcherBtnText, { color: colors.success, marginLeft: 4 }]}>
+                      Call
                     </Text>
                   </Pressable>
                 )}
@@ -416,8 +419,9 @@ export function FollowUpsScreen({ followUpRepo }: FollowUpsScreenProps): React.J
                     accessibilityLabel={`WhatsApp ${fu.personName}`}
                     style={[styles.launcherBtn, { backgroundColor: "rgba(37, 211, 102, 0.15)" }]}
                   >
-                    <Text style={[styles.launcherBtnText, { color: "#25d366" }]}>
-                      💬 WhatsApp
+                    <Ionicons name="chatbubble-ellipses-outline" size={14} color="#25d366" />
+                    <Text style={[styles.launcherBtnText, { color: "#25d366", marginLeft: 4 }]}>
+                      WhatsApp
                     </Text>
                   </Pressable>
                 )}
@@ -427,12 +431,12 @@ export function FollowUpsScreen({ followUpRepo }: FollowUpsScreenProps): React.J
               {fu.status === "open" && (
                 <View style={styles.actionsRow}>
                   <TouchButton
-                    label="✓ Complete"
+                    label="Complete"
                     onPress={() => handleComplete(fu.id)}
                     variant="primary"
                   />
                   <TouchButton
-                    label="💤 Snooze +24h"
+                    label="Snooze +24h"
                     onPress={() => handleSnooze(fu.id)}
                     variant="secondary"
                   />

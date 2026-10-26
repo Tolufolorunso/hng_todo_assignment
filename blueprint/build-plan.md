@@ -207,7 +207,7 @@ The Blueprint overlay, `AGENTS.md`, and onboarding setup are already present.
 
 ## Milestone L.4: Mobile Architecture Modernization with Expo Router and Native Polish
 
-- [ ] 46. **Expo Router file-based navigation and vector icon migration** - re-architect
+- [x] 46. **Expo Router file-based navigation and vector icon migration** - re-architect
   `apps/mobile` with official Expo Router (`expo-router`, `react-native-screens`,
   `react-native-safe-area-context`), creating file-based routes (`app/(tabs)/_layout.tsx`,
   `tasks.tsx`, `followups.tsx`, `notes.tsx`, `more.tsx`, and native stack modal screens),

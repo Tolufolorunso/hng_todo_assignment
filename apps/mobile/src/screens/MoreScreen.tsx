@@ -6,6 +6,7 @@ import {
   ScrollView,
   StyleSheet,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import type { MobileScreen } from "../types/navigation.js";
 import { useTheme } from "../services/theme.js";
 
@@ -18,7 +19,7 @@ interface MoreMenuItem {
   id: string;
   title: string;
   description: string;
-  icon: string;
+  icon: React.ComponentProps<typeof Ionicons>["name"];
   screen?: MobileScreen;
   badge?: number;
   isAction?: boolean;
@@ -35,14 +36,14 @@ export function MoreScreen({
       id: "plan",
       title: "Plan My Day",
       description: "Capacity-aware day planning with focus recommendations",
-      icon: "⚡",
+      icon: "flash-outline",
       screen: { name: "plan" },
     },
     {
       id: "inbox",
       title: "Fast Capture Inbox",
       description: "Quick capture items for triage and processing",
-      icon: "📥",
+      icon: "file-tray-full-outline",
       screen: { name: "inbox" },
       badge: inboxPendingCount,
     },
@@ -50,35 +51,35 @@ export function MoreScreen({
       id: "calendar",
       title: "Calendar & Schedule",
       description: "Monthly calendar view and upcoming deadlines",
-      icon: "📅",
+      icon: "calendar-outline",
       screen: { name: "calendar" },
     },
     {
       id: "analytics",
       title: "Productivity Insights",
       description: "Completion velocity, priority breakdown, and trends",
-      icon: "📊",
+      icon: "bar-chart-outline",
       screen: { name: "analytics" },
     },
     {
       id: "search",
       title: "Search Workspace",
       description: "Search across tasks, descriptions, and note content",
-      icon: "🔍",
+      icon: "search-outline",
       screen: { name: "search" },
     },
     {
       id: "backup",
       title: "Data Backup & Restore",
       description: "Export and restore portable JSON data snapshots",
-      icon: "💾",
+      icon: "save-outline",
       screen: { name: "backup" },
     },
     {
       id: "account",
       title: "Account & Cloud Sync",
       description: "Sign in with email OTP and sync across devices",
-      icon: "👤",
+      icon: "person-circle-outline",
       screen: { name: "account" },
     },
   ];
@@ -111,8 +112,13 @@ export function MoreScreen({
               pressed && styles.itemRowPressed,
             ]}
           >
-            <View style={styles.itemIconContainer}>
-              <Text style={styles.itemIcon}>{item.icon}</Text>
+            <View
+              style={[
+                styles.itemIconContainer,
+                { backgroundColor: "rgba(59, 130, 246, 0.12)" },
+              ]}
+            >
+              <Ionicons name={item.icon} size={20} color={colors.accent} />
             </View>
 
             <View style={styles.itemTextContainer}>
@@ -134,9 +140,12 @@ export function MoreScreen({
               </Text>
             </View>
 
-            <Text style={[styles.itemChevron, { color: colors.textSecondary }]}>
-              ›
-            </Text>
+            <Ionicons
+              name="chevron-forward"
+              size={18}
+              color={colors.textSecondary}
+              style={styles.chevronIcon}
+            />
           </Pressable>
         ))}
       </View>
@@ -155,8 +164,17 @@ export function MoreScreen({
             pressed && styles.itemRowPressed,
           ]}
         >
-          <View style={styles.itemIconContainer}>
-            <Text style={styles.itemIcon}>{mode === "dark" ? "🌙" : "☀️"}</Text>
+          <View
+            style={[
+              styles.itemIconContainer,
+              { backgroundColor: "rgba(59, 130, 246, 0.12)" },
+            ]}
+          >
+            <Ionicons
+              name={mode === "dark" ? "moon-outline" : "sunny-outline"}
+              size={20}
+              color={colors.accent}
+            />
           </View>
           <View style={styles.itemTextContainer}>
             <Text style={[styles.itemTitle, { color: colors.textPrimary }]}>Theme</Text>
@@ -244,9 +262,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
   },
-  itemChevron: {
-    fontSize: 20,
-    fontWeight: "600",
+  chevronIcon: {
     marginLeft: 8,
   },
 });

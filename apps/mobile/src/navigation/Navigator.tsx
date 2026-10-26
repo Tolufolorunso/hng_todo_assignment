@@ -5,6 +5,7 @@ import {
   Pressable,
   StyleSheet,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import type { MobileScreen, MobileTab } from "../types/navigation.js";
 import type { TaskRepository } from "../storage/taskRepository.js";
 import type { NoteRepository } from "../storage/noteRepository.js";
@@ -50,14 +51,14 @@ export interface MobileNavigatorProps {
 export interface NavTabItem {
   id: MobileTab;
   label: string;
-  icon: string;
+  icon: React.ComponentProps<typeof Ionicons>["name"];
 }
 
 export const PRIMARY_TABS: NavTabItem[] = [
-  { id: "tasks", label: "Tasks", icon: "✓" },
-  { id: "followups", label: "Follow Ups", icon: "🤝" },
-  { id: "notes", label: "Notes", icon: "📝" },
-  { id: "more", label: "More", icon: "⋯" },
+  { id: "tasks", label: "Tasks", icon: "checkbox-outline" },
+  { id: "followups", label: "Follow Ups", icon: "people-outline" },
+  { id: "notes", label: "Notes", icon: "document-text-outline" },
+  { id: "more", label: "More", icon: "ellipsis-horizontal-circle-outline" },
 ];
 
 export function MobileNavigator({
@@ -290,7 +291,8 @@ export function MobileNavigator({
             accessibilityLabel="Back to more tools"
             style={styles.backButton}
           >
-            <Text style={[styles.backText, { color: colors.accent }]}>‹ More Tools</Text>
+            <Ionicons name="chevron-back" size={18} color={colors.accent} />
+            <Text style={[styles.backText, { color: colors.accent }]}>More Tools</Text>
           </Pressable>
         </View>
       )}
@@ -328,14 +330,11 @@ export function MobileNavigator({
                 ]}
               >
                 <View style={styles.tabIconWrapper}>
-                  <Text
-                    style={[
-                      styles.tabIcon,
-                      { color: isActive ? colors.accent : colors.textMuted },
-                    ]}
-                  >
-                    {tab.icon}
-                  </Text>
+                  <Ionicons
+                    name={tab.icon}
+                    size={22}
+                    color={isActive ? colors.accent : colors.textMuted}
+                  />
                   {badge > 0 ? (
                     <View style={styles.tabBadge}>
                       <Text style={styles.tabBadgeText}>

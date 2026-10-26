@@ -13,6 +13,10 @@ export default defineConfig({
       "react-native": path.resolve(__dirname, "./src/test/react-native-mock.ts"),
       "expo-notifications": path.resolve(__dirname, "./src/test/expo-notifications-mock.ts"),
       "expo-secure-store": path.resolve(__dirname, "./src/test/expo-secure-store-mock.ts"),
+      "expo-router": path.resolve(__dirname, "./src/test/expo-router-mock.ts"),
+      "@expo/vector-icons": path.resolve(__dirname, "./src/test/vector-icons-mock.ts"),
+      "react-native-safe-area-context": path.resolve(__dirname, "./src/test/safe-area-mock.ts"),
+      "react-native-screens": path.resolve(__dirname, "./src/test/screens-mock.ts"),
     },
   },
 });

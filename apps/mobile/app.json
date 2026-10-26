@@ -35,7 +35,9 @@
         "ACCESS_NETWORK_STATE"
       ]
     },
+    "scheme": "taskflow",
     "plugins": [
+      "expo-router",
       [
         "expo-notifications",
         {
