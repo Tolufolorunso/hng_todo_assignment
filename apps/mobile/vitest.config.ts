@@ -11,6 +11,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "react-native": path.resolve(__dirname, "./src/test/react-native-mock.ts"),
+      "expo-notifications": path.resolve(__dirname, "./src/test/expo-notifications-mock.ts"),
     },
   },
 });

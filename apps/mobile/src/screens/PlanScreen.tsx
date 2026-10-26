@@ -1,4 +1,12 @@
 import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  StyleSheet,
+  ActivityIndicator,
+} from "react-native";
 import type { TaskRepository } from "../storage/taskRepository.js";
 import type { FollowUpRepository } from "../storage/followUpRepository.js";
 import type { DailyPlanRepository } from "../storage/dailyPlanRepository.js";
@@ -30,6 +38,15 @@ export function PlanScreen({
   const [totalEstimatedMinutes, setTotalEstimatedMinutes] = useState(0);
   const [loading, setLoading] = useState(true);
 
+  const generatePlan = async (minutes: number) => {
+    const tasks = await taskRepo.list();
+    const followups = await followUpRepo.list();
+    const result = generateDailyRecommendations(tasks, followups, minutes, { targetDate: today });
+    setRecommendedItems(result.recommendedItems);
+    setOverflowItems(result.overflowItems);
+    setTotalEstimatedMinutes(result.totalEstimatedMinutes);
+  };
+
   const loadCurrentPlan = async () => {
     setLoading(true);
     try {
@@ -44,15 +61,6 @@ export function PlanScreen({
     } finally {
       setLoading(false);
     }
-  };
-
-  const generatePlan = async (minutes: number) => {
-    const tasks = await taskRepo.list();
-    const followups = await followUpRepo.list();
-    const result = generateDailyRecommendations(tasks, followups, minutes, { targetDate: today });
-    setRecommendedItems(result.recommendedItems);
-    setOverflowItems(result.overflowItems);
-    setTotalEstimatedMinutes(result.totalEstimatedMinutes);
   };
 
   useEffect(() => {
@@ -92,141 +100,159 @@ export function PlanScreen({
   };
 
   return (
-    <div
-      role="region"
-      aria-label="Plan My Day screen"
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        height: "100%",
-        backgroundColor: colors.background,
-        color: colors.textPrimary,
-        padding: "16px",
-        overflowY: "auto",
-      }}
+    <ScrollView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      contentContainerStyle={styles.contentContainer}
+      testID="plan-screen"
     >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-        <div>
-          <h1 style={{ fontSize: "20px", fontWeight: 700, margin: 0 }}>Plan My Day</h1>
-          <div style={{ fontSize: "13px", color: colors.textMuted, marginTop: "2px" }}>{today}</div>
-        </div>
-        {existingPlan?.acceptedAt && (
+      <View style={styles.headerRow}>
+        <View>
+          <Text style={[styles.screenTitle, { color: colors.textPrimary }]}>
+            Plan My Day
+          </Text>
+          <Text style={[styles.dateSubtitle, { color: colors.textMuted }]}>
+            {today}
+          </Text>
+        </View>
+        {existingPlan?.acceptedAt ? (
           <TouchButton label="Replan" onPress={handleResetPlan} variant="secondary" />
-        )}
-      </div>
+        ) : null}
+      </View>
 
       {/* Available Time Selector */}
-      <div
-        style={{
-          backgroundColor: colors.surface,
-          border: `1px solid ${colors.surfaceBorder}`,
-          borderRadius: "12px",
-          padding: "16px",
-          marginBottom: "16px",
-        }}
+      <View
+        style={[
+          styles.capacityCard,
+          { backgroundColor: colors.surface, borderColor: colors.surfaceBorder },
+        ]}
       >
-        <div style={{ fontSize: "14px", fontWeight: 600, marginBottom: "8px" }}>
+        <Text style={[styles.capacityTitle, { color: colors.textPrimary }]}>
           Target Capacity: {availableMinutes} min ({Math.round((availableMinutes / 60) * 10) / 10}h)
-        </div>
-        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-          {CAPACITY_PRESETS.map((preset) => (
-            <button
-              key={preset}
-              type="button"
-              disabled={!!existingPlan?.acceptedAt}
-              onClick={() => handleCapacityChange(preset)}
-              style={{
-                padding: "8px 12px",
-                borderRadius: "8px",
-                border: `1px solid ${availableMinutes === preset ? colors.accent : colors.surfaceBorder}`,
-                backgroundColor: availableMinutes === preset ? colors.accent : "transparent",
-                color: availableMinutes === preset ? "#ffffff" : colors.textPrimary,
-                fontSize: "13px",
-                fontWeight: 600,
-                cursor: existingPlan?.acceptedAt ? "not-allowed" : "pointer",
-                minHeight: "44px",
-              }}
-            >
-              {preset}m
-            </button>
-          ))}
-        </div>
-      </div>
+        </Text>
+        <View style={styles.presetsRow}>
+          {CAPACITY_PRESETS.map((preset) => {
+            const isSelected = availableMinutes === preset;
+            const isDisabled = !!existingPlan?.acceptedAt;
+            return (
+              <Pressable
+                key={preset}
+                disabled={isDisabled}
+                onPress={() => handleCapacityChange(preset)}
+                accessibilityRole="button"
+                accessibilityLabel={`${preset} minutes`}
+                style={[
+                  styles.presetChip,
+                  {
+                    borderColor: isSelected ? colors.accent : colors.surfaceBorder,
+                    backgroundColor: isSelected ? colors.accent : "transparent",
+                    opacity: isDisabled ? 0.6 : 1,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.presetChipText,
+                    { color: isSelected ? "#ffffff" : colors.textPrimary },
+                  ]}
+                >
+                  {preset}m
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
 
       {/* Display Active Checklist if Plan Accepted */}
       {existingPlan?.acceptedAt ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: "15px", fontWeight: 600 }}>Active Daily Checklist</span>
+        <View style={styles.sectionContainer}>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+              Active Daily Checklist
+            </Text>
             <Badge label="Plan Accepted" variant="low" />
-          </div>
+          </View>
 
           {existingPlan.items.length === 0 ? (
-            <EmptyState title="No items in today's plan" description="You have completed all items!" />
+            <EmptyState
+              title="No items in today's plan"
+              description="You have completed all items for today!"
+            />
           ) : (
             existingPlan.items.map((item) => (
-              <div
+              <Pressable
                 key={item.id}
-                onClick={() => handleToggleItem(item.id)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                  padding: "12px",
-                  backgroundColor: colors.surface,
-                  border: `1px solid ${colors.surfaceBorder}`,
-                  borderRadius: "8px",
-                  cursor: "pointer",
-                  minHeight: "48px",
-                }}
+                onPress={() => handleToggleItem(item.id)}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: item.completed }}
+                accessibilityLabel={item.title}
+                style={[
+                  styles.checklistItem,
+                  { backgroundColor: colors.surface, borderColor: colors.surfaceBorder },
+                ]}
               >
-                <input
-                  type="checkbox"
-                  checked={item.completed}
-                  onChange={() => handleToggleItem(item.id)}
-                  style={{ width: "20px", height: "20px", cursor: "pointer" }}
-                />
-                <div style={{ flex: 1 }}>
-                  <div
-                    style={{
-                      fontSize: "14px",
-                      textDecoration: item.completed ? "line-through" : "none",
-                      color: item.completed ? colors.textMuted : colors.textPrimary,
-                      fontWeight: 500,
-                    }}
+                <View
+                  style={[
+                    styles.checkboxIndicator,
+                    {
+                      borderColor: item.completed ? colors.accent : colors.surfaceBorder,
+                      backgroundColor: item.completed ? colors.accent : "transparent",
+                    },
+                  ]}
+                >
+                  {item.completed ? (
+                    <Text style={styles.checkboxCheck}>✓</Text>
+                  ) : null}
+                </View>
+
+                <View style={styles.itemMainContent}>
+                  <Text
+                    style={[
+                      styles.itemTitle,
+                      {
+                        color: item.completed ? colors.textMuted : colors.textPrimary,
+                        textDecorationLine: item.completed ? "line-through" : "none",
+                      },
+                    ]}
                   >
                     {item.title}
-                  </div>
-                  {item.reason && (
-                    <div style={{ fontSize: "12px", color: colors.textMuted }}>{item.reason}</div>
-                  )}
-                </div>
-                {item.estimatedMinutes && (
+                  </Text>
+                  {item.reason ? (
+                    <Text style={[styles.itemReason, { color: colors.textMuted }]}>
+                      {item.reason}
+                    </Text>
+                  ) : null}
+                </View>
+
+                {item.estimatedMinutes ? (
                   <Badge label={`${item.estimatedMinutes}m`} variant="neutral" />
-                )}
-              </div>
+                ) : null}
+              </Pressable>
             ))
           )}
-        </div>
+        </View>
       ) : (
         /* Recommended items preview before acceptance */
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: "15px", fontWeight: 600 }}>
+        <View style={styles.sectionContainer}>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
               Recommended: {totalEstimatedMinutes} / {availableMinutes} min
-            </span>
+            </Text>
             <TouchButton
               label="Accept Daily Plan"
               onPress={handleAcceptPlan}
               variant="primary"
               disabled={recommendedItems.length === 0}
             />
-          </div>
+          </View>
 
           {loading ? (
-            <div style={{ textAlign: "center", padding: "24px", color: colors.textMuted }}>
-              Calculating capacity plan...
-            </div>
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={colors.accent} />
+              <Text style={[styles.loadingText, { color: colors.textMuted }]}>
+                Calculating capacity recommendations...
+              </Text>
+            </View>
           ) : recommendedItems.length === 0 ? (
             <EmptyState
               title="No tasks to plan"
@@ -234,63 +260,207 @@ export function PlanScreen({
             />
           ) : (
             recommendedItems.map((item) => (
-              <div
+              <View
                 key={item.id}
-                style={{
-                  padding: "12px",
-                  backgroundColor: colors.surface,
-                  border: `1px solid ${colors.surfaceBorder}`,
-                  borderRadius: "8px",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
+                style={[
+                  styles.recommendedCard,
+                  { backgroundColor: colors.surface, borderColor: colors.surfaceBorder },
+                ]}
               >
-                <div>
-                  <div style={{ fontSize: "14px", fontWeight: 600, color: colors.textPrimary }}>
+                <View style={styles.itemMainContent}>
+                  <Text style={[styles.itemTitle, { color: colors.textPrimary }]}>
                     {item.title}
-                  </div>
-                  <div style={{ fontSize: "12px", color: colors.accent, marginTop: "2px" }}>
-                    {item.reason}
-                  </div>
-                </div>
-                <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                  </Text>
+                  {item.reason ? (
+                    <Text style={[styles.itemReason, { color: colors.accent }]}>
+                      {item.reason}
+                    </Text>
+                  ) : null}
+                </View>
+
+                <View style={styles.badgesRow}>
                   <Badge label={item.type} variant="category" />
                   <Badge label={`${item.estimatedMinutes}m`} variant="neutral" />
-                </div>
-              </div>
+                </View>
+              </View>
             ))
           )}
 
-          {overflowItems.length > 0 && (
-            <div style={{ marginTop: "16px" }}>
-              <div style={{ fontSize: "13px", fontWeight: 600, color: colors.textMuted, marginBottom: "8px" }}>
+          {overflowItems.length > 0 ? (
+            <View style={styles.overflowContainer}>
+              <Text style={[styles.overflowTitle, { color: colors.textMuted }]}>
                 Overflow ({overflowItems.length} items exceeding {availableMinutes}m capacity)
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              </Text>
+              <View style={styles.overflowList}>
                 {overflowItems.map((item) => (
-                  <div
+                  <View
                     key={item.id}
-                    style={{
-                      padding: "8px 12px",
-                      backgroundColor: "rgba(255, 255, 255, 0.03)",
-                      border: `1px solid ${colors.surfaceBorder}`,
-                      borderRadius: "6px",
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      opacity: 0.7,
-                    }}
+                    style={[
+                      styles.overflowCard,
+                      {
+                        backgroundColor: colors.surface,
+                        borderColor: colors.surfaceBorder,
+                      },
+                    ]}
                   >
-                    <span style={{ fontSize: "13px", color: colors.textMuted }}>{item.title}</span>
+                    <Text style={[styles.overflowItemTitle, { color: colors.textMuted }]}>
+                      {item.title}
+                    </Text>
                     <Badge label={`${item.estimatedMinutes}m`} variant="neutral" />
-                  </div>
+                  </View>
                 ))}
-              </div>
-            </div>
-          )}
-        </div>
+              </View>
+            </View>
+          ) : null}
+        </View>
       )}
-    </div>
+    </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  contentContainer: {
+    padding: 16,
+    paddingBottom: 40,
+  },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  screenTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+  },
+  dateSubtitle: {
+    fontSize: 13,
+    marginTop: 2,
+  },
+  capacityCard: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    gap: 10,
+  },
+  capacityTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  presetsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  presetChip: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    minHeight: 44,
+    minWidth: 44,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  presetChipText: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  sectionContainer: {
+    gap: 12,
+  },
+  sectionHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  loadingContainer: {
+    padding: 32,
+    alignItems: "center",
+    gap: 12,
+  },
+  loadingText: {
+    fontSize: 14,
+  },
+  checklistItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    minHeight: 48,
+    gap: 12,
+  },
+  checkboxIndicator: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  checkboxCheck: {
+    color: "#ffffff",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  itemMainContent: {
+    flex: 1,
+  },
+  itemTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  itemReason: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  recommendedCard: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 14,
+    borderRadius: 10,
+    borderWidth: 1,
+    minHeight: 48,
+  },
+  badgesRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  overflowContainer: {
+    marginTop: 16,
+    gap: 8,
+  },
+  overflowTitle: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  overflowList: {
+    gap: 8,
+  },
+  overflowCard: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    opacity: 0.75,
+  },
+  overflowItemTitle: {
+    fontSize: 13,
+    flex: 1,
+    marginRight: 8,
+  },
+});

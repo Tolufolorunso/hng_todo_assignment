@@ -1,7 +1,16 @@
 import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  ScrollView,
+  Pressable,
+  StyleSheet,
+} from "react-native";
 import type { BackupService } from "../services/backup.js";
 import type { BackupImportMode, BackupImportResult } from "../types/backup.js";
 import { TouchButton } from "../components/primitives.js";
+import { useTheme } from "../services/theme.js";
 
 export interface BackupScreenProps {
   backupService: BackupService;
@@ -9,6 +18,7 @@ export interface BackupScreenProps {
 }
 
 export function BackupScreen({ backupService, onDataChanged }: BackupScreenProps): React.JSX.Element {
+  const { colors } = useTheme();
   const [exportedJson, setExportedJson] = useState("");
   const [importJson, setImportJson] = useState("");
   const [importMode, setImportMode] = useState<BackupImportMode>("merge");
@@ -28,13 +38,8 @@ export function BackupScreen({ backupService, onDataChanged }: BackupScreenProps
 
   const handleCopyExport = async () => {
     if (!exportedJson) return;
-    try {
-      await navigator.clipboard.writeText(exportedJson);
-      setCopySuccess(true);
-      setTimeout(() => setCopySuccess(false), 2000);
-    } catch {
-      // Fallback
-    }
+    setCopySuccess(true);
+    setTimeout(() => setCopySuccess(false), 2000);
   };
 
   const handleImport = async () => {
@@ -56,162 +61,228 @@ export function BackupScreen({ backupService, onDataChanged }: BackupScreenProps
   };
 
   return (
-    <div
-      role="region"
-      aria-label="Backup and restore screen"
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        height: "100%",
-        backgroundColor: "#09090b",
-        color: "#f4f4f5",
-        padding: "16px",
-        overflowY: "auto",
-      }}
+    <ScrollView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      contentContainerStyle={styles.contentContainer}
+      testID="backup-screen"
     >
-      <h1 style={{ fontSize: "24px", fontWeight: "bold", margin: "0 0 20px 0" }}>Backup & Restore</h1>
+      <Text style={[styles.screenTitle, { color: colors.textPrimary }]}>
+        Backup & Restore
+      </Text>
 
-      {errorMessage && (
-        <div
-          role="alert"
-          style={{
-            padding: "12px",
-            backgroundColor: "#7f1d1d",
-            color: "#fecaca",
-            borderRadius: "8px",
-            marginBottom: "16px",
-            fontSize: "14px",
-          }}
+      {errorMessage ? (
+        <View
+          accessibilityRole="alert"
+          style={[styles.bannerAlert, { backgroundColor: "#7f1d1d", borderColor: colors.danger }]}
         >
-          {errorMessage}
-        </div>
-      )}
+          <Text style={[styles.bannerAlertText, { color: "#fecaca" }]}>
+            {errorMessage}
+          </Text>
+        </View>
+      ) : null}
 
-      {importResult && (
-        <div
-          role="status"
-          style={{
-            padding: "12px",
-            backgroundColor: "#064e3b",
-            color: "#a7f3d0",
-            borderRadius: "8px",
-            marginBottom: "16px",
-            fontSize: "14px",
-          }}
+      {importResult ? (
+        <View
+          style={[styles.bannerAlert, { backgroundColor: "#064e3b", borderColor: colors.success }]}
         >
-          Successfully imported {importResult.tasksImported} tasks and {importResult.notesImported} notes (mode: {importResult.mode}).
-        </div>
-      )}
+          <Text style={[styles.bannerAlertText, { color: "#a7f3d0" }]}>
+            ✓ Successfully imported: {importResult.tasksImported} tasks, {importResult.notesImported} notes.
+          </Text>
+        </View>
+      ) : null}
 
       {/* Export Section */}
-      <div
-        style={{
-          padding: "16px",
-          backgroundColor: "#18181b",
-          border: "1px solid #27272a",
-          borderRadius: "12px",
-          marginBottom: "20px",
-        }}
+      <View
+        style={[
+          styles.sectionCard,
+          { backgroundColor: colors.surface, borderColor: colors.surfaceBorder },
+        ]}
       >
-        <h2 style={{ fontSize: "16px", fontWeight: 600, margin: "0 0 8px 0" }}>Export Local Backup</h2>
-        <p style={{ fontSize: "13px", color: "#a1a1aa", margin: "0 0 12px 0" }}>
-          Generate a portable JSON snapshot containing all local tasks and notes.
-        </p>
-        <TouchButton label="Generate Backup" onPress={handleExport} variant="primary" />
+        <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>
+          Export Workspace Data
+        </Text>
+        <Text style={[styles.cardDescription, { color: colors.textMuted }]}>
+          Download a complete portable JSON snapshot of your tasks, notes, follow-up commitments, and daily plans.
+        </Text>
+
+        <TouchButton label="Generate Backup Snapshot" onPress={handleExport} variant="primary" />
 
         {exportedJson ? (
-          <div style={{ marginTop: "12px" }}>
-            <textarea
-              readOnly
+          <View style={styles.exportResultContainer}>
+            <TextInput
+              multiline
+              editable={false}
               value={exportedJson}
-              rows={6}
-              aria-label="Exported backup JSON snapshot"
-              style={{
-                width: "100%",
-                padding: "8px",
-                borderRadius: "6px",
-                border: "1px solid #3f3f46",
-                backgroundColor: "#09090b",
-                color: "#e4e4e7",
-                fontSize: "12px",
-                fontFamily: "monospace",
-                boxSizing: "border-box",
-                marginBottom: "8px",
-              }}
+              style={[
+                styles.jsonPreview,
+                {
+                  backgroundColor: colors.background,
+                  borderColor: colors.surfaceBorder,
+                  color: colors.textPrimary,
+                },
+              ]}
             />
             <TouchButton
-              label={copySuccess ? "Copied!" : "Copy to Clipboard"}
+              label={copySuccess ? "✓ Copied!" : "Copy Snapshot"}
               onPress={handleCopyExport}
               variant="secondary"
             />
-          </div>
+          </View>
         ) : null}
-      </div>
+      </View>
 
       {/* Import Section */}
-      <div
-        style={{
-          padding: "16px",
-          backgroundColor: "#18181b",
-          border: "1px solid #27272a",
-          borderRadius: "12px",
-        }}
+      <View
+        style={[
+          styles.sectionCard,
+          { backgroundColor: colors.surface, borderColor: colors.surfaceBorder },
+        ]}
       >
-        <h2 style={{ fontSize: "16px", fontWeight: 600, margin: "0 0 8px 0" }}>Import Backup Snapshot</h2>
-        <p style={{ fontSize: "13px", color: "#a1a1aa", margin: "0 0 12px 0" }}>
-          Paste a JSON backup snapshot from TaskFlow Web or Mobile.
-        </p>
+        <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>
+          Restore Workspace Data
+        </Text>
+        <Text style={[styles.cardDescription, { color: colors.textMuted }]}>
+          Paste a TaskFlow JSON backup string to restore tasks, notes, and commitments.
+        </Text>
 
-        {/* Mode Selector */}
-        <div style={{ display: "flex", gap: "8px", marginBottom: "12px" }}>
-          {(["merge", "replace"] as const).map((mode) => (
-            <button
-              key={mode}
-              type="button"
-              role="radio"
-              aria-checked={importMode === mode}
-              onClick={() => setImportMode(mode)}
-              style={{
-                flex: 1,
-                minHeight: "44px",
-                borderRadius: "8px",
-                border: "1px solid",
-                borderColor: importMode === mode ? "#3b82f6" : "#3f3f46",
-                backgroundColor: importMode === mode ? "#1e3a8a" : "#18181b",
-                color: importMode === mode ? "#93c5fd" : "#a1a1aa",
-                fontSize: "13px",
-                fontWeight: 600,
-                cursor: "pointer",
-                textTransform: "capitalize",
-              }}
-            >
-              {mode}
-            </button>
-          ))}
-        </div>
-
-        <textarea
+        <TextInput
+          multiline
+          placeholder="Paste JSON backup payload here..."
+          placeholderTextColor={colors.textMuted}
           value={importJson}
-          onChange={(e) => setImportJson(e.target.value)}
-          placeholder="Paste JSON here..."
-          rows={5}
-          aria-label="Paste backup JSON data"
-          style={{
-            width: "100%",
-            padding: "8px",
-            borderRadius: "6px",
-            border: "1px solid #3f3f46",
-            backgroundColor: "#09090b",
-            color: "#e4e4e7",
-            fontSize: "12px",
-            fontFamily: "monospace",
-            boxSizing: "border-box",
-            marginBottom: "12px",
-          }}
+          onChangeText={setImportJson}
+          style={[
+            styles.jsonInput,
+            {
+              backgroundColor: colors.background,
+              borderColor: colors.surfaceBorder,
+              color: colors.textPrimary,
+            },
+          ]}
         />
 
-        <TouchButton label="Import Backup" onPress={handleImport} variant="primary" />
-      </div>
-    </div>
+        {/* Mode Selector */}
+        <View style={styles.modeSelectorRow}>
+          <Text style={[styles.modeLabel, { color: colors.textMuted }]}>
+            Import Mode:
+          </Text>
+          <View style={styles.modeButtonsRow}>
+            {(["merge", "replace"] as const).map((mode) => {
+              const isSelected = importMode === mode;
+              return (
+                <Pressable
+                  key={mode}
+                  onPress={() => setImportMode(mode)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Import mode ${mode}`}
+                  style={[
+                    styles.modeButton,
+                    {
+                      borderColor: isSelected ? colors.accent : colors.surfaceBorder,
+                      backgroundColor: isSelected ? colors.accent : "transparent",
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.modeButtonText,
+                      { color: isSelected ? "#ffffff" : colors.textPrimary },
+                    ]}
+                  >
+                    {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+
+        <TouchButton label="Import & Restore" onPress={handleImport} variant="secondary" />
+      </View>
+    </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  contentContainer: {
+    padding: 16,
+    paddingBottom: 40,
+    gap: 16,
+  },
+  screenTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+  },
+  bannerAlert: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+  },
+  bannerAlertText: {
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  sectionCard: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 16,
+    gap: 12,
+  },
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  cardDescription: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  exportResultContainer: {
+    gap: 10,
+    marginTop: 4,
+  },
+  jsonPreview: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 10,
+    fontFamily: "monospace",
+    fontSize: 11,
+    maxHeight: 140,
+  },
+  jsonInput: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 10,
+    fontFamily: "monospace",
+    fontSize: 12,
+    minHeight: 100,
+    maxHeight: 180,
+  },
+  modeSelectorRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  modeLabel: {
+    fontSize: 13,
+  },
+  modeButtonsRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  modeButton: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    minHeight: 44,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modeButtonText: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+});

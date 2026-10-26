@@ -1,4 +1,12 @@
 import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  StyleSheet,
+  ActivityIndicator,
+} from "react-native";
 import type { TaskRepository } from "../storage/taskRepository.js";
 import type { FollowUpRepository } from "../storage/followUpRepository.js";
 import type { Task } from "../types/task.js";
@@ -12,11 +20,13 @@ export interface CalendarScreenProps {
   followUpRepo: FollowUpRepository;
 }
 
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
 export function CalendarScreen({ taskRepo, followUpRepo }: CalendarScreenProps): React.JSX.Element {
   const { colors } = useTheme();
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
-  const [month, setMonth] = useState(today.getMonth() + 1); // 1-12
+  const [month, setMonth] = useState(today.getMonth() + 1);
   const [selectedDate, setSelectedDate] = useState(() => today.toISOString().slice(0, 10));
 
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -66,208 +76,298 @@ export function CalendarScreen({ taskRepo, followUpRepo }: CalendarScreenProps):
   });
 
   return (
-    <div
-      role="region"
-      aria-label="Calendar screen"
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        height: "100%",
-        backgroundColor: colors.background,
-        color: colors.textPrimary,
-        padding: "16px",
-        overflowY: "auto",
-      }}
+    <ScrollView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      contentContainerStyle={styles.contentContainer}
+      testID="calendar-screen"
     >
       {/* Month Navigation */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "16px",
-        }}
-      >
-        <button
-          type="button"
-          onClick={handlePrevMonth}
-          style={{
-            minHeight: "44px",
-            minWidth: "44px",
-            borderRadius: "8px",
-            border: `1px solid ${colors.surfaceBorder}`,
-            backgroundColor: colors.surface,
-            color: colors.textPrimary,
-            fontSize: "16px",
-            cursor: "pointer",
-          }}
+      <View style={styles.navRow}>
+        <Pressable
+          onPress={handlePrevMonth}
+          accessibilityRole="button"
+          accessibilityLabel="Previous month"
+          style={[
+            styles.navBtn,
+            { backgroundColor: colors.surface, borderColor: colors.surfaceBorder },
+          ]}
         >
-          ‹
-        </button>
-        <h1 style={{ fontSize: "18px", fontWeight: 700, margin: 0 }}>
+          <Text style={[styles.navBtnText, { color: colors.textPrimary }]}>‹</Text>
+        </Pressable>
+
+        <Text style={[styles.monthHeaderTitle, { color: colors.textPrimary }]}>
           {monthName} {year}
-        </h1>
-        <button
-          type="button"
-          onClick={handleNextMonth}
-          style={{
-            minHeight: "44px",
-            minWidth: "44px",
-            borderRadius: "8px",
-            border: `1px solid ${colors.surfaceBorder}`,
-            backgroundColor: colors.surface,
-            color: colors.textPrimary,
-            fontSize: "16px",
-            cursor: "pointer",
-          }}
+        </Text>
+
+        <Pressable
+          onPress={handleNextMonth}
+          accessibilityRole="button"
+          accessibilityLabel="Next month"
+          style={[
+            styles.navBtn,
+            { backgroundColor: colors.surface, borderColor: colors.surfaceBorder },
+          ]}
         >
-          ›
-        </button>
-      </div>
+          <Text style={[styles.navBtnText, { color: colors.textPrimary }]}>›</Text>
+        </Pressable>
+      </View>
 
-      {/* Calendar Day Grid */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(7, 1fr)",
-          gap: "4px",
-          marginBottom: "16px",
-        }}
-      >
-        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((dayName) => (
-          <div
-            key={dayName}
-            style={{
-              textAlign: "center",
-              fontSize: "11px",
-              fontWeight: 600,
-              color: colors.textMuted,
-              padding: "4px 0",
-            }}
-          >
-            {dayName}
-          </div>
+      {/* Weekday Labels Header */}
+      <View style={styles.weekdaysRow}>
+        {WEEKDAYS.map((dayName) => (
+          <View key={dayName} style={styles.weekdayCol}>
+            <Text style={[styles.weekdayText, { color: colors.textMuted }]}>
+              {dayName}
+            </Text>
+          </View>
         ))}
+      </View>
 
+      {/* Calendar Day Grid (7-column Flexbox) */}
+      <View style={styles.calendarGrid}>
         {Object.entries(monthSchedule.days).map(([dateKey, dayData]) => {
           const isSelected = selectedDate === dateKey;
           const dayNumber = parseInt(dateKey.slice(8), 10);
 
           return (
-            <button
-              key={dateKey}
-              type="button"
-              onClick={() => setSelectedDate(dateKey)}
-              style={{
-                minHeight: "44px",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                borderRadius: "8px",
-                border: `1px solid ${isSelected ? colors.accent : colors.surfaceBorder}`,
-                backgroundColor: isSelected
-                  ? "rgba(59, 130, 246, 0.2)"
-                  : dayData.totalItems > 0
-                  ? colors.surface
-                  : "transparent",
-                color: isSelected ? colors.accent : colors.textPrimary,
-                cursor: "pointer",
-                padding: "2px",
-              }}
-            >
-              <span style={{ fontSize: "12px", fontWeight: isSelected ? 700 : 500 }}>
-                {dayNumber}
-              </span>
-              {dayData.totalItems > 0 && (
-                <span
-                  style={{
-                    width: "6px",
-                    height: "6px",
-                    borderRadius: "50%",
-                    backgroundColor: dayData.hasOverdue ? colors.danger : colors.accent,
-                    marginTop: "2px",
-                  }}
-                />
-              )}
-            </button>
+            <View key={dateKey} style={styles.dayCellContainer}>
+              <Pressable
+                onPress={() => setSelectedDate(dateKey)}
+                accessibilityRole="button"
+                accessibilityLabel={`Date ${dateKey}, ${dayData.totalItems} items`}
+                style={[
+                  styles.dayCell,
+                  {
+                    borderColor: isSelected ? colors.accent : colors.surfaceBorder,
+                    backgroundColor: isSelected
+                      ? "rgba(59, 130, 246, 0.2)"
+                      : dayData.totalItems > 0
+                      ? colors.surface
+                      : "transparent",
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.dayNumberText,
+                    {
+                      color: isSelected ? colors.accent : colors.textPrimary,
+                      fontWeight: isSelected ? "700" : "500",
+                    },
+                  ]}
+                >
+                  {dayNumber}
+                </Text>
+
+                {dayData.totalItems > 0 ? (
+                  <View
+                    style={[
+                      styles.itemDot,
+                      {
+                        backgroundColor: dayData.hasOverdue ? colors.danger : colors.accent,
+                      },
+                    ]}
+                  />
+                ) : (
+                  <View style={styles.emptyDotPlaceholder} />
+                )}
+              </Pressable>
+            </View>
           );
         })}
-      </div>
+      </View>
 
       {/* Selected Day Inspector */}
-      <div
-        style={{
-          backgroundColor: colors.surface,
-          border: `1px solid ${colors.surfaceBorder}`,
-          borderRadius: "12px",
-          padding: "16px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "10px",
-        }}
+      <View
+        style={[
+          styles.inspectorCard,
+          { backgroundColor: colors.surface, borderColor: colors.surfaceBorder },
+        ]}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ fontSize: "15px", fontWeight: 700 }}>Schedule for {selectedDate}</div>
+        <View style={styles.inspectorHeaderRow}>
+          <Text style={[styles.inspectorTitle, { color: colors.textPrimary }]}>
+            Schedule for {selectedDate}
+          </Text>
           <Badge label={`${selectedSchedule.totalItems} items`} variant="neutral" />
-        </div>
+        </View>
 
-        {selectedSchedule.totalItems === 0 ? (
-          <EmptyState title="Nothing scheduled" description="No tasks or follow-ups due on this day." />
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="small" color={colors.accent} />
+          </View>
+        ) : selectedSchedule.totalItems === 0 ? (
+          <EmptyState
+            title="Nothing scheduled"
+            description="No tasks or follow-ups due on this day."
+          />
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          <View style={styles.itemsList}>
             {selectedSchedule.tasks.map((task) => (
-              <div
+              <View
                 key={task.id}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  padding: "8px 12px",
-                  backgroundColor: colors.background,
-                  borderRadius: "8px",
-                }}
+                style={[
+                  styles.scheduleItemRow,
+                  { backgroundColor: colors.background, borderColor: colors.surfaceBorder },
+                ]}
               >
-                <div>
-                  <span style={{ fontSize: "13px", fontWeight: 600, color: colors.textPrimary }}>
+                <View style={styles.scheduleItemContent}>
+                  <Text style={[styles.scheduleItemTitle, { color: colors.textPrimary }]}>
                     {task.title}
-                  </span>
-                  <div style={{ fontSize: "11px", color: colors.textMuted }}>Task</div>
-                </div>
+                  </Text>
+                  <Text style={[styles.scheduleItemSubtitle, { color: colors.textMuted }]}>
+                    Task
+                  </Text>
+                </View>
                 <Badge
                   label={task.completed ? "Done" : task.priority}
                   variant={task.completed ? "low" : "high"}
                 />
-              </div>
+              </View>
             ))}
 
             {selectedSchedule.followups.map((fu) => (
-              <div
+              <View
                 key={fu.id}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  padding: "8px 12px",
-                  backgroundColor: colors.background,
-                  borderRadius: "8px",
-                }}
+                style={[
+                  styles.scheduleItemRow,
+                  { backgroundColor: colors.background, borderColor: colors.surfaceBorder },
+                ]}
               >
-                <div>
-                  <span style={{ fontSize: "13px", fontWeight: 600, color: colors.textPrimary }}>
+                <View style={styles.scheduleItemContent}>
+                  <Text style={[styles.scheduleItemTitle, { color: colors.textPrimary }]}>
                     {fu.personName}: {fu.commitment}
-                  </span>
-                  <div style={{ fontSize: "11px", color: colors.accent }}>Follow Up</div>
-                </div>
+                  </Text>
+                  <Text style={[styles.scheduleItemSubtitle, { color: colors.accent }]}>
+                    Follow Up
+                  </Text>
+                </View>
                 <Badge
                   label={fu.status}
                   variant={fu.status === "completed" ? "low" : "high"}
                 />
-              </div>
+              </View>
             ))}
-          </div>
+          </View>
         )}
-      </div>
-    </div>
+      </View>
+    </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  contentContainer: {
+    padding: 16,
+    paddingBottom: 40,
+  },
+  navRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  navBtn: {
+    minHeight: 44,
+    minWidth: 44,
+    borderRadius: 8,
+    borderWidth: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  navBtnText: {
+    fontSize: 20,
+    fontWeight: "600",
+  },
+  monthHeaderTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  weekdaysRow: {
+    flexDirection: "row",
+    marginBottom: 6,
+  },
+  weekdayCol: {
+    flex: 1,
+    alignItems: "center",
+    paddingVertical: 4,
+  },
+  weekdayText: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  calendarGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginBottom: 20,
+  },
+  dayCellContainer: {
+    width: "14.285%",
+    padding: 2,
+  },
+  dayCell: {
+    minHeight: 44,
+    borderRadius: 8,
+    borderWidth: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 4,
+  },
+  dayNumberText: {
+    fontSize: 13,
+  },
+  itemDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginTop: 3,
+  },
+  emptyDotPlaceholder: {
+    width: 6,
+    height: 6,
+    marginTop: 3,
+  },
+  inspectorCard: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 16,
+    gap: 12,
+  },
+  inspectorHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  inspectorTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  loadingContainer: {
+    padding: 20,
+    alignItems: "center",
+  },
+  itemsList: {
+    gap: 8,
+  },
+  scheduleItemRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  scheduleItemContent: {
+    flex: 1,
+    marginRight: 8,
+  },
+  scheduleItemTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  scheduleItemSubtitle: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+});

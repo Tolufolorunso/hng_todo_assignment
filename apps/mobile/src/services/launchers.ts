@@ -1,3 +1,4 @@
+import { Linking } from "react-native";
 import type { PreferredAction } from "../types/followup.js";
 
 export function cleanPhoneNumber(raw: string): string {
@@ -59,3 +60,20 @@ export function createWhatsAppUri(phone: string, text?: string): string {
   return buildLauncherUri("whatsapp", phone, { body: text });
 }
 
+export async function launchAction(
+  action: NonNullable<PreferredAction>,
+  target: string,
+  options?: { subject?: string; body?: string }
+): Promise<boolean> {
+  const uri = buildLauncherUri(action, target, options);
+  try {
+    const supported = await Linking.canOpenURL(uri);
+    if (supported) {
+      await Linking.openURL(uri);
+      return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}

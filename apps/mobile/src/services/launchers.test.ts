@@ -1,5 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { buildLauncherUri, validateLauncherTarget, cleanPhoneNumber } from "./launchers.js";
+import {
+  buildLauncherUri,
+  validateLauncherTarget,
+  cleanPhoneNumber,
+  launchAction,
+  createMailtoUri,
+  createTelUri,
+  createWhatsAppUri,
+} from "./launchers.js";
 
 describe("Mobile Communication Launchers", () => {
   it("cleans phone numbers and preserves leading plus sign", () => {
@@ -13,11 +21,13 @@ describe("Mobile Communication Launchers", () => {
 
     const uri2 = buildLauncherUri("email", "client@example.com", { subject: "Follow up commitment" });
     expect(uri2).toBe("mailto:client@example.com?subject=Follow%20up%20commitment");
+    expect(createMailtoUri("client@example.com")).toBe("mailto:client@example.com");
   });
 
   it("builds valid tel URI for phone calls", () => {
     const uri = buildLauncherUri("phone", "+1 (800) 555-0199");
     expect(uri).toBe("tel:+18005550199");
+    expect(createTelUri("+1 (800) 555-0199")).toBe("tel:+18005550199");
   });
 
   it("builds valid WhatsApp deep link with optional text", () => {
@@ -26,6 +36,7 @@ describe("Mobile Communication Launchers", () => {
 
     const uri2 = buildLauncherUri("whatsapp", "+15551234567", { body: "Hi Alice, following up on our project!" });
     expect(uri2).toBe("https://wa.me/15551234567?text=Hi%20Alice%2C%20following%20up%20on%20our%20project!");
+    expect(createWhatsAppUri("+15551234567")).toBe("https://wa.me/15551234567");
   });
 
   it("validates targets according to action type", () => {
@@ -33,8 +44,19 @@ describe("Mobile Communication Launchers", () => {
     expect(validateLauncherTarget("email", "invalid-email")).toBe(false);
 
     expect(validateLauncherTarget("phone", "+15551234567")).toBe(true);
-    expect(validateLauncherTarget("phone", "123")).toBe(false); // too short
+    expect(validateLauncherTarget("phone", "123")).toBe(false);
 
     expect(validateLauncherTarget("whatsapp", "+2348012345678")).toBe(true);
+  });
+
+  it("successfully invokes native launchAction", async () => {
+    const resultEmail = await launchAction("email", "test@example.com");
+    expect(resultEmail).toBe(true);
+
+    const resultPhone = await launchAction("phone", "+15551234567");
+    expect(resultPhone).toBe(true);
+
+    const resultWhatsApp = await launchAction("whatsapp", "+15551234567", { body: "Hello" });
+    expect(resultWhatsApp).toBe(true);
   });
 });

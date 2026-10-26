@@ -182,7 +182,7 @@ The Blueprint overlay, `AGENTS.md`, and onboarding setup are already present.
   strict four-tab bottom navigation bar (Tasks, Follow Ups, Notes, and More),
   native `expo-sqlite` persistence with an in-memory test driver, native primitives
   (View, Text, Pressable, TextInput, StyleSheet), and core Task and Note CRUD.
-- [ ] 42. **React Native product parity and mobile-first workflows** - independently
+- [x] 42. **React Native product parity and mobile-first workflows** - independently
   implement Follow Up recurrence, direct communication launchers (phone, email,
   WhatsApp via native linking), Plan My Day, Actionable Notes, Calendar view,
   Analytics, local closed-app notifications via `expo-notifications`, and native

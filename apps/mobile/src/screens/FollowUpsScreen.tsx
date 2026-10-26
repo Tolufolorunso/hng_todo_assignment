@@ -1,8 +1,22 @@
 import React, { useState, useEffect } from "react";
-import type { FollowUp, FollowUpStatus, CreateFollowUpInput, RecurrenceRule } from "../types/followup.js";
+import {
+  View,
+  Text,
+  TextInput,
+  ScrollView,
+  Pressable,
+  StyleSheet,
+  ActivityIndicator,
+} from "react-native";
+import type {
+  FollowUp,
+  FollowUpStatus,
+  RecurrenceRule,
+} from "../types/followup.js";
 import type { FollowUpRepository } from "../storage/followUpRepository.js";
 import { TouchButton, Badge, EmptyState } from "../components/primitives.js";
-import { createMailtoUri, createTelUri, createWhatsAppUri } from "../services/launchers.js";
+import { launchAction } from "../services/launchers.js";
+import { notificationScheduler } from "../services/notifications.js";
 import { useTheme } from "../services/theme.js";
 
 export interface FollowUpsScreenProps {
@@ -24,6 +38,7 @@ export function FollowUpsScreen({ followUpRepo }: FollowUpsScreenProps): React.J
   const [phone, setPhone] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [recurrenceInterval, setRecurrenceInterval] = useState<"none" | "daily" | "weekly" | "monthly">("none");
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const loadFollowUps = async () => {
     setLoading(true);
@@ -40,7 +55,11 @@ export function FollowUpsScreen({ followUpRepo }: FollowUpsScreenProps): React.J
   }, []);
 
   const handleCreate = async () => {
-    if (!personName.trim() || !commitment.trim()) return;
+    if (!personName.trim() || !commitment.trim()) {
+      setErrorMsg("Person name and commitment are required");
+      return;
+    }
+    setErrorMsg(null);
 
     let recurrence: RecurrenceRule | null = null;
     if (recurrenceInterval !== "none") {
@@ -53,7 +72,7 @@ export function FollowUpsScreen({ followUpRepo }: FollowUpsScreenProps): React.J
       };
     }
 
-    await followUpRepo.create({
+    const created = await followUpRepo.create({
       personName: personName.trim(),
       commitment: commitment.trim(),
       dueAt: `${dueDate}T12:00:00.000Z`,
@@ -62,6 +81,13 @@ export function FollowUpsScreen({ followUpRepo }: FollowUpsScreenProps): React.J
       whatsAppNumber: whatsapp.trim() || null,
       recurrence,
     });
+
+    // Schedule local push notification reminder
+    try {
+      await notificationScheduler.scheduleFollowUpReminder(created);
+    } catch {
+      // Non-blocking notification scheduling
+    }
 
     setPersonName("");
     setCommitment("");
@@ -75,6 +101,7 @@ export function FollowUpsScreen({ followUpRepo }: FollowUpsScreenProps): React.J
 
   const handleComplete = async (id: string) => {
     await followUpRepo.completeOccurrence(id, "completed");
+    await notificationScheduler.cancelByTargetId(id);
     await loadFollowUps();
   };
 
@@ -85,6 +112,7 @@ export function FollowUpsScreen({ followUpRepo }: FollowUpsScreenProps): React.J
 
   const handleDelete = async (id: string) => {
     await followUpRepo.delete(id);
+    await notificationScheduler.cancelByTargetId(id);
     await loadFollowUps();
   };
 
@@ -94,183 +122,210 @@ export function FollowUpsScreen({ followUpRepo }: FollowUpsScreenProps): React.J
   });
 
   return (
-    <div
-      role="region"
-      aria-label="Follow Ups screen"
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        height: "100%",
-        backgroundColor: colors.background,
-        color: colors.textPrimary,
-        padding: "16px",
-        overflowY: "auto",
-      }}
+    <ScrollView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      contentContainerStyle={styles.contentContainer}
+      testID="followups-screen"
     >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "16px",
-        }}
-      >
-        <h1 style={{ fontSize: "20px", fontWeight: 700, margin: 0 }}>Follow Ups</h1>
+      <View style={styles.headerRow}>
+        <Text style={[styles.screenTitle, { color: colors.textPrimary }]}>
+          Follow Ups
+        </Text>
         <TouchButton
           label={showAddForm ? "Cancel" : "+ Add Follow Up"}
           onPress={() => setShowAddForm(!showAddForm)}
           variant={showAddForm ? "secondary" : "primary"}
         />
-      </div>
+      </View>
 
       {showAddForm && (
-        <div
-          style={{
-            backgroundColor: colors.surface,
-            border: `1px solid ${colors.surfaceBorder}`,
-            borderRadius: "12px",
-            padding: "16px",
-            marginBottom: "16px",
-            display: "flex",
-            flexDirection: "column",
-            gap: "10px",
-          }}
+        <View
+          style={[
+            styles.formCard,
+            { backgroundColor: colors.surface, borderColor: colors.surfaceBorder },
+          ]}
         >
-          <div style={{ fontWeight: 600, fontSize: "15px" }}>New Follow Up Commitment</div>
-          <input
-            type="text"
+          <Text style={[styles.formTitle, { color: colors.textPrimary }]}>
+            New Follow Up Commitment
+          </Text>
+
+          {errorMsg ? (
+            <Text style={[styles.errorText, { color: colors.danger }]}>
+              {errorMsg}
+            </Text>
+          ) : null}
+
+          <TextInput
             placeholder="Person or contact name *"
+            placeholderTextColor={colors.textMuted}
             value={personName}
-            onChange={(e) => setPersonName(e.target.value)}
-            style={{
-              padding: "10px",
-              borderRadius: "8px",
-              backgroundColor: colors.background,
-              color: colors.textPrimary,
-              border: `1px solid ${colors.surfaceBorder}`,
-              fontSize: "14px",
-            }}
+            onChangeText={setPersonName}
+            style={[
+              styles.input,
+              {
+                backgroundColor: colors.background,
+                color: colors.textPrimary,
+                borderColor: colors.surfaceBorder,
+              },
+            ]}
           />
-          <input
-            type="text"
+
+          <TextInput
             placeholder="Commitment description *"
+            placeholderTextColor={colors.textMuted}
             value={commitment}
-            onChange={(e) => setCommitment(e.target.value)}
-            style={{
-              padding: "10px",
-              borderRadius: "8px",
-              backgroundColor: colors.background,
-              color: colors.textPrimary,
-              border: `1px solid ${colors.surfaceBorder}`,
-              fontSize: "14px",
-            }}
+            onChangeText={setCommitment}
+            style={[
+              styles.input,
+              {
+                backgroundColor: colors.background,
+                color: colors.textPrimary,
+                borderColor: colors.surfaceBorder,
+              },
+            ]}
           />
-          <input
-            type="date"
+
+          <TextInput
+            placeholder="Due date (YYYY-MM-DD)"
+            placeholderTextColor={colors.textMuted}
             value={dueDate}
-            onChange={(e) => setDueDate(e.target.value)}
-            style={{
-              padding: "10px",
-              borderRadius: "8px",
-              backgroundColor: colors.background,
-              color: colors.textPrimary,
-              border: `1px solid ${colors.surfaceBorder}`,
-              fontSize: "14px",
-            }}
+            onChangeText={setDueDate}
+            style={[
+              styles.input,
+              {
+                backgroundColor: colors.background,
+                color: colors.textPrimary,
+                borderColor: colors.surfaceBorder,
+              },
+            ]}
           />
-          <input
-            type="email"
+
+          <TextInput
             placeholder="Email address (optional)"
+            placeholderTextColor={colors.textMuted}
+            keyboardType="email-address"
+            autoCapitalize="none"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            style={{
-              padding: "10px",
-              borderRadius: "8px",
-              backgroundColor: colors.background,
-              color: colors.textPrimary,
-              border: `1px solid ${colors.surfaceBorder}`,
-              fontSize: "14px",
-            }}
+            onChangeText={setEmail}
+            style={[
+              styles.input,
+              {
+                backgroundColor: colors.background,
+                color: colors.textPrimary,
+                borderColor: colors.surfaceBorder,
+              },
+            ]}
           />
-          <input
-            type="tel"
+
+          <TextInput
             placeholder="Phone number (optional)"
+            placeholderTextColor={colors.textMuted}
+            keyboardType="phone-pad"
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            style={{
-              padding: "10px",
-              borderRadius: "8px",
-              backgroundColor: colors.background,
-              color: colors.textPrimary,
-              border: `1px solid ${colors.surfaceBorder}`,
-              fontSize: "14px",
-            }}
+            onChangeText={setPhone}
+            style={[
+              styles.input,
+              {
+                backgroundColor: colors.background,
+                color: colors.textPrimary,
+                borderColor: colors.surfaceBorder,
+              },
+            ]}
           />
-          <input
-            type="tel"
+
+          <TextInput
             placeholder="WhatsApp number (optional)"
+            placeholderTextColor={colors.textMuted}
+            keyboardType="phone-pad"
             value={whatsapp}
-            onChange={(e) => setWhatsapp(e.target.value)}
-            style={{
-              padding: "10px",
-              borderRadius: "8px",
-              backgroundColor: colors.background,
-              color: colors.textPrimary,
-              border: `1px solid ${colors.surfaceBorder}`,
-              fontSize: "14px",
-            }}
+            onChangeText={setWhatsapp}
+            style={[
+              styles.input,
+              {
+                backgroundColor: colors.background,
+                color: colors.textPrimary,
+                borderColor: colors.surfaceBorder,
+              },
+            ]}
           />
-          <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-            <span style={{ fontSize: "13px", color: colors.textMuted }}>Recurrence:</span>
-            {(["none", "daily", "weekly", "monthly"] as const).map((r) => (
-              <button
-                key={r}
-                type="button"
-                onClick={() => setRecurrenceInterval(r)}
-                style={{
-                  padding: "6px 10px",
-                  borderRadius: "6px",
-                  border: `1px solid ${recurrenceInterval === r ? colors.accent : colors.surfaceBorder}`,
-                  backgroundColor: recurrenceInterval === r ? colors.accent : "transparent",
-                  color: recurrenceInterval === r ? "#ffffff" : colors.textPrimary,
-                  fontSize: "12px",
-                  cursor: "pointer",
-                }}
-              >
-                {r.charAt(0).toUpperCase() + r.slice(1)}
-              </button>
-            ))}
-          </div>
+
+          <View style={styles.recurrenceRow}>
+            <Text style={[styles.recurrenceLabel, { color: colors.textMuted }]}>
+              Recurrence:
+            </Text>
+            <View style={styles.chipsContainer}>
+              {(["none", "daily", "weekly", "monthly"] as const).map((r) => {
+                const isSelected = recurrenceInterval === r;
+                return (
+                  <Pressable
+                    key={r}
+                    onPress={() => setRecurrenceInterval(r)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Recurrence ${r}`}
+                    style={[
+                      styles.chip,
+                      {
+                        borderColor: isSelected ? colors.accent : colors.surfaceBorder,
+                        backgroundColor: isSelected ? colors.accent : colors.surface,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.chipText,
+                        { color: isSelected ? "#ffffff" : colors.textPrimary },
+                      ]}
+                    >
+                      {r.charAt(0).toUpperCase() + r.slice(1)}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+
           <TouchButton label="Save Follow Up" onPress={handleCreate} variant="primary" />
-        </div>
+        </View>
       )}
 
       {/* Filter Tabs */}
-      <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
-        {(["open", "completed", "all"] as const).map((st) => (
-          <button
-            key={st}
-            type="button"
-            onClick={() => setStatusFilter(st)}
-            style={{
-              padding: "6px 14px",
-              borderRadius: "20px",
-              border: "none",
-              backgroundColor: statusFilter === st ? colors.accent : colors.surface,
-              color: statusFilter === st ? "#ffffff" : colors.textMuted,
-              fontWeight: 600,
-              fontSize: "13px",
-              cursor: "pointer",
-              minHeight: "44px",
-            }}
-          >
-            {st.charAt(0).toUpperCase() + st.slice(1)}
-          </button>
-        ))}
-      </div>
+      <View style={styles.filterTabsRow}>
+        {(["open", "completed", "all"] as const).map((st) => {
+          const isSelected = statusFilter === st;
+          return (
+            <Pressable
+              key={st}
+              onPress={() => setStatusFilter(st)}
+              accessibilityRole="button"
+              accessibilityLabel={`Filter ${st}`}
+              style={[
+                styles.filterTab,
+                {
+                  backgroundColor: isSelected ? colors.accent : colors.surface,
+                  borderColor: colors.surfaceBorder,
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.filterTabText,
+                  { color: isSelected ? "#ffffff" : colors.textMuted },
+                ]}
+              >
+                {st.charAt(0).toUpperCase() + st.slice(1)}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
 
       {loading ? (
-        <div style={{ textAlign: "center", padding: "24px", color: colors.textMuted }}>Loading...</div>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.accent} />
+          <Text style={[styles.loadingText, { color: colors.textMuted }]}>
+            Loading commitments...
+          </Text>
+        </View>
       ) : filtered.length === 0 ? (
         <EmptyState
           title="No follow ups found"
@@ -283,37 +338,34 @@ export function FollowUpsScreen({ followUpRepo }: FollowUpsScreenProps): React.J
           onAction={() => setShowAddForm(true)}
         />
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+        <View style={styles.listContainer}>
           {filtered.map((fu) => (
-            <div
+            <View
               key={fu.id}
-              style={{
-                backgroundColor: colors.surface,
-                border: `1px solid ${colors.surfaceBorder}`,
-                borderRadius: "12px",
-                padding: "16px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "8px",
-              }}
+              style={[
+                styles.itemCard,
+                { backgroundColor: colors.surface, borderColor: colors.surfaceBorder },
+              ]}
             >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                <div>
-                  <div style={{ fontSize: "16px", fontWeight: 700, color: colors.textPrimary }}>
+              <View style={styles.cardHeader}>
+                <View style={styles.cardHeaderMain}>
+                  <Text style={[styles.personNameText, { color: colors.textPrimary }]}>
                     {fu.personName}
-                  </div>
-                  <div style={{ fontSize: "14px", color: colors.textSecondary, marginTop: "2px" }}>
+                  </Text>
+                  <Text style={[styles.commitmentText, { color: colors.textSecondary }]}>
                     {fu.commitment}
-                  </div>
-                </div>
+                  </Text>
+                </View>
                 <Badge
                   label={fu.status}
                   variant={fu.status === "completed" ? "low" : "high"}
                 />
-              </div>
+              </View>
 
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", fontSize: "12px", color: colors.textMuted }}>
-                <span>Due: {fu.dueAt.slice(0, 10)}</span>
+              <View style={styles.metaRow}>
+                <Text style={[styles.metaText, { color: colors.textMuted }]}>
+                  Due: {fu.dueAt.slice(0, 10)}
+                </Text>
                 {fu.recurrence && (
                   <Badge
                     label={`${fu.recurrence.frequency} (${fu.recurrence.mode})`}
@@ -321,73 +373,59 @@ export function FollowUpsScreen({ followUpRepo }: FollowUpsScreenProps): React.J
                   />
                 )}
                 {fu.sourceExcerpt && (
-                  <span style={{ fontStyle: "italic", color: colors.accent }}>Linked Note</span>
+                  <Text style={[styles.linkedNoteText, { color: colors.accent }]}>
+                    Linked Note
+                  </Text>
                 )}
-              </div>
+              </View>
 
-              {/* Launcher intent shortcuts */}
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "4px" }}>
+              {/* Native communication launchers */}
+              <View style={styles.launchersRow}>
                 {fu.emailAddress && (
-                  <a
-                    href={createMailtoUri(fu.emailAddress, { subject: `Follow-up: ${fu.commitment}` })}
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      padding: "4px 10px",
-                      borderRadius: "6px",
-                      backgroundColor: "rgba(59, 130, 246, 0.15)",
-                      color: colors.accent,
-                      fontSize: "12px",
-                      textDecoration: "none",
-                      minHeight: "36px",
-                    }}
+                  <Pressable
+                    onPress={() => launchAction("email", fu.emailAddress!, { subject: `Follow-up: ${fu.commitment}` })}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Email ${fu.personName}`}
+                    style={[styles.launcherBtn, { backgroundColor: "rgba(59, 130, 246, 0.15)" }]}
                   >
-                    ✉ Email
-                  </a>
+                    <Text style={[styles.launcherBtnText, { color: colors.accent }]}>
+                      ✉ Email
+                    </Text>
+                  </Pressable>
                 )}
                 {fu.phoneNumber && (
-                  <a
-                    href={createTelUri(fu.phoneNumber)}
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      padding: "4px 10px",
-                      borderRadius: "6px",
-                      backgroundColor: "rgba(16, 185, 129, 0.15)",
-                      color: colors.success,
-                      fontSize: "12px",
-                      textDecoration: "none",
-                      minHeight: "36px",
-                    }}
+                  <Pressable
+                    onPress={() => launchAction("phone", fu.phoneNumber!)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Call ${fu.personName}`}
+                    style={[styles.launcherBtn, { backgroundColor: "rgba(16, 185, 129, 0.15)" }]}
                   >
-                    📞 Call
-                  </a>
+                    <Text style={[styles.launcherBtnText, { color: colors.success }]}>
+                      📞 Call
+                    </Text>
+                  </Pressable>
                 )}
                 {fu.whatsAppNumber && (
-                  <a
-                    href={createWhatsAppUri(fu.whatsAppNumber, `Hi ${fu.personName}, following up on: ${fu.commitment}`)}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      padding: "4px 10px",
-                      borderRadius: "6px",
-                      backgroundColor: "rgba(37, 211, 102, 0.15)",
-                      color: "#25d366",
-                      fontSize: "12px",
-                      textDecoration: "none",
-                      minHeight: "36px",
-                    }}
+                  <Pressable
+                    onPress={() =>
+                      launchAction("whatsapp", fu.whatsAppNumber!, {
+                        body: `Hi ${fu.personName}, following up on: ${fu.commitment}`,
+                      })
+                    }
+                    accessibilityRole="button"
+                    accessibilityLabel={`WhatsApp ${fu.personName}`}
+                    style={[styles.launcherBtn, { backgroundColor: "rgba(37, 211, 102, 0.15)" }]}
                   >
-                    💬 WhatsApp
-                  </a>
+                    <Text style={[styles.launcherBtnText, { color: "#25d366" }]}>
+                      💬 WhatsApp
+                    </Text>
+                  </Pressable>
                 )}
-              </div>
+              </View>
 
               {/* Action buttons */}
               {fu.status === "open" && (
-                <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
+                <View style={styles.actionsRow}>
                   <TouchButton
                     label="✓ Complete"
                     onPress={() => handleComplete(fu.id)}
@@ -403,12 +441,169 @@ export function FollowUpsScreen({ followUpRepo }: FollowUpsScreenProps): React.J
                     onPress={() => handleDelete(fu.id)}
                     variant="ghost"
                   />
-                </div>
+                </View>
               )}
-            </div>
+            </View>
           ))}
-        </div>
+        </View>
       )}
-    </div>
+    </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  contentContainer: {
+    padding: 16,
+    paddingBottom: 40,
+  },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  screenTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+  },
+  formCard: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    gap: 12,
+  },
+  formTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  errorText: {
+    fontSize: 13,
+  },
+  input: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    minHeight: 44,
+  },
+  recurrenceRow: {
+    gap: 8,
+  },
+  recurrenceLabel: {
+    fontSize: 13,
+  },
+  chipsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  chip: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    minHeight: 44,
+    minWidth: 64,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  chipText: {
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  filterTabsRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 16,
+  },
+  filterTab: {
+    borderWidth: 1,
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    minHeight: 44,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  filterTabText: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  loadingContainer: {
+    padding: 32,
+    alignItems: "center",
+    gap: 12,
+  },
+  loadingText: {
+    fontSize: 14,
+  },
+  listContainer: {
+    gap: 12,
+  },
+  itemCard: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 16,
+    gap: 10,
+  },
+  cardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
+  cardHeaderMain: {
+    flex: 1,
+    marginRight: 8,
+  },
+  personNameText: {
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  commitmentText: {
+    fontSize: 14,
+    marginTop: 2,
+  },
+  metaRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: 8,
+  },
+  metaText: {
+    fontSize: 12,
+  },
+  linkedNoteText: {
+    fontSize: 12,
+    fontStyle: "italic",
+  },
+  launchersRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 4,
+  },
+  launcherBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 8,
+    minHeight: 44,
+    minWidth: 44,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  launcherBtnText: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  actionsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 6,
+  },
+});

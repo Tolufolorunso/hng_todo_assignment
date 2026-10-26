@@ -1,4 +1,12 @@
 import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  ScrollView,
+  StyleSheet,
+  ActivityIndicator,
+} from "react-native";
 import type { InboxCapture } from "../types/inbox.js";
 import type { InboxRepository } from "../storage/inboxRepository.js";
 import type { InboxTriageService } from "../services/inbox.js";
@@ -77,98 +85,82 @@ export function InboxScreen({ inboxRepo, triageService }: InboxScreenProps): Rea
   };
 
   return (
-    <div
-      role="region"
-      aria-label="Fast Capture Inbox screen"
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        height: "100%",
-        backgroundColor: colors.background,
-        color: colors.textPrimary,
-        padding: "16px",
-        overflowY: "auto",
-      }}
+    <ScrollView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      contentContainerStyle={styles.contentContainer}
+      testID="inbox-screen"
     >
-      <h1 style={{ fontSize: "20px", fontWeight: 700, margin: "0 0 16px 0" }}>
+      <Text style={[styles.screenTitle, { color: colors.textPrimary }]}>
         Fast Capture Inbox
-      </h1>
+      </Text>
 
       {/* Quick capture input box */}
-      <div
-        style={{
-          backgroundColor: colors.surface,
-          border: `1px solid ${colors.surfaceBorder}`,
-          borderRadius: "12px",
-          padding: "16px",
-          marginBottom: "16px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "10px",
-        }}
+      <View
+        style={[
+          styles.captureCard,
+          { backgroundColor: colors.surface, borderColor: colors.surfaceBorder },
+        ]}
       >
-        <textarea
+        <TextInput
+          multiline
           placeholder="Quick idea, thought, or task..."
+          placeholderTextColor={colors.textMuted}
           value={captureText}
-          onChange={(e) => setCaptureText(e.target.value)}
-          rows={3}
-          style={{
-            padding: "10px",
-            borderRadius: "8px",
-            backgroundColor: colors.background,
-            color: colors.textPrimary,
-            border: `1px solid ${colors.surfaceBorder}`,
-            fontSize: "14px",
-            resize: "vertical",
-          }}
+          onChangeText={setCaptureText}
+          style={[
+            styles.textarea,
+            {
+              backgroundColor: colors.background,
+              borderColor: colors.surfaceBorder,
+              color: colors.textPrimary,
+            },
+          ]}
         />
-        <input
-          type="url"
+        <TextInput
           placeholder="Optional link (https://...)"
+          placeholderTextColor={colors.textMuted}
+          keyboardType="url"
+          autoCapitalize="none"
           value={sharedUrl}
-          onChange={(e) => setSharedUrl(e.target.value)}
-          style={{
-            padding: "8px 10px",
-            borderRadius: "8px",
-            backgroundColor: colors.background,
-            color: colors.textPrimary,
-            border: `1px solid ${colors.surfaceBorder}`,
-            fontSize: "13px",
-          }}
+          onChangeText={setSharedUrl}
+          style={[
+            styles.urlInput,
+            {
+              backgroundColor: colors.background,
+              borderColor: colors.surfaceBorder,
+              color: colors.textPrimary,
+            },
+          ]}
         />
         <TouchButton label="Capture to Inbox" onPress={handleCapture} variant="primary" />
-      </div>
+      </View>
 
       {/* Recipient prompt modal when triaging to follow up */}
-      {promptCaptureId && (
-        <div
-          style={{
-            backgroundColor: colors.surface,
-            border: `2px solid ${colors.accent}`,
-            borderRadius: "12px",
-            padding: "16px",
-            marginBottom: "16px",
-            display: "flex",
-            flexDirection: "column",
-            gap: "10px",
-          }}
+      {promptCaptureId ? (
+        <View
+          style={[
+            styles.promptCard,
+            { backgroundColor: colors.surface, borderColor: colors.accent },
+          ]}
         >
-          <div style={{ fontWeight: 600, fontSize: "14px" }}>Who is this follow-up for?</div>
-          <input
-            type="text"
+          <Text style={[styles.promptTitle, { color: colors.textPrimary }]}>
+            Who is this follow-up for?
+          </Text>
+          <TextInput
             placeholder="Contact or person name *"
+            placeholderTextColor={colors.textMuted}
             value={personName}
-            onChange={(e) => setPersonName(e.target.value)}
-            style={{
-              padding: "8px 10px",
-              borderRadius: "8px",
-              backgroundColor: colors.background,
-              color: colors.textPrimary,
-              border: `1px solid ${colors.surfaceBorder}`,
-              fontSize: "14px",
-            }}
+            onChangeText={setPersonName}
+            style={[
+              styles.promptInput,
+              {
+                backgroundColor: colors.background,
+                borderColor: colors.surfaceBorder,
+                color: colors.textPrimary,
+              },
+            ]}
           />
-          <div style={{ display: "flex", gap: "8px" }}>
+          <View style={styles.promptButtonsRow}>
             <TouchButton
               label="Save Follow Up"
               onPress={() => handleTriageFollowUp(promptCaptureId)}
@@ -182,48 +174,48 @@ export function InboxScreen({ inboxRepo, triageService }: InboxScreenProps): Rea
               }}
               variant="secondary"
             />
-          </div>
-        </div>
-      )}
+          </View>
+        </View>
+      ) : null}
 
       {/* Triage Queue */}
-      <div style={{ fontSize: "14px", fontWeight: 600, marginBottom: "8px" }}>
+      <Text style={[styles.queueTitle, { color: colors.textMuted }]}>
         Pending Queue ({captures.length})
-      </div>
+      </Text>
 
       {loading ? (
-        <div style={{ textAlign: "center", padding: "24px", color: colors.textMuted }}>Loading...</div>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.accent} />
+          <Text style={[styles.loadingText, { color: colors.textMuted }]}>
+            Loading inbox items...
+          </Text>
+        </View>
       ) : captures.length === 0 ? (
         <EmptyState
           title="Inbox is clear"
           description="Everything has been triaged into tasks, notes, or follow-ups!"
         />
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+        <View style={styles.capturesList}>
           {captures.map((item) => (
-            <div
+            <View
               key={item.id}
-              style={{
-                backgroundColor: colors.surface,
-                border: `1px solid ${colors.surfaceBorder}`,
-                borderRadius: "10px",
-                padding: "14px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "10px",
-              }}
+              style={[
+                styles.captureItemCard,
+                { backgroundColor: colors.surface, borderColor: colors.surfaceBorder },
+              ]}
             >
-              <div style={{ fontSize: "14px", color: colors.textPrimary, whiteSpace: "pre-wrap" }}>
+              <Text style={[styles.captureItemText, { color: colors.textPrimary }]}>
                 {item.text}
-              </div>
+              </Text>
 
-              {item.sharedUrl && (
-                <div style={{ fontSize: "12px", color: colors.accent, wordBreak: "break-all" }}>
+              {item.sharedUrl ? (
+                <Text style={[styles.captureItemUrl, { color: colors.accent }]}>
                   Link: {item.sharedUrl}
-                </div>
-              )}
+                </Text>
+              ) : null}
 
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+              <View style={styles.triageActionsRow}>
                 <TouchButton
                   label="→ Task"
                   onPress={() => handleTriageTask(item.id)}
@@ -244,11 +236,106 @@ export function InboxScreen({ inboxRepo, triageService }: InboxScreenProps): Rea
                   onPress={() => handleDiscard(item.id)}
                   variant="ghost"
                 />
-              </div>
-            </div>
+              </View>
+            </View>
           ))}
-        </div>
+        </View>
       )}
-    </div>
+    </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  contentContainer: {
+    padding: 16,
+    paddingBottom: 40,
+    gap: 16,
+  },
+  screenTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+  },
+  captureCard: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 16,
+    gap: 10,
+  },
+  textarea: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 14,
+    minHeight: 80,
+    textAlignVertical: "top",
+  },
+  urlInput: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 13,
+    minHeight: 44,
+  },
+  promptCard: {
+    borderWidth: 2,
+    borderRadius: 12,
+    padding: 16,
+    gap: 10,
+  },
+  promptTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  promptInput: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    minHeight: 44,
+  },
+  promptButtonsRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  queueTitle: {
+    fontSize: 13,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  loadingContainer: {
+    padding: 32,
+    alignItems: "center",
+    gap: 12,
+  },
+  loadingText: {
+    fontSize: 14,
+  },
+  capturesList: {
+    gap: 12,
+  },
+  captureItemCard: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 14,
+    gap: 10,
+  },
+  captureItemText: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  captureItemUrl: {
+    fontSize: 12,
+  },
+  triageActionsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 4,
+  },
+});

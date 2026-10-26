@@ -1,4 +1,12 @@
 import React, { useState } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  StyleSheet,
+  ActivityIndicator,
+} from "react-native";
 import type { ConflictRecord } from "../types/sync.js";
 import { useTheme } from "../services/theme.js";
 
@@ -36,183 +44,237 @@ export function ConflictModal({
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label="Resolve Sync Conflicts"
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: "rgba(0, 0, 0, 0.85)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "16px",
-        zIndex: 9999,
-      }}
+    <View
+      accessibilityRole="none"
+      accessibilityViewIsModal={true}
+      style={styles.backdrop}
     >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: "600px",
-          maxHeight: "90vh",
-          overflowY: "auto",
-          backgroundColor: colors.surface,
-          borderRadius: "16px",
-          padding: "20px",
-          border: `1px solid ${colors.surfaceBorder}`,
-          display: "flex",
-          flexDirection: "column",
-          gap: "16px",
-        }}
+      <View
+        style={[
+          styles.modalContainer,
+          { backgroundColor: colors.surface, borderColor: colors.surfaceBorder },
+        ]}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <h2 style={{ fontSize: "18px", fontWeight: "bold", color: colors.textPrimary, margin: 0 }}>
+        <View style={styles.headerRow}>
+          <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
             Sync Conflicts ({conflicts.length})
-          </h2>
-          <button
-            onClick={onClose}
-            aria-label="Close conflict modal"
-            style={{
-              minWidth: "44px",
-              minHeight: "44px",
-              background: "none",
-              border: "none",
-              color: colors.textMuted,
-              fontSize: "20px",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
+          </Text>
+          <Pressable
+            onPress={onClose}
+            accessibilityRole="button"
+            accessibilityLabel="Close conflict modal"
+            style={styles.closeBtn}
           >
-            ✕
-          </button>
-        </div>
+            <Text style={[styles.closeBtnText, { color: colors.textMuted }]}>✕</Text>
+          </Pressable>
+        </View>
 
-        <p style={{ fontSize: "14px", color: colors.textMuted, margin: 0 }}>
+        <Text style={[styles.modalDescription, { color: colors.textMuted }]}>
           Differences were detected between this device and the server. Choose which version you want to keep.
-        </p>
+        </Text>
 
-        {conflicts.map((c) => {
-          const isBusy = resolvingId === c.id;
-          return (
-            <div
-              key={c.id}
-              style={{
-                backgroundColor: colors.background,
-                borderRadius: "12px",
-                padding: "16px",
-                border: `1px solid ${colors.surfaceBorder}`,
-                display: "flex",
-                flexDirection: "column",
-                gap: "12px",
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: "13px", fontWeight: "bold", color: colors.accent, textTransform: "uppercase" }}>
-                  {c.entityType} ({c.entityId})
-                </span>
-                <span style={{ fontSize: "12px", color: colors.textMuted }}>
-                  Server Rev: {c.serverRevision}
-                </span>
-              </div>
+        <ScrollView style={styles.conflictsScroll} contentContainerStyle={styles.conflictsList}>
+          {conflicts.map((c) => {
+            const isBusy = resolvingId === c.id;
+            return (
+              <View
+                key={c.id}
+                style={[
+                  styles.conflictCard,
+                  { backgroundColor: colors.background, borderColor: colors.surfaceBorder },
+                ]}
+              >
+                <View style={styles.conflictCardHeader}>
+                  <Text style={[styles.entityTag, { color: colors.accent }]}>
+                    {c.entityType} ({c.entityId})
+                  </Text>
+                  <Text style={[styles.revText, { color: colors.textMuted }]}>
+                    Server Rev: {c.serverRevision}
+                  </Text>
+                </View>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                <div>
-                  <div style={{ fontSize: "12px", fontWeight: "bold", color: "#60a5fa", marginBottom: "4px" }}>
-                    Device Version (Local)
-                  </div>
-                  <pre
-                    style={{
-                      margin: 0,
-                      padding: "8px",
-                      backgroundColor: "rgba(0, 0, 0, 0.3)",
-                      borderRadius: "6px",
-                      fontSize: "12px",
-                      color: colors.textPrimary,
-                      whiteSpace: "pre-wrap",
-                      wordBreak: "break-all",
-                    }}
+                <View style={styles.diffColumns}>
+                  <View style={styles.diffBlock}>
+                    <Text style={styles.localLabel}>
+                      Device Version (Local)
+                    </Text>
+                    <View style={styles.codeSnippetBox}>
+                      <Text style={[styles.codeSnippetText, { color: colors.textPrimary }]}>
+                        {formatPayload(c.localValue)}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.diffBlock}>
+                    <Text style={styles.serverLabel}>
+                      Server Version (Cloud)
+                    </Text>
+                    <View style={styles.codeSnippetBox}>
+                      <Text style={[styles.codeSnippetText, { color: colors.textPrimary }]}>
+                        {formatPayload(c.serverValue)}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+
+                <View style={styles.actionsRow}>
+                  <Pressable
+                    disabled={isBusy}
+                    onPress={() => handleAction(c.id, "keepServer")}
+                    accessibilityRole="button"
+                    accessibilityLabel="Keep Server Version"
+                    style={[styles.resolveBtn, styles.serverBtn, isBusy && styles.disabledBtn]}
                   >
-                    {formatPayload(c.localValue)}
-                  </pre>
-                </div>
+                    {isBusy ? (
+                      <ActivityIndicator size="small" color="#ffffff" />
+                    ) : (
+                      <Text style={styles.btnText}>Keep Server</Text>
+                    )}
+                  </Pressable>
 
-                <div>
-                  <div style={{ fontSize: "12px", fontWeight: "bold", color: "#34d399", marginBottom: "4px" }}>
-                    Server Version (Cloud)
-                  </div>
-                  <pre
-                    style={{
-                      margin: 0,
-                      padding: "8px",
-                      backgroundColor: "rgba(0, 0, 0, 0.3)",
-                      borderRadius: "6px",
-                      fontSize: "12px",
-                      color: colors.textPrimary,
-                      whiteSpace: "pre-wrap",
-                      wordBreak: "break-all",
-                    }}
+                  <Pressable
+                    disabled={isBusy}
+                    onPress={() => handleAction(c.id, "keepLocal")}
+                    accessibilityRole="button"
+                    accessibilityLabel="Keep Local Version"
+                    style={[styles.resolveBtn, styles.localBtn, isBusy && styles.disabledBtn]}
                   >
-                    {formatPayload(c.serverValue)}
-                  </pre>
-                </div>
-              </div>
-
-              <div style={{ display: "flex", gap: "10px", marginTop: "4px" }}>
-                <button
-                  disabled={isBusy}
-                  onClick={() => handleAction(c.id, "keepServer")}
-                  aria-label="Keep Server Version"
-                  style={{
-                    flex: 1,
-                    minHeight: "44px",
-                    backgroundColor: "#059669",
-                    color: "#ffffff",
-                    borderRadius: "8px",
-                    border: "none",
-                    fontWeight: "bold",
-                    fontSize: "13px",
-                    cursor: isBusy ? "not-allowed" : "pointer",
-                    opacity: isBusy ? 0.6 : 1,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  Keep Server
-                </button>
-                <button
-                  disabled={isBusy}
-                  onClick={() => handleAction(c.id, "keepLocal")}
-                  aria-label="Keep Local Version"
-                  style={{
-                    flex: 1,
-                    minHeight: "44px",
-                    backgroundColor: "#2563eb",
-                    color: "#ffffff",
-                    borderRadius: "8px",
-                    border: "none",
-                    fontWeight: "bold",
-                    fontSize: "13px",
-                    cursor: isBusy ? "not-allowed" : "pointer",
-                    opacity: isBusy ? 0.6 : 1,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  Keep Local
-                </button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
+                    {isBusy ? (
+                      <ActivityIndicator size="small" color="#ffffff" />
+                    ) : (
+                      <Text style={styles.btnText}>Keep Local</Text>
+                    )}
+                  </Pressable>
+                </View>
+              </View>
+            );
+          })}
+        </ScrollView>
+      </View>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  backdrop: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.85)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 16,
+    zIndex: 9999,
+  },
+  modalContainer: {
+    width: "100%",
+    maxWidth: 600,
+    maxHeight: "90%",
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 20,
+    gap: 14,
+  },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  closeBtn: {
+    minWidth: 44,
+    minHeight: 44,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  closeBtnText: {
+    fontSize: 18,
+    fontWeight: "600",
+  },
+  modalDescription: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  conflictsScroll: {
+    maxHeight: 450,
+  },
+  conflictsList: {
+    gap: 12,
+  },
+  conflictCard: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 14,
+    gap: 10,
+  },
+  conflictCardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  entityTag: {
+    fontSize: 12,
+    fontWeight: "700",
+    textTransform: "uppercase",
+  },
+  revText: {
+    fontSize: 12,
+  },
+  diffColumns: {
+    gap: 8,
+  },
+  diffBlock: {
+    gap: 4,
+  },
+  localLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#60a5fa",
+  },
+  serverLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#34d399",
+  },
+  codeSnippetBox: {
+    backgroundColor: "rgba(0, 0, 0, 0.3)",
+    borderRadius: 6,
+    padding: 8,
+  },
+  codeSnippetText: {
+    fontFamily: "monospace",
+    fontSize: 11,
+  },
+  actionsRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 4,
+  },
+  resolveBtn: {
+    flex: 1,
+    minHeight: 44,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 12,
+  },
+  serverBtn: {
+    backgroundColor: "#059669",
+  },
+  localBtn: {
+    backgroundColor: "#2563eb",
+  },
+  disabledBtn: {
+    opacity: 0.6,
+  },
+  btnText: {
+    color: "#ffffff",
+    fontWeight: "700",
+    fontSize: 13,
+  },
+});

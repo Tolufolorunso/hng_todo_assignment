@@ -1,8 +1,17 @@
 import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  ScrollView,
+  StyleSheet,
+  ActivityIndicator,
+} from "react-native";
 import type { SearchService, SearchResults } from "../services/search.js";
 import { TaskItemCard } from "../components/TaskItemCard.js";
 import { NoteItemCard } from "../components/NoteItemCard.js";
 import type { TaskRepository } from "../storage/taskRepository.js";
+import { useTheme } from "../services/theme.js";
 
 export interface SearchScreenProps {
   searchService: SearchService;
@@ -17,6 +26,7 @@ export function SearchScreen({
   onNavigateToTask,
   onNavigateToNote,
 }: SearchScreenProps): React.JSX.Element {
+  const { colors } = useTheme();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResults>({
     query: "",
@@ -52,99 +62,134 @@ export function SearchScreen({
   };
 
   return (
-    <div
-      role="region"
-      aria-label="Search screen"
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        height: "100%",
-        backgroundColor: "#09090b",
-        color: "#f4f4f5",
-        padding: "16px",
-        overflowY: "auto",
-      }}
+    <ScrollView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      contentContainerStyle={styles.contentContainer}
+      testID="search-screen"
     >
-      <h1 style={{ fontSize: "24px", fontWeight: "bold", margin: "0 0 16px 0" }}>Search</h1>
+      <Text style={[styles.screenTitle, { color: colors.textPrimary }]}>
+        Search
+      </Text>
 
       {/* Search Input */}
-      <div style={{ marginBottom: "20px" }}>
-        <input
-          type="text"
+      <View style={styles.inputContainer}>
+        <TextInput
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChangeText={setQuery}
           placeholder="Search tasks and notes..."
-          aria-label="Search across tasks and notes"
-          style={{
-            width: "100%",
-            minHeight: "44px",
-            padding: "12px 16px",
-            borderRadius: "10px",
-            border: "1px solid #3b82f6",
-            backgroundColor: "#18181b",
-            color: "#ffffff",
-            fontSize: "15px",
-            boxSizing: "border-box",
-          }}
+          placeholderTextColor={colors.textMuted}
+          accessibilityLabel="Search across tasks and notes"
+          style={[
+            styles.input,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.accent,
+              color: colors.textPrimary,
+            },
+          ]}
         />
-      </div>
+      </View>
 
-      {searching && (
-        <div style={{ textAlign: "center", padding: "16px", color: "#a1a1aa" }}>Searching...</div>
-      )}
+      {searching ? (
+        <View style={styles.statusContainer}>
+          <ActivityIndicator size="small" color={colors.accent} />
+          <Text style={[styles.statusText, { color: colors.textMuted }]}>
+            Searching...
+          </Text>
+        </View>
+      ) : null}
 
-      {!searching && query.trim() && results.totalCount === 0 && (
-        <div style={{ textAlign: "center", padding: "32px", color: "#a1a1aa" }}>
-          No tasks or notes found matching &ldquo;{query}&rdquo;.
-        </div>
-      )}
+      {!searching && query.trim() && results.totalCount === 0 ? (
+        <View style={styles.statusContainer}>
+          <Text style={[styles.statusText, { color: colors.textMuted }]}>
+            No tasks or notes found matching &ldquo;{query}&rdquo;.
+          </Text>
+        </View>
+      ) : null}
 
       {/* Task Matches */}
-      {results.tasks.length > 0 && (
-        <div style={{ marginBottom: "24px" }}>
-          <div
-            style={{
-              fontSize: "14px",
-              fontWeight: 600,
-              color: "#a1a1aa",
-              textTransform: "uppercase",
-              letterSpacing: "0.05em",
-              marginBottom: "8px",
-            }}
-          >
+      {results.tasks.length > 0 ? (
+        <View style={styles.sectionContainer}>
+          <Text style={[styles.sectionHeaderTitle, { color: colors.textMuted }]}>
             Tasks ({results.tasks.length})
-          </div>
-          {results.tasks.map((task) => (
-            <TaskItemCard
-              key={task.id}
-              task={task}
-              onToggleComplete={handleToggleTaskComplete}
-              onPress={onNavigateToTask}
-            />
-          ))}
-        </div>
-      )}
+          </Text>
+          <View style={styles.cardsList}>
+            {results.tasks.map((task) => (
+              <TaskItemCard
+                key={task.id}
+                task={task}
+                onToggleComplete={handleToggleTaskComplete}
+                onPress={onNavigateToTask}
+              />
+            ))}
+          </View>
+        </View>
+      ) : null}
 
       {/* Note Matches */}
-      {results.notes.length > 0 && (
-        <div>
-          <div
-            style={{
-              fontSize: "14px",
-              fontWeight: 600,
-              color: "#a1a1aa",
-              textTransform: "uppercase",
-              letterSpacing: "0.05em",
-              marginBottom: "8px",
-            }}
-          >
+      {results.notes.length > 0 ? (
+        <View style={styles.sectionContainer}>
+          <Text style={[styles.sectionHeaderTitle, { color: colors.textMuted }]}>
             Notes ({results.notes.length})
-          </div>
-          {results.notes.map((note) => (
-            <NoteItemCard key={note.id} note={note} onPress={onNavigateToNote} />
-          ))}
-        </div>
-      )}
-    </div>
+          </Text>
+          <View style={styles.cardsList}>
+            {results.notes.map((note) => (
+              <NoteItemCard
+                key={note.id}
+                note={note}
+                onPress={onNavigateToNote}
+              />
+            ))}
+          </View>
+        </View>
+      ) : null}
+    </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  contentContainer: {
+    padding: 16,
+    paddingBottom: 40,
+  },
+  screenTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    marginBottom: 16,
+  },
+  inputContainer: {
+    marginBottom: 16,
+  },
+  input: {
+    minHeight: 48,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    fontSize: 15,
+  },
+  statusContainer: {
+    padding: 24,
+    alignItems: "center",
+    gap: 8,
+  },
+  statusText: {
+    fontSize: 14,
+  },
+  sectionContainer: {
+    marginBottom: 20,
+    gap: 8,
+  },
+  sectionHeaderTitle: {
+    fontSize: 13,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  cardsList: {
+    gap: 8,
+  },
+});
