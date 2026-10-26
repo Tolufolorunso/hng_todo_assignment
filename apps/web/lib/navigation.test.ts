@@ -3,8 +3,10 @@ import {
   PRIMARY_NAV_ITEMS,
   SECONDARY_NAV_ITEMS,
   QUICK_ACTION_ITEMS,
+  COMMAND_PALETTE_ITEMS,
   isPrimaryActive,
   resolveBadgeCount,
+  matchCommand,
 } from "./navigation";
 
 describe("Navigation Module", () => {
@@ -19,7 +21,7 @@ describe("Navigation Module", () => {
       ]);
     });
 
-    it("assigns appropriate badges to followups and more", () => {
+    it("assigns appropriate badges and shortcuts to primary items", () => {
       const followups = PRIMARY_NAV_ITEMS.find((item) => item.key === "followups");
       const more = PRIMARY_NAV_ITEMS.find((item) => item.key === "more");
       const tasks = PRIMARY_NAV_ITEMS.find((item) => item.key === "tasks");
@@ -29,11 +31,16 @@ describe("Navigation Module", () => {
       expect(more?.badgeKey).toBe("inbox");
       expect(tasks?.badgeKey).toBeUndefined();
       expect(notes?.badgeKey).toBeUndefined();
+
+      expect(tasks?.shortcut).toBe("G T");
+      expect(followups?.shortcut).toBe("G F");
+      expect(notes?.shortcut).toBe("G N");
+      expect(more?.shortcut).toBe("G M");
     });
   });
 
   describe("Secondary and Quick Action Items", () => {
-    it("defines the expected secondary navigation tools", () => {
+    it("defines the expected secondary navigation tools with shortcuts", () => {
       const keys = SECONDARY_NAV_ITEMS.map((item) => item.key);
       expect(keys).toEqual(["inbox", "plan", "calendar", "analytics"]);
 
@@ -41,6 +48,7 @@ describe("Navigation Module", () => {
         expect(item.label).toBeTruthy();
         expect(item.description).toBeTruthy();
         expect(item.href).toBeTruthy();
+        expect(item.shortcut).toMatch(/^G [A-Z]$/);
       }
     });
 
@@ -53,6 +61,39 @@ describe("Navigation Module", () => {
         expect(item.description).toBeTruthy();
         expect(item.action).toBeTruthy();
       }
+
+      const capture = QUICK_ACTION_ITEMS.find((item) => item.key === "capture");
+      expect(capture?.shortcut).toBe("Alt+C");
+    });
+  });
+
+  describe("Command Palette Items and Matcher", () => {
+    it("defines comprehensive navigation and action commands", () => {
+      expect(COMMAND_PALETTE_ITEMS.length).toBeGreaterThanOrEqual(10);
+
+      const navCommands = COMMAND_PALETTE_ITEMS.filter((c) => c.category === "navigation");
+      const actionCommands = COMMAND_PALETTE_ITEMS.filter((c) => c.category === "actions");
+      const settingCommands = COMMAND_PALETTE_ITEMS.filter((c) => c.category === "settings");
+
+      expect(navCommands.length).toBe(7);
+      expect(actionCommands.length).toBe(2);
+      expect(settingCommands.length).toBe(3);
+    });
+
+    it("matches commands by title, description, shortcut, or keywords", () => {
+      const tasksCommand = COMMAND_PALETTE_ITEMS.find((c) => c.id === "nav-tasks")!;
+      const captureCommand = COMMAND_PALETTE_ITEMS.find((c) => c.id === "action-capture")!;
+
+      expect(matchCommand(tasksCommand, "")).toBe(true);
+      expect(matchCommand(tasksCommand, "Tasks")).toBe(true);
+      expect(matchCommand(tasksCommand, "backlog")).toBe(true);
+      expect(matchCommand(tasksCommand, "G T")).toBe(true);
+      expect(matchCommand(tasksCommand, "gt")).toBe(true);
+      expect(matchCommand(tasksCommand, "nonexistent")).toBe(false);
+
+      expect(matchCommand(captureCommand, "quick")).toBe(true);
+      expect(matchCommand(captureCommand, "Alt+C")).toBe(true);
+      expect(matchCommand(captureCommand, "alt+c")).toBe(true);
     });
   });
 

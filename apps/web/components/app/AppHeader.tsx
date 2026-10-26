@@ -8,7 +8,9 @@ import FastCaptureModal from "@/components/inbox/FastCaptureModal";
 import ThemeToggle from "@/components/app/ThemeToggle";
 import TaskFlowLogo from "@/components/brand/TaskFlowLogo";
 import MobileNavBar from "@/components/app/MobileNavBar";
-import MoreDrawer from "@/components/app/MoreDrawer";
+import MorePopover from "@/components/app/MorePopover";
+import MobileBottomSheet from "@/components/app/MobileBottomSheet";
+import CommandPalette from "@/components/app/CommandPalette";
 import AboutDeveloperModal from "@/components/app/AboutDeveloperModal";
 import AccountModal from "@/components/auth/AccountModal";
 import DataAdoptionModal from "@/components/auth/DataAdoptionModal";
@@ -20,6 +22,7 @@ import { triggerSyncNow } from "@/lib/sync";
 import { getDueFollowUpsCount } from "@/lib/followups";
 import { getPendingCapturesCount } from "@/lib/inbox";
 import { isPrimaryActive } from "@/lib/navigation";
+import { useGlobalShortcuts } from "@/hooks/useGlobalShortcuts";
 
 interface AppHeaderProps {
   active?: "tasks" | "notes" | "calendar" | "analytics" | "privacy" | "followups" | "plan" | "inbox";
@@ -31,10 +34,18 @@ export default function AppHeader({ active }: AppHeaderProps) {
   const [isCaptureOpen, setIsCaptureOpen] = useState(false);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const [isAdoptionOpen, setIsAdoptionOpen] = useState(false);
-  const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const [isDesktopMoreOpen, setIsDesktopMoreOpen] = useState(false);
+  const [isMobileMoreOpen, setIsMobileMoreOpen] = useState(false);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [dueFollowUpsCount, setDueFollowUpsCount] = useState<number>(0);
   const [pendingCapturesCount, setPendingCapturesCount] = useState<number>(0);
+
+  // Global Keyboard Shortcuts (Cmd+K / Ctrl+K, G-sequences, Alt+C)
+  useGlobalShortcuts({
+    onToggleCommandPalette: () => setIsCommandPaletteOpen((prev) => !prev),
+    onOpenQuickCapture: () => setIsCaptureOpen(true),
+  });
 
   async function handleAuthenticated() {
     if (user) {
@@ -72,38 +83,10 @@ export default function AppHeader({ active }: AppHeaderProps) {
     };
   }, []);
 
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.altKey && (e.key === "c" || e.key === "C")) {
-        e.preventDefault();
-        setIsCaptureOpen(true);
-        return;
-      }
-
-      if (e.key === "c" && !e.ctrlKey && !e.metaKey && !e.altKey) {
-        const target = e.target as HTMLElement | null;
-        const tagName = target?.tagName?.toLowerCase();
-        if (
-          tagName === "input" ||
-          tagName === "textarea" ||
-          tagName === "select" ||
-          target?.isContentEditable
-        ) {
-          return;
-        }
-        e.preventDefault();
-        setIsCaptureOpen(true);
-      }
-    }
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
-
   const isTasksActive = isPrimaryActive("tasks", active);
   const isFollowUpsActive = isPrimaryActive("followups", active);
   const isNotesActive = isPrimaryActive("notes", active);
-  const isMoreActive = isMoreOpen || isPrimaryActive("more", active);
+  const isMoreActive = isDesktopMoreOpen || isMobileMoreOpen || isPrimaryActive("more", active);
 
   return (
     <>
@@ -217,16 +200,66 @@ export default function AppHeader({ active }: AppHeaderProps) {
               <span>Notes</span>
             </Link>
 
-            {/* 4. More */}
+            {/* 4. More (Desktop Anchored Popover) */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsDesktopMoreOpen((prev) => !prev)}
+                aria-expanded={isDesktopMoreOpen}
+                aria-haspopup="menu"
+                className={`flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-medium transition-all ${
+                  isMoreActive
+                    ? "border border-border/60 bg-surface text-text shadow-sm"
+                    : "text-muted hover:bg-surface/50 hover:text-text"
+                }`}
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className={isMoreActive ? "text-accent" : "text-faint"}
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="12" r="1" />
+                  <circle cx="12" cy="5" r="1" />
+                  <circle cx="12" cy="19" r="1" />
+                </svg>
+                <span>More</span>
+                {pendingCapturesCount > 0 && (
+                  <span className="rounded-full bg-accent/20 px-1.5 py-0.2 text-[10px] font-bold text-accent">
+                    {pendingCapturesCount > 9 ? "9+" : pendingCapturesCount}
+                  </span>
+                )}
+              </button>
+
+              <MorePopover
+                isOpen={isDesktopMoreOpen}
+                onClose={() => setIsDesktopMoreOpen(false)}
+                active={active}
+                inboxCount={pendingCapturesCount}
+                dueCount={dueFollowUpsCount}
+                onOpenCapture={() => setIsCaptureOpen(true)}
+                onOpenBackup={() => setIsBackupOpen(true)}
+                onOpenAccount={() => setIsAccountOpen(true)}
+                onOpenAbout={() => setIsAboutOpen(true)}
+              />
+            </div>
+          </nav>
+
+          {/* Header Right Utilities */}
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            {/* Command Palette Button */}
             <button
               type="button"
-              onClick={() => setIsMoreOpen(true)}
-              aria-expanded={isMoreOpen}
-              className={`flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-medium transition-all ${
-                isMoreActive
-                  ? "border border-border/60 bg-surface text-text shadow-sm"
-                  : "text-muted hover:bg-surface/50 hover:text-text"
-              }`}
+              onClick={() => setIsCommandPaletteOpen(true)}
+              title="Search & Commands (Cmd+K)"
+              aria-label="Search & Commands (Cmd+K)"
+              className="flex items-center gap-1.5 rounded-lg border border-border/80 bg-surface px-2.5 py-1.5 text-xs text-muted shadow-sm transition-all hover:border-border-strong hover:bg-surface-muted hover:text-text active:scale-95"
             >
               <svg
                 width="14"
@@ -237,24 +270,18 @@ export default function AppHeader({ active }: AppHeaderProps) {
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className={isMoreActive ? "text-accent" : "text-faint"}
                 aria-hidden="true"
               >
-                <circle cx="12" cy="12" r="1" />
-                <circle cx="12" cy="5" r="1" />
-                <circle cx="12" cy="19" r="1" />
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.3-4.3" />
               </svg>
-              <span>More</span>
-              {pendingCapturesCount > 0 && (
-                <span className="rounded-full bg-accent/20 px-1.5 py-0.2 text-[10px] font-bold text-accent">
-                  {pendingCapturesCount > 9 ? "9+" : pendingCapturesCount}
-                </span>
-              )}
+              <span className="hidden lg:inline">Search...</span>
+              <kbd className="hidden sm:inline rounded bg-surface-muted px-1 py-0.2 font-mono text-[9px] text-muted border border-border/60">
+                ⌘K
+              </kbd>
             </button>
-          </nav>
 
-          {/* Header Right Utilities */}
-          <div className="flex items-center gap-2 sm:gap-2.5">
+            {/* Quick Capture */}
             <button
               type="button"
               onClick={() => setIsCaptureOpen(true)}
@@ -281,6 +308,7 @@ export default function AppHeader({ active }: AppHeaderProps) {
                 Alt+C
               </kbd>
             </button>
+
             <ThemeToggle />
             <SyncStatusIndicator />
             <OfflineIndicator />
@@ -325,13 +353,25 @@ export default function AppHeader({ active }: AppHeaderProps) {
           </div>
         </div>
 
-        {/* Drawers and Modals */}
-        <MoreDrawer
-          isOpen={isMoreOpen}
-          onClose={() => setIsMoreOpen(false)}
+        {/* Mobile Bottom Sheet for Small Viewports */}
+        <MobileBottomSheet
+          isOpen={isMobileMoreOpen}
+          onClose={() => setIsMobileMoreOpen(false)}
           active={active}
           inboxCount={pendingCapturesCount}
           dueCount={dueFollowUpsCount}
+          onOpenCapture={() => setIsCaptureOpen(true)}
+          onOpenBackup={() => setIsBackupOpen(true)}
+          onOpenAccount={() => setIsAccountOpen(true)}
+          onOpenAbout={() => setIsAboutOpen(true)}
+        />
+
+        {/* Global Command Palette */}
+        <CommandPalette
+          isOpen={isCommandPaletteOpen}
+          onClose={() => setIsCommandPaletteOpen(false)}
+          dueCount={dueFollowUpsCount}
+          inboxCount={pendingCapturesCount}
           onOpenCapture={() => setIsCaptureOpen(true)}
           onOpenBackup={() => setIsBackupOpen(true)}
           onOpenAccount={() => setIsAccountOpen(true)}
@@ -376,8 +416,8 @@ export default function AppHeader({ active }: AppHeaderProps) {
         active={active}
         dueCount={dueFollowUpsCount}
         inboxCount={pendingCapturesCount}
-        onOpenMore={() => setIsMoreOpen(true)}
-        isMoreOpen={isMoreOpen}
+        onOpenMore={() => setIsMobileMoreOpen(true)}
+        isMoreOpen={isMobileMoreOpen}
       />
     </>
   );

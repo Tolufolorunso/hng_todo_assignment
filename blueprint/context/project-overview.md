@@ -1,12 +1,12 @@
 # TaskFlow - Project Overview
 
-<!-- blueprint:source-hash 652a12934fcb799696eb38d375b96a026b18dc00c9556fc1fa91528d8bb4884b -->
+<!-- blueprint:source-hash 166ae7625adff4ec9d2879ae6320549d8833c9d88a44d603bada2145ca3e14d3 -->
 
 > A differentiated local-first personal productivity suite for web, Android/iOS, and Windows, with optional synchronization and proactive Follow Up reminders.
 
 ## Problem
 
-TaskFlow helps people capture work, plan a realistic day, remember commitments, and turn notes into action. The shipped offline browser app remains isolated to one profile. Next come the four differentiating capabilities, web navigation realignment, and independent mobile and Windows clients with optional synchronization.
+TaskFlow helps people capture work, plan a realistic day, remember commitments, and turn notes into action. The shipped offline browser app and initial mobile foundation are complete. Next come web navigation realignment with anchored popover and command palette, performance polish, official Expo Router file-based mobile architecture with native aesthetics, and the independent Windows client with synchronization.
 
 ## Users
 
@@ -33,7 +33,7 @@ TaskFlow helps people capture work, plan a realistic day, remember commitments, 
 
 ## Features
 
-Features 1 through 39 are shipped; Feature 40 is next. Headline capabilities are Follow Up, Plan My Day, actionable notes, fast capture, and unified 4-destination navigation.
+Features 1 through 43 are shipped; Feature 44 is next. Headline capabilities are Follow Up, Plan My Day, actionable notes, fast capture, and unified 4-destination navigation.
 
 ### Shipped web product
 
@@ -92,19 +92,29 @@ Features 1 through 39 are shipped; Feature 40 is next. Headline capabilities are
 ### Web realignment and React Native mobile foundation
 
 40. **Web navigation consolidation and responsive layout refinement:** streamlines web navigation to at most four primary destinations (Tasks, Follow Ups, Notes, and More drawer) to eliminate small-viewport overcrowding.
-41. **Expo and React Native mobile foundation with four-tab native navigation:** re-scaffolds apps/mobile with official Expo and Expo Router, 4-tab bottom bar (Tasks, Follow Ups, Notes, More), native expo-sqlite, and native primitives (View, Text, Pressable, TextInput, StyleSheet).
+41. **Expo and React Native mobile foundation with four-tab native navigation:** re-scaffolds apps/mobile with Expo, 4-tab bottom bar (Tasks, Follow Ups, Notes, More), native expo-sqlite, and native primitives (View, Text, Pressable, TextInput, StyleSheet).
 42. **React Native product parity and mobile-first workflows:** Follow Up recurrence, direct communication launchers (phone, email, WhatsApp), Plan My Day, Actionable Notes, Calendar, Analytics, expo-notifications, and native themes.
 43. **React Native cloud synchronization, accounts, and emulator launch:** secure token storage via expo-secure-store, OTP auth, local data adoption, outbox sync, native conflict resolution, and live verification on Android emulator.
 
+### Web navigation realignment, popover menu, and performance polish
+
+44. **Web anchored popover navigation, mobile bottom sheet, and command palette:** replaces slide-over drawer with anchored floating popover on desktop, interactive draggable bottom sheet on mobile web, keyboard shortcut navigation (G I, G C, G P), and global Cmd+K or Ctrl+K command palette.
+45. **Web performance optimization and layout memoization:** eliminates redundant layout re-renders across header, footer, and dialogs; optimizes list rendering and selector subscriptions for instantaneous filter and search response.
+
+### Mobile architecture modernization with Expo Router and native polish
+
+46. **Expo Router file-based navigation and vector icon migration:** re-architects apps/mobile with official Expo Router (app/(tabs)/...), native stack modal screens, persistent scroll state, deep linking, and crisp @expo/vector-icons replacing placeholder emojis.
+47. **Mobile native aesthetics, haptics, and FlatList virtualization:** implements iOS inset grouped cards, Apple Settings style More hub, translucent Cupertino blur bars, Android Material 3 elevation and ripple feedback, expo-haptics tactile feedback, and FlatList virtualization.
+
 ### Native Windows application
 
-44. **WPF offline foundation:** independent .NET WPF task and note application on SQLite with backup and keyboard use.
-45. **WPF product and differentiated parity:** core parity plus Plan My Day, actionable notes, Follow Up, notifications, launchers, fast capture, and accessibility.
-46. **WPF API integration and release:** auth, sync, DPAPI-protected sessions, recovery, signed MSIX packaging, and Store readiness.
+48. **WPF offline foundation:** independent .NET WPF task and note application on SQLite with backup and keyboard use.
+49. **WPF product and differentiated parity:** core parity plus Plan My Day, actionable notes, Follow Up, notifications, launchers, fast capture, and accessibility.
+50. **WPF API integration and release readiness:** auth, sync, DPAPI-protected sessions, recovery, signed MSIX packaging, and Store readiness.
 
 ### Cross-platform hardening
 
-47. **Compatibility and operational hardening:** verifies migration, recurrence, convergence, notification failure, deletion, abuse controls, accessibility, privacy, portability, monitoring, and rollback.
+51. **Cross-platform compatibility and operational hardening:** verifies migration recovery, API backward compatibility, recurrence consistency, multi-device convergence, notification permission and delivery failure, account deletion, abuse controls, accessibility, synchronized-mode privacy, backup portability, observability, and release rollback.
 
 ## Architecture boundaries
 
@@ -205,12 +215,12 @@ Sync returns applied, duplicate, conflict, or invalid per mutation. Server revis
 
 ## Tech stack
 
-- **Web and API:** Next.js App Router, React 19, strict TypeScript, Tailwind CSS v4, Route Handlers. Streamlined 4-destination navigation (Tasks, Follow Ups, Notes, More).
+- **Web and API:** Next.js App Router, React 19, strict TypeScript, Tailwind CSS v4, Route Handlers. Streamlined 4-destination navigation with non-blocking anchored floating popover on desktop, touch bottom sheet on mobile web, and Cmd+K command palette.
 - **Web local data:** IndexedDB through idb; version 4 precedes tested migrations.
 - **Cloud:** PostgreSQL accessed only by server code inside apps/web.
 - **Auth:** API-owned passwordless email OTP with rotating, revocable sessions.
 - **Web notifications:** Web Push plus durable scheduled dispatcher.
-- **Mobile:** independent React Native app with Expo and Expo Router, strictly using native primitives (View, Text, Pressable, TextInput, StyleSheet, FlatList) with zero HTML DOM dependencies.
+- **Mobile:** independent React Native app with official Expo Router file-based routing (app/(tabs)/...), native stack modal navigation, @expo/vector-icons, expo-haptics, and pure native primitives (View, Text, Pressable, TextInput, StyleSheet, FlatList) with zero HTML DOM dependencies.
 - **Mobile data and native integration:** expo-sqlite, mobile-owned migrations, recurrence, expo-notifications, expo-secure-store, Linking.openURL launchers, share-sheet capture.
 - **Windows:** C# WPF on .NET 10 LTS, MVVM, Microsoft.Data.Sqlite, DPAPI, Windows notifications, URI launchers.
 - **Rich text:** independent clients conforming to taskflow-html-v1, with final API sanitization.
@@ -222,8 +232,8 @@ None planned. Personal productivity and portfolio product. Infrastructure costs 
 
 ## UI/UX
 
-- **Web:** dark-default Linear/Raycast-inspired responsive app. Navigation consolidated to max 4 primary destinations (Tasks, Follow Ups, Notes, More drawer) preventing mobile viewport crowding while preserving desktop elegance.
-- **Mobile:** strict 4-tab bottom navigation (Tasks, Follow Ups, Notes, More). Pure native primitives, safe areas, dynamic text, VoiceOver/TalkBack, accessible ordering, local notifications.
+- **Web:** dark-default Linear/Raycast-inspired responsive app. Navigation consolidated to max 4 primary destinations (Tasks, Follow Ups, Notes, More) with anchored floating popover on desktop, draggable bottom sheet on mobile, and global Cmd+K command palette preserving total canvas context.
+- **Mobile:** strict 4-tab bottom navigation (Tasks, Follow Ups, Notes, More). File-based Expo Router, platform-native aesthetics (iOS inset grouped cards, Apple Settings style More hub, Cupertino blur; Android Material 3 elevation and ripples), tactile feedback via expo-haptics, virtualized FlatList rendering, safe areas, dynamic text, VoiceOver/TalkBack, local notifications.
 - **Plan My Day:** shows capacity, reasons, editable selection/order before acceptance; never silently modifies backlog.
 - **Follow Up:** shows who, what, when, and how; keeps due items visible without permission; separate completion, skip, snooze, reschedule, launch.
 - **Fast capture:** opens quickly, saves locally with minimal input, confirms success, preserves original text.

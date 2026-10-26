@@ -193,26 +193,52 @@ The Blueprint overlay, `AGENTS.md`, and onboarding setup are already present.
   synchronization against the backend API, native conflict resolution modal,
   lifecycle recovery, and live verification on the Android emulator.
 
+## Milestone L.3: Web Navigation Realignment, Popover Menu, and Performance Polish
+
+- [x] 44. **Web anchored popover navigation, mobile bottom sheet, and command palette** -
+  replace the slide-over `MoreDrawer` with an anchored floating popover on desktop,
+  an interactive draggable bottom sheet on mobile viewports, keyboard shortcut
+  navigation (`G I`, `G C`, `G P`), and a global `Cmd+K` / `Ctrl+K` command
+  palette for instant tool switching without breaking canvas context.
+- [ ] 45. **Web performance optimization and layout memoization** - eliminate
+  redundant layout re-renders across `AppHeader`, `AppFooter`, and dialogs; optimize
+  task and note list rendering and selector subscriptions to guarantee instantaneous
+  filter and search response times.
+
+## Milestone L.4: Mobile Architecture Modernization with Expo Router and Native Polish
+
+- [ ] 46. **Expo Router file-based navigation and vector icon migration** - re-architect
+  `apps/mobile` with official Expo Router (`expo-router`, `react-native-screens`,
+  `react-native-safe-area-context`), creating file-based routes (`app/(tabs)/_layout.tsx`,
+  `tasks.tsx`, `followups.tsx`, `notes.tsx`, `more.tsx`, and native stack modal screens),
+  preserving scroll states and deep linking, and replacing all unicode emojis with
+  `@expo/vector-icons`.
+- [ ] 47. **Mobile native aesthetics, haptics, and FlatList virtualization** - implement
+  platform-specific native styling (iOS inset grouped cards, Apple Settings style More
+  hub, translucent Cupertino navigation bars; Android Material 3 elevation and ripples),
+  integrate tactile feedback via `expo-haptics`, and virtualize task and note lists with
+  optimized `FlatList` to ensure buttery 60/120fps scrolling.
+
 ## Milestone M: Native Windows Application
 
-- [ ] 44. **WPF offline foundation** - create the independent .NET 10 WPF
+- [ ] 48. **WPF offline foundation** - create the independent .NET 10 WPF
   application with MVVM, Windows-owned SQLite migrations, task and note CRUD,
   search, backup import and export, keyboard navigation, and offline restart
   behavior.
-- [ ] 45. **WPF product and differentiated feature parity** - independently
+- [ ] 49. **WPF product and differentiated feature parity** - independently
   implement priorities, due dates, categories, ordering, calendar, analytics,
   rich-text editing, note reading, themes, Plan My Day, actionable notes,
   Follow Up recurrence, Windows closed-app notifications, communication
   launchers, keyboard-oriented fast capture, Narrator support, contrast themes,
   and high-DPI layouts.
-- [ ] 46. **WPF API integration and release readiness** - independently implement
+- [ ] 50. **WPF API integration and release readiness** - independently implement
   authentication, synchronization for all supported entities, DPAPI-protected
   sessions, conflict resolution, network and notification recovery, signed x64
   and Arm64 MSIX packaging, and Microsoft Store readiness.
 
 ## Milestone N: Cross-Platform Hardening
 
-- [ ] 47. **Cross-platform compatibility and operational hardening** - verify
+- [ ] 51. **Cross-platform compatibility and operational hardening** - verify
   migration recovery, API backward compatibility, recurrence consistency,
   multi-device convergence, notification permission and delivery failure,
   account deletion, abuse controls, accessibility, synchronized-mode privacy,

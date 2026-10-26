@@ -1039,6 +1039,10 @@ can be guaranteed.
 - Tailwind CSS v4.
 - IndexedDB through `idb`.
 - Next.js App Router Route Handlers for `/api/v1`.
+- Non-blocking anchored floating popover navigation on desktop, preserving canvas context.
+- Gesture-driven, touch-friendly bottom sheet on mobile web viewports.
+- Global command palette (`Cmd+K` / `Ctrl+K`) for instant tool navigation and quick actions.
+- Layout memoization and optimized selector subscriptions to eliminate redundant re-renders.
 - PostgreSQL for synchronized cloud data.
 - Standard Web Push for account-based closed-app browser reminders.
 - A durable scheduled dispatcher or queue appropriate to the selected host.
@@ -1051,6 +1055,12 @@ can be guaranteed.
 ### 8.2 Mobile
 
 - React Native for Android and iOS.
+- Official Expo Router file-based routing (`app/(tabs)/...`) preserving scroll state and deep linking.
+- Native stack navigation with interactive swipe-to-back on iOS and hardware back handling on Android.
+- Crisp vector icons via `@expo/vector-icons` replacing all placeholder emojis.
+- Platform-native aesthetics: iOS inset grouped cards (Apple Settings style More hub) and translucent Cupertino blur bars; Android Material 3 elevation and dynamic ripple feedback.
+- Tactile feedback integration via `expo-haptics` for task toggles, swipes, and button presses.
+- Virtualized list rendering via `FlatList` with cached layouts and item memoization.
 - Expo development builds and Continuous Native Generation unless a confirmed
   native dependency requires a bare project.
 - Mobile-owned SQLite schema and migrations.
@@ -1265,8 +1275,10 @@ and local-data adoption without blocking local-only use.
 Web navigation is streamlined to at most four primary destinations (Tasks,
 Follow Ups, Notes, and More). Secondary workflows including Fast Capture Inbox,
 Plan My Day, Calendar and Schedule, Productivity Analytics, Data Backup, and
-Account Settings are housed in a responsive slide-over drawer and modal to
-prevent UI overcrowding on mobile viewports while preserving widescreen ergonomics.
+Account Settings are accessible via an anchored floating popover on desktop,
+an interactive draggable bottom sheet on mobile web viewports, and a global
+Cmd+K or Ctrl+K command palette, preventing UI overcrowding while preserving
+widescreen canvas context.
 
 ### 10.6 Mobile
 
@@ -1277,10 +1289,15 @@ Expo and Expo Router with zero web DOM HTML dependencies.
   1. Tasks (daily backlog, status filters, task creation, and reordering).
   2. Follow Ups (commitments, recurring communications, and action launchers).
   3. Notes (rich text notes and actionable excerpting).
-  4. More (slide-over and sheet accessing Inbox capture and triage, Plan My Day,
+  4. More (iOS inset grouped cards and Apple Settings style hub accessing Inbox capture and triage, Plan My Day,
      Calendar, Analytics, Data Backup, and Account/Sync settings).
+- Official Expo Router file-based routing (`app/(tabs)/...`) and native stack navigation.
 - Pure React Native primitives (View, Text, Pressable, TextInput, StyleSheet,
   ScrollView, and FlatList).
+- Crisp vector icons via `@expo/vector-icons` replacing placeholder emojis.
+- Tactile feedback integration via `expo-haptics` on interactions and toggles.
+- Platform-native aesthetics: iOS grouped cards and Cupertino blur bars; Android Material 3 elevation and ripples.
+- Virtualized list rendering via `FlatList` with cached layout heights.
 - Safe-area and software-keyboard handling via SafeAreaView and KeyboardAvoidingView.
 - Touch targets strictly meeting or exceeding 44x44 dp with visible active states.
 - Local persistence through expo-sqlite with an in-memory fallback for test execution.
