@@ -170,26 +170,49 @@ The Blueprint overlay, `AGENTS.md`, and onboarding setup are already present.
   builds, notification and store privacy material, and physical-device
   verification.
 
+## Milestone L.2: Web Navigation Realignment and React Native Mobile Foundation
+
+- [x] 40. **Web navigation consolidation and responsive layout refinement** - streamline
+  web navigation to at most four primary destinations (Tasks, Follow Ups, Notes,
+  and More), moving secondary tools (Inbox, Plan My Day, Calendar, Analytics,
+  Backup, and Settings) into an intuitive, responsive slide-over drawer and modal,
+  ensuring clean mobile viewport responsiveness and zero overcrowding.
+- [ ] 41. **Expo and React Native mobile foundation with four-tab native navigation** -
+  re-scaffold `apps/mobile` with official Expo and Expo Router, implementing a
+  strict four-tab bottom navigation bar (Tasks, Follow Ups, Notes, and More),
+  native `expo-sqlite` persistence with an in-memory test driver, native primitives
+  (View, Text, Pressable, TextInput, StyleSheet), and core Task and Note CRUD.
+- [ ] 42. **React Native product parity and mobile-first workflows** - independently
+  implement Follow Up recurrence, direct communication launchers (phone, email,
+  WhatsApp via native linking), Plan My Day, Actionable Notes, Calendar view,
+  Analytics, local closed-app notifications via `expo-notifications`, and native
+  dark and light themes.
+- [ ] 43. **React Native cloud synchronization, accounts, and emulator launch** -
+  independently implement secure token storage via `expo-secure-store`, passwordless
+  email OTP authentication, local data cloud adoption, bidirectional outbox
+  synchronization against the backend API, native conflict resolution modal,
+  lifecycle recovery, and live verification on the Android emulator.
+
 ## Milestone M: Native Windows Application
 
-- [ ] 40. **WPF offline foundation** - create the independent .NET 10 WPF
+- [ ] 44. **WPF offline foundation** - create the independent .NET 10 WPF
   application with MVVM, Windows-owned SQLite migrations, task and note CRUD,
   search, backup import and export, keyboard navigation, and offline restart
   behavior.
-- [ ] 41. **WPF product and differentiated feature parity** - independently
+- [ ] 45. **WPF product and differentiated feature parity** - independently
   implement priorities, due dates, categories, ordering, calendar, analytics,
   rich-text editing, note reading, themes, Plan My Day, actionable notes,
   Follow Up recurrence, Windows closed-app notifications, communication
   launchers, keyboard-oriented fast capture, Narrator support, contrast themes,
   and high-DPI layouts.
-- [ ] 42. **WPF API integration and release readiness** - independently implement
+- [ ] 46. **WPF API integration and release readiness** - independently implement
   authentication, synchronization for all supported entities, DPAPI-protected
   sessions, conflict resolution, network and notification recovery, signed x64
   and Arm64 MSIX packaging, and Microsoft Store readiness.
 
 ## Milestone N: Cross-Platform Hardening
 
-- [ ] 43. **Cross-platform compatibility and operational hardening** - verify
+- [ ] 47. **Cross-platform compatibility and operational hardening** - verify
   migration recovery, API backward compatibility, recurrence consistency,
   multi-device convergence, notification permission and delivery failure,
   account deletion, abuse controls, accessibility, synchronized-mode privacy,

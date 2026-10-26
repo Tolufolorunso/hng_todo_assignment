@@ -8,6 +8,8 @@ import FastCaptureModal from "@/components/inbox/FastCaptureModal";
 import ThemeToggle from "@/components/app/ThemeToggle";
 import TaskFlowLogo from "@/components/brand/TaskFlowLogo";
 import MobileNavBar from "@/components/app/MobileNavBar";
+import MoreDrawer from "@/components/app/MoreDrawer";
+import AboutDeveloperModal from "@/components/app/AboutDeveloperModal";
 import AccountModal from "@/components/auth/AccountModal";
 import DataAdoptionModal from "@/components/auth/DataAdoptionModal";
 import SyncStatusIndicator from "@/components/sync/SyncStatusIndicator";
@@ -17,162 +19,11 @@ import { setActiveWorkspaceId } from "@/lib/repository";
 import { triggerSyncNow } from "@/lib/sync";
 import { getDueFollowUpsCount } from "@/lib/followups";
 import { getPendingCapturesCount } from "@/lib/inbox";
+import { isPrimaryActive } from "@/lib/navigation";
 
 interface AppHeaderProps {
   active?: "tasks" | "notes" | "calendar" | "analytics" | "privacy" | "followups" | "plan" | "inbox";
 }
-
-const NAV_ITEMS = [
-  {
-    key: "tasks",
-    href: "/",
-    label: "Tasks",
-    icon: (
-      <svg
-        width="14"
-        height="14"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        <path d="M20 6 9 17l-5-5" />
-      </svg>
-    ),
-  },
-  {
-    key: "inbox",
-    href: "/inbox",
-    label: "Inbox",
-    icon: (
-      <svg
-        width="14"
-        height="14"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        <path d="M22 12h-6l-2 3h-4l-2-3H2" />
-        <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
-      </svg>
-    ),
-  },
-  {
-    key: "notes",
-    href: "/notes",
-    label: "Notes",
-    icon: (
-      <svg
-        width="14"
-        height="14"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-        <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
-      </svg>
-    ),
-  },
-  {
-    key: "followups",
-    href: "/followups",
-    label: "Follow Ups",
-    icon: (
-      <svg
-        width="14"
-        height="14"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-        <circle cx="9" cy="7" r="4" />
-        <polyline points="16 11 18 13 22 9" />
-      </svg>
-    ),
-  },
-  {
-    key: "plan",
-    href: "/plan",
-    label: "Plan",
-    icon: (
-      <svg
-        width="14"
-        height="14"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        <circle cx="12" cy="12" r="10" />
-        <polyline points="12 6 12 12 16 14" />
-      </svg>
-    ),
-  },
-  {
-    key: "calendar",
-    href: "/calendar",
-    label: "Calendar",
-    icon: (
-      <svg
-        width="14"
-        height="14"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-        <line x1="16" y1="2" x2="16" y2="6" />
-        <line x1="8" y1="2" x2="8" y2="6" />
-        <line x1="3" y1="10" x2="21" y2="10" />
-      </svg>
-    ),
-  },
-  {
-    key: "analytics",
-    href: "/analytics",
-    label: "Analytics",
-    icon: (
-      <svg
-        width="14"
-        height="14"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        <path d="M3 3v18h18" />
-        <path d="m19 9-5 5-4-4-3 3" />
-      </svg>
-    ),
-  },
-];
 
 export default function AppHeader({ active }: AppHeaderProps) {
   const { user, isAuthenticated } = useAuth();
@@ -180,6 +31,8 @@ export default function AppHeader({ active }: AppHeaderProps) {
   const [isCaptureOpen, setIsCaptureOpen] = useState(false);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const [isAdoptionOpen, setIsAdoptionOpen] = useState(false);
+  const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [dueFollowUpsCount, setDueFollowUpsCount] = useState<number>(0);
   const [pendingCapturesCount, setPendingCapturesCount] = useState<number>(0);
 
@@ -247,6 +100,11 @@ export default function AppHeader({ active }: AppHeaderProps) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
+  const isTasksActive = isPrimaryActive("tasks", active);
+  const isFollowUpsActive = isPrimaryActive("followups", active);
+  const isNotesActive = isPrimaryActive("notes", active);
+  const isMoreActive = isMoreOpen || isPrimaryActive("more", active);
+
   return (
     <>
       <header className="sticky top-0 z-20 border-b border-border bg-bg/85 backdrop-blur-md transition-colors">
@@ -265,49 +123,134 @@ export default function AppHeader({ active }: AppHeaderProps) {
             </span>
           </Link>
 
-          {/* Desktop Navigation Tabs */}
+          {/* Consolidated 4-Destination Desktop Navigation */}
           <nav
             aria-label="Main navigation"
             className="hidden sm:flex items-center gap-1 rounded-xl border border-border bg-surface-muted/80 p-1"
           >
-            {NAV_ITEMS.map((item) => {
-              const isActive = active === item.key;
-              const hasBadge =
-                item.key === "followups"
-                  ? dueFollowUpsCount > 0
-                  : item.key === "inbox"
-                  ? pendingCapturesCount > 0
-                  : false;
-              const badgeCount =
-                item.key === "followups" ? dueFollowUpsCount : pendingCapturesCount;
-              const badgeColor =
-                item.key === "followups"
-                  ? "bg-rose-500/20 text-rose-500"
-                  : "bg-accent/20 text-accent";
+            {/* 1. Tasks */}
+            <Link
+              href="/"
+              aria-current={isTasksActive ? "page" : undefined}
+              className={`flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-medium transition-all ${
+                isTasksActive
+                  ? "border border-border/60 bg-surface text-text shadow-sm"
+                  : "text-muted hover:bg-surface/50 hover:text-text"
+              }`}
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className={isTasksActive ? "text-accent" : "text-faint"}
+                aria-hidden="true"
+              >
+                <path d="M20 6 9 17l-5-5" />
+              </svg>
+              <span>Tasks</span>
+            </Link>
 
-              return (
-                <Link
-                  key={item.key}
-                  href={item.href}
-                  aria-current={isActive ? "page" : undefined}
-                  className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
-                    isActive
-                      ? "border border-border/60 bg-surface text-text shadow-sm"
-                      : "text-muted hover:bg-surface/50 hover:text-text"
-                  }`}
-                >
-                  <span className={isActive ? "text-accent" : "text-faint"}>
-                    {item.icon}
-                  </span>
-                  <span>{item.label}</span>
-                  {hasBadge && (
-                    <span className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${badgeColor}`}>
-                      {badgeCount}
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
+            {/* 2. Follow Ups */}
+            <Link
+              href="/followups"
+              aria-current={isFollowUpsActive ? "page" : undefined}
+              className={`flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-medium transition-all ${
+                isFollowUpsActive
+                  ? "border border-border/60 bg-surface text-text shadow-sm"
+                  : "text-muted hover:bg-surface/50 hover:text-text"
+              }`}
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className={isFollowUpsActive ? "text-accent" : "text-faint"}
+                aria-hidden="true"
+              >
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <polyline points="16 11 18 13 22 9" />
+              </svg>
+              <span>Follow Ups</span>
+              {dueFollowUpsCount > 0 && (
+                <span className="rounded-full bg-rose-500/20 px-1.5 py-0.2 text-[10px] font-bold text-rose-500">
+                  {dueFollowUpsCount > 9 ? "9+" : dueFollowUpsCount}
+                </span>
+              )}
+            </Link>
+
+            {/* 3. Notes */}
+            <Link
+              href="/notes"
+              aria-current={isNotesActive ? "page" : undefined}
+              className={`flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-medium transition-all ${
+                isNotesActive
+                  ? "border border-border/60 bg-surface text-text shadow-sm"
+                  : "text-muted hover:bg-surface/50 hover:text-text"
+              }`}
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className={isNotesActive ? "text-accent" : "text-faint"}
+                aria-hidden="true"
+              >
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
+              </svg>
+              <span>Notes</span>
+            </Link>
+
+            {/* 4. More */}
+            <button
+              type="button"
+              onClick={() => setIsMoreOpen(true)}
+              aria-expanded={isMoreOpen}
+              className={`flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-medium transition-all ${
+                isMoreActive
+                  ? "border border-border/60 bg-surface text-text shadow-sm"
+                  : "text-muted hover:bg-surface/50 hover:text-text"
+              }`}
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className={isMoreActive ? "text-accent" : "text-faint"}
+                aria-hidden="true"
+              >
+                <circle cx="12" cy="12" r="1" />
+                <circle cx="12" cy="5" r="1" />
+                <circle cx="12" cy="19" r="1" />
+              </svg>
+              <span>More</span>
+              {pendingCapturesCount > 0 && (
+                <span className="rounded-full bg-accent/20 px-1.5 py-0.2 text-[10px] font-bold text-accent">
+                  {pendingCapturesCount > 9 ? "9+" : pendingCapturesCount}
+                </span>
+              )}
+            </button>
           </nav>
 
           {/* Header Right Utilities */}
@@ -339,29 +282,6 @@ export default function AppHeader({ active }: AppHeaderProps) {
               </kbd>
             </button>
             <ThemeToggle />
-            <button
-              type="button"
-              onClick={() => setIsBackupOpen(true)}
-              aria-label="Backup and restore data"
-              className="flex items-center gap-1.5 rounded-lg border border-border/80 bg-surface px-2.5 py-1.5 text-xs font-semibold text-text shadow-sm transition-all hover:border-border-strong hover:bg-surface-muted active:scale-95"
-            >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
-              <span>Data</span>
-            </button>
             <SyncStatusIndicator />
             <OfflineIndicator />
 
@@ -405,6 +325,19 @@ export default function AppHeader({ active }: AppHeaderProps) {
           </div>
         </div>
 
+        {/* Drawers and Modals */}
+        <MoreDrawer
+          isOpen={isMoreOpen}
+          onClose={() => setIsMoreOpen(false)}
+          active={active}
+          inboxCount={pendingCapturesCount}
+          dueCount={dueFollowUpsCount}
+          onOpenCapture={() => setIsCaptureOpen(true)}
+          onOpenBackup={() => setIsBackupOpen(true)}
+          onOpenAccount={() => setIsAccountOpen(true)}
+          onOpenAbout={() => setIsAboutOpen(true)}
+        />
+
         <BackupModal
           isOpen={isBackupOpen}
           onClose={() => setIsBackupOpen(false)}
@@ -431,15 +364,21 @@ export default function AppHeader({ active }: AppHeaderProps) {
             onClose={() => setIsAdoptionOpen(false)}
           />
         )}
+
+        <AboutDeveloperModal
+          isOpen={isAboutOpen}
+          onClose={() => setIsAboutOpen(false)}
+        />
       </header>
 
-      {/* Mobile Bottom Navigation Bar */}
+      {/* Mobile Bottom Navigation Bar (strictly 4 tabs) */}
       <MobileNavBar
         active={active}
         dueCount={dueFollowUpsCount}
         inboxCount={pendingCapturesCount}
+        onOpenMore={() => setIsMoreOpen(true)}
+        isMoreOpen={isMoreOpen}
       />
     </>
   );
 }
-

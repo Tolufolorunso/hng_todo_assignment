@@ -1262,19 +1262,34 @@ The web expansion adds Plan My Day, Follow Up, inbox capture, actionable notes,
 synchronization status, account controls, push readiness, conflict resolution,
 and local-data adoption without blocking local-only use.
 
+Web navigation is streamlined to at most four primary destinations (Tasks,
+Follow Ups, Notes, and More). Secondary workflows including Fast Capture Inbox,
+Plan My Day, Calendar and Schedule, Productivity Analytics, Data Backup, and
+Account Settings are housed in a responsive slide-over drawer and modal to
+prevent UI overcrowding on mobile viewports while preserving widescreen ergonomics.
+
 ### 10.6 Mobile
 
-- Native phone and tablet navigation.
-- Safe-area and software-keyboard handling.
-- Touch targets appropriate for Android and iOS.
-- Touch-friendly task and plan reordering with accessible alternatives.
-- VoiceOver and TalkBack labels, state, and announcements.
-- Dynamic text and system scaling.
-- Reduced-motion support.
-- Text alternatives for charts and color-coded states.
-- Offline and synchronization states that do not depend on color alone.
-- Accessible local notifications and launcher fallbacks.
-- Share-sheet capture that confirms whether content was saved.
+The mobile client is built as an independent React Native application using
+Expo and Expo Router with zero web DOM HTML dependencies.
+
+- Strictly four-tab native bottom navigation:
+  1. Tasks (daily backlog, status filters, task creation, and reordering).
+  2. Follow Ups (commitments, recurring communications, and action launchers).
+  3. Notes (rich text notes and actionable excerpting).
+  4. More (slide-over and sheet accessing Inbox capture and triage, Plan My Day,
+     Calendar, Analytics, Data Backup, and Account/Sync settings).
+- Pure React Native primitives (View, Text, Pressable, TextInput, StyleSheet,
+  ScrollView, and FlatList).
+- Safe-area and software-keyboard handling via SafeAreaView and KeyboardAvoidingView.
+- Touch targets strictly meeting or exceeding 44x44 dp with visible active states.
+- Local persistence through expo-sqlite with an in-memory fallback for test execution.
+- Secure credential protection via expo-secure-store.
+- Local closed-app follow-up reminders scheduled through expo-notifications.
+- Native communication launchers using Linking.openURL.
+- VoiceOver and TalkBack labels, states, and accessibility announcements.
+- Dynamic text and system scaling with reduced-motion support.
+- Dark and light theme switching matching system preferences with status bar styling.
 
 ### 10.7 Windows
 
