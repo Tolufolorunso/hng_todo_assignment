@@ -91,7 +91,7 @@ export default function MobileBottomSheet({
       {/* Slide-Up Bottom Sheet */}
       <div
         ref={sheetRef}
-        className="relative z-10 flex w-full flex-col max-h-[85vh] rounded-t-3xl border-t border-border bg-surface-muted/95 shadow-2xl backdrop-blur-xl animate-in slide-in-from-bottom duration-200"
+        className="relative z-10 flex w-full flex-col max-h-[85vh] rounded-t-3xl border-t border-border bg-surface shadow-2xl backdrop-blur-xl animate-in slide-in-from-bottom duration-200"
       >
         {/* Grab Handle */}
         <div className="flex justify-center pt-3 pb-1" aria-hidden="true">

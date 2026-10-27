@@ -12,7 +12,7 @@ function AppFooter() {
   const handleCloseModal = useCallback(() => setIsModalOpen(false), []);
 
   return (
-    <footer className="mt-auto border-t border-border bg-surface/30 backdrop-blur-xs py-6 px-4 text-xs text-muted transition-colors mb-16 sm:mb-0 sm:fixed sm:bottom-0 sm:left-0 sm:right-0 sm:z-20 sm:border-t sm:border-border sm:bg-bg/85 sm:backdrop-blur-md sm:py-2.5 sm:px-6 print:hidden">
+    <footer className="mt-auto w-full border-t border-border bg-surface/30 backdrop-blur-xs py-6 px-4 text-xs text-muted transition-colors mb-16 sm:mb-0 print:hidden">
       <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-3 sm:flex-row sm:items-center">
         {/* Left: Brand & Architecture note */}
         <div className="flex flex-col items-center gap-1 sm:flex-row sm:items-center sm:gap-2">

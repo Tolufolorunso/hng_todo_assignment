@@ -84,7 +84,7 @@ function MorePopover({
       ref={popoverRef}
       role="menu"
       aria-label="More workflows and tools"
-      className="absolute right-0 top-full mt-2.5 z-40 w-76 rounded-2xl border border-border bg-surface-muted/95 p-2 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150"
+      className="absolute right-0 top-full mt-2.5 z-50 w-76 rounded-2xl border border-border bg-surface p-2 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150"
     >
       {/* Header with Title and Theme */}
       <div className="flex items-center justify-between border-b border-border/80 px-3 py-2 pb-2.5">

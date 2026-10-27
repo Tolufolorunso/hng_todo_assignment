@@ -8,7 +8,7 @@ import {
   TITLE_MAX_LENGTH,
   validateTaskInput,
 } from "@/lib/validation";
-import type { TaskCategory } from "@/types/task";
+import type { TaskCategory, TaskPriority } from "@/types/task";
 
 interface TaskFormProps {
   onAdded: () => Promise<void>;
@@ -30,6 +30,9 @@ export default function TaskForm({ onAdded, onWriteError }: TaskFormProps) {
   const [description, setDescription] = useState("");
   const [showDetails, setShowDetails] = useState(false);
   const [category, setCategory] = useState<TaskCategory | null>(null);
+  const [priority, setPriority] = useState<TaskPriority>("medium");
+  const [dueDate, setDueDate] = useState<string>("");
+  const [estimatedMinutes, setEstimatedMinutes] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -37,7 +40,15 @@ export default function TaskForm({ onAdded, onWriteError }: TaskFormProps) {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const validation = validateTaskInput({ title, description, category });
+    const parsedMinutes = estimatedMinutes.trim() ? Number(estimatedMinutes.trim()) : null;
+    const validation = validateTaskInput({
+      title,
+      description,
+      priority,
+      dueDate: dueDate || null,
+      category,
+      estimatedMinutes: parsedMinutes,
+    });
     if (!validation.ok) {
       setError(validation.error);
       inputRef.current?.focus();
@@ -50,10 +61,16 @@ export default function TaskForm({ onAdded, onWriteError }: TaskFormProps) {
       await createTask({
         title: validation.value.title,
         description: validation.value.description,
+        priority: validation.value.priority,
+        dueDate: validation.value.dueDate,
         category: validation.value.category,
+        estimatedMinutes: validation.value.estimatedMinutes ?? null,
       });
       setTitle("");
       setDescription("");
+      setPriority("medium");
+      setDueDate("");
+      setEstimatedMinutes("");
       setCategory(null);
       setShowDetails(false);
       await onAdded();
@@ -106,7 +123,7 @@ export default function TaskForm({ onAdded, onWriteError }: TaskFormProps) {
           {submitting ? (
             <>
               <span className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
-              <span>Adding...</span>
+              <span>Adding</span>
             </>
           ) : (
             <>
@@ -185,17 +202,75 @@ export default function TaskForm({ onAdded, onWriteError }: TaskFormProps) {
         </button>
       </div>
 
-      {/* Expandable Rich Text Description Editor */}
+      {/* Expandable Rich Text Description Editor and Extra Controls */}
       {showDetails && (
-        <div className="mt-1 overflow-hidden rounded-xl border border-border bg-surface shadow-xs transition-all focus-within:border-accent focus-within:ring-2 focus-within:ring-accent-soft">
-          <WysiwygEditor
-            value={description}
-            onChange={setDescription}
-            disabled={submitting}
-            placeholder="Add formatted details, lists, headings, or notes... Format with the ribbon above."
-            ariaLabel="Task description rich text editor"
-            maxLength={DESCRIPTION_MAX_LENGTH}
-          />
+        <div className="flex flex-col gap-2.5 rounded-xl border border-border bg-surface p-3 shadow-xs">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-col gap-1">
+              <label
+                htmlFor="task-priority"
+                className="text-xs font-semibold text-muted"
+              >
+                Priority
+              </label>
+              <select
+                id="task-priority"
+                value={priority}
+                onChange={(event) => setPriority(event.target.value as TaskPriority)}
+                disabled={submitting}
+                className="rounded-xl border border-border bg-surface px-3 py-1.5 text-xs font-medium text-text outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft"
+              >
+                <option value="low">Low Priority</option>
+                <option value="medium">Medium Priority</option>
+                <option value="high">High Priority</option>
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label htmlFor="task-due-date" className="text-xs font-semibold text-muted">
+                Due Date
+              </label>
+              <input
+                id="task-due-date"
+                type="date"
+                value={dueDate}
+                onChange={(event) => setDueDate(event.target.value)}
+                disabled={submitting}
+                className="rounded-xl border border-border bg-surface px-3 py-1.5 text-xs text-text outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label
+                htmlFor="task-estimate"
+                className="text-xs font-semibold text-muted"
+              >
+                Estimate (mins)
+              </label>
+              <input
+                id="task-estimate"
+                type="number"
+                min={1}
+                max={1440}
+                placeholder="e.g. 30"
+                value={estimatedMinutes}
+                onChange={(event) => setEstimatedMinutes(event.target.value)}
+                disabled={submitting}
+                className="w-24 rounded-xl border border-border bg-surface px-3 py-1.5 text-xs text-text outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft"
+              />
+            </div>
+          </div>
+
+          <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-xs transition-all focus-within:border-accent focus-within:ring-2 focus-within:ring-accent-soft">
+            <WysiwygEditor
+              value={description}
+              onChange={setDescription}
+              disabled={submitting}
+              placeholder="Add formatted details, lists, headings, or notes. Format with the ribbon above."
+              ariaLabel="Task description rich text editor"
+              maxLength={DESCRIPTION_MAX_LENGTH}
+            />
+          </div>
         </div>
       )}
 

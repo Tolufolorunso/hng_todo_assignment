@@ -107,7 +107,7 @@ export default function FastCaptureModal({
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-150"
     >
       <div
-        className="w-full max-w-lg rounded-2xl border border-border/80 bg-surface p-5 shadow-2xl transition-all duration-150 scale-in-95"
+        className="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl border border-border/80 bg-surface p-5 shadow-2xl transition-all duration-150 scale-in-95"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-border/60 pb-3">
@@ -168,7 +168,7 @@ export default function FastCaptureModal({
               value={text}
               disabled={isSubmitting || success}
               onChange={(e) => handleTextChange(e.target.value)}
-              placeholder="What is on your mind? Paste a link, jot down a thought, or record a task..."
+              placeholder="What is on your mind? Paste a link, jot down a thought, or record a task"
               className="w-full resize-none rounded-xl border border-border bg-surface-muted/40 p-3 text-xs leading-relaxed text-foreground placeholder:text-muted/60 focus:border-accent focus:bg-surface focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
             />
           </div>
@@ -269,7 +269,7 @@ export default function FastCaptureModal({
               {isSubmitting ? (
                 <>
                   <span className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  <span>Saving...</span>
+                  <span>Saving</span>
                 </>
               ) : success ? (
                 <>

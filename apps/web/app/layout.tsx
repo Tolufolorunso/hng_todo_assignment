@@ -122,7 +122,7 @@ export default function RootLayout({
         />
         <JsonLd />
       </head>
-      <body className="min-h-full flex flex-col bg-bg text-text transition-colors duration-150">
+      <body className="min-h-full flex flex-col bg-bg text-text">
         <ServiceWorkerRegistrar />
         <AuthProvider>
           {children}

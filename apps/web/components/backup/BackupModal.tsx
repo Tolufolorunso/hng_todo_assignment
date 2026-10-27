@@ -156,7 +156,7 @@ export default function BackupModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-lg cursor-default rounded-2xl border border-border bg-surface p-6 shadow-2xl transition-all"
+        className="relative w-full max-w-lg max-h-[85vh] overflow-y-auto cursor-default rounded-2xl border border-border bg-surface p-6 shadow-2xl transition-all"
       >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border/60 pb-4">

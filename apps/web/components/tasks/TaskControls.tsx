@@ -45,7 +45,7 @@ function TaskControls({
     <div className="sticky top-16 z-10 -mx-1 flex flex-col gap-2.5 border-b border-border/80 bg-bg/90 px-1 py-3 backdrop-blur-md">
       <div className="flex flex-wrap items-center justify-between gap-3">
         {/* Search Input */}
-        <div className="relative min-w-[11rem] flex-1">
+        <div className="relative min-w-[11rem] max-w-md flex-1">
           <svg
             width="14"
             height="14"
@@ -69,7 +69,7 @@ function TaskControls({
             type="search"
             value={query}
             onChange={(event) => onQueryChange(event.target.value)}
-            placeholder="Search by title or description..."
+            placeholder="Search by title or description"
             autoComplete="off"
             className="w-full rounded-xl border border-border bg-surface py-2 pl-9 pr-3 text-xs text-text outline-none placeholder:text-faint transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft"
           />

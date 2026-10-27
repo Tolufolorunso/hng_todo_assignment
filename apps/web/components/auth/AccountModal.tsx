@@ -216,7 +216,7 @@ export default function AccountModal({ isOpen, onClose, onAuthenticated }: Accou
       aria-modal="true"
       aria-labelledby="account-modal-title"
     >
-      <div className="relative w-full max-w-md rounded-2xl border border-border bg-surface p-6 shadow-2xl transition-all">
+      <div className="relative w-full max-w-md max-h-[85vh] overflow-y-auto rounded-2xl border border-border bg-surface p-6 shadow-2xl transition-all">
         {/* Close Button */}
         <button
           type="button"

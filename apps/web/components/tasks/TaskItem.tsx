@@ -88,7 +88,6 @@ function TaskItem({
 }: TaskItemProps) {
   const [mode, setMode] = useState<Mode>("view");
   const [expanded, setExpanded] = useState(false);
-  const checkboxId = `task-${task.id}`;
   const overdue = isOverdue(task, todayIso);
 
   if (mode === "edit") {
@@ -202,6 +201,7 @@ function TaskItem({
       )}
       {/* Drag Grip Handle */}
       <div
+        onClick={(event) => event.stopPropagation()}
         className="flex items-center pt-1 text-faint opacity-35 transition-opacity group-hover:opacity-90 hover:text-text cursor-grab active:cursor-grabbing select-none"
         title="Drag to reorder"
         aria-label={`Drag handle for ${task.title}`}
@@ -223,29 +223,41 @@ function TaskItem({
       </div>
 
       {/* Checkbox */}
-      <div className="pt-0.5">
+      <div className="pt-0.5" onClick={(event) => event.stopPropagation()}>
         <input
-          id={checkboxId}
           type="checkbox"
+          aria-label={`Mark "${task.title}" as complete`}
           checked={task.completed}
           disabled={disabled}
           onChange={(event) => onToggle(task, event.target.checked)}
+          onClick={(event) => event.stopPropagation()}
           className="h-4 w-4 cursor-pointer rounded-md accent-accent transition-transform active:scale-90"
         />
       </div>
 
       {/* Task Content */}
-      <div className="min-w-0 flex-1">
-        <label
-          htmlFor={checkboxId}
-          className={`cursor-pointer text-sm font-medium transition-colors ${
+      <div
+        className="min-w-0 flex-1 cursor-pointer"
+        onClick={() => setMode("edit")}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            setMode("edit");
+          }
+        }}
+        aria-label={`Edit task ${task.title}`}
+      >
+        <div
+          className={`text-sm font-medium transition-colors ${
             task.completed
               ? "text-muted line-through"
               : "text-text hover:text-accent"
           }`}
         >
           {task.title}
-        </label>
+        </div>
         {task.description !== "" && (() => {
           const hasHtml = /<[a-z][\s\S]*>/i.test(task.description);
           const plain = stripHtmlToText(task.description);
@@ -279,7 +291,10 @@ function TaskItem({
               {isLong && (
                 <button
                   type="button"
-                  onClick={() => setExpanded(!expanded)}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setExpanded(!expanded);
+                  }}
                   className="mt-1 text-[11px] font-semibold text-accent hover:underline"
                 >
                   {expanded ? "Show less" : "Show more"}
@@ -356,6 +371,7 @@ function TaskItem({
           {task.sourceNoteId && (
             <Link
               href={`/notes?id=${encodeURIComponent(task.sourceNoteId)}`}
+              onClick={(event) => event.stopPropagation()}
               className="inline-flex items-center gap-1 rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-[10px] font-semibold text-accent hover:border-accent/50 hover:bg-accent/20 transition-colors"
               title={task.sourceExcerpt ? `From note: "${task.sourceExcerpt}"` : "View source note"}
             >
@@ -376,7 +392,10 @@ function TaskItem({
       </div>
 
       {/* Row Actions */}
-      <div className="flex items-center gap-1 opacity-70 transition-opacity group-hover:opacity-100">
+      <div
+        onClick={(event) => event.stopPropagation()}
+        className="flex items-center gap-1 opacity-70 transition-opacity group-hover:opacity-100"
+      >
         <button
           type="button"
           onClick={() => setMode("edit")}
