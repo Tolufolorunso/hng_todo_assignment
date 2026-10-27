@@ -7,6 +7,7 @@
         xmlns:vm="clr-namespace:TaskFlow.ViewModels"
         mc:Ignorable="d"
         Title="TaskFlow Desktop"
+        Icon="Assets/app.ico"
         Height="820" Width="1200"
         MinWidth="960" MinHeight="660"
         WindowStartupLocation="CenterScreen"
@@ -79,13 +80,57 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="btnBorder" Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                        <Border x:Name="btnBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderThickness="3,0,0,0"
+                                BorderBrush="Transparent"
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="btnBorder" Property="Background" Value="{DynamicResource BgSurfaceElevated}" />
                                 <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+                            </Trigger>
+                            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" Value="True">
+                                <Setter TargetName="btnBorder" Property="Background" Value="{DynamicResource BgSurfaceElevated}" />
+                                <Setter TargetName="btnBorder" Property="BorderBrush" Value="{DynamicResource AccentBlue}" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+                                <Setter Property="FontWeight" Value="Bold" />
+                            </DataTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="FormatButton" TargetType="Button">
+            <Setter Property="Background" Value="{DynamicResource BgSurfaceElevated}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Padding" Value="7,3" />
+            <Setter Property="Margin" Value="0,0,4,0" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="fmtBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="fmtBorder" Property="Background" Value="{DynamicResource AccentBlue}" />
+                                <Setter TargetName="fmtBorder" Property="BorderBrush" Value="{DynamicResource AccentBlue}" />
+                                <Setter Property="Foreground" Value="White" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -102,6 +147,142 @@
             <Setter Property="Padding" Value="10,8" />
             <Setter Property="FontSize" Value="13" />
         </Style>
+
+        <!-- ComboBox Toggle Button Template -->
+        <ControlTemplate x:Key="ComboBoxToggleButtonTemplate" TargetType="ToggleButton">
+            <Border x:Name="templateRoot"
+                    Background="{DynamicResource BgSurface}"
+                    BorderBrush="{DynamicResource BorderSubtle}"
+                    BorderThickness="1"
+                    CornerRadius="6"
+                    SnapsToDevicePixels="true">
+                <Border x:Name="splitBorder"
+                        Width="24"
+                        HorizontalAlignment="Right"
+                        SnapsToDevicePixels="true">
+                    <Path x:Name="arrow"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Center"
+                          Data="M 0 0 L 4 4 L 8 0"
+                          Stroke="{DynamicResource TextSecondary}"
+                          StrokeThickness="1.5" />
+                </Border>
+            </Border>
+            <ControlTemplate.Triggers>
+                <Trigger Property="IsMouseOver" Value="true">
+                    <Setter TargetName="templateRoot" Property="BorderBrush" Value="{DynamicResource AccentBlue}" />
+                    <Setter TargetName="arrow" Property="Stroke" Value="{DynamicResource TextPrimary}" />
+                </Trigger>
+                <Trigger Property="IsChecked" Value="true">
+                    <Setter TargetName="templateRoot" Property="BorderBrush" Value="{DynamicResource AccentBlue}" />
+                </Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
+
+        <!-- ComboBox Item Style -->
+        <Style x:Key="ModernComboBoxItem" TargetType="ComboBoxItem">
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Padding" Value="10,6" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBoxItem">
+                        <Border x:Name="itemBorder"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="4"
+                                Padding="{TemplateBinding Padding}"
+                                SnapsToDevicePixels="true">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="true">
+                                <Setter TargetName="itemBorder" Property="Background" Value="{DynamicResource AccentBlue}" />
+                                <Setter Property="Foreground" Value="White" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="true">
+                                <Setter TargetName="itemBorder" Property="Background" Value="{DynamicResource AccentBlueHover}" />
+                                <Setter Property="Foreground" Value="White" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Modern ComboBox Style -->
+        <Style x:Key="ModernComboBox" TargetType="ComboBox">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Background" Value="{DynamicResource BgSurface}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto" />
+            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
+            <Setter Property="Padding" Value="10,6" />
+            <Setter Property="ItemContainerStyle" Value="{StaticResource ModernComboBoxItem}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid x:Name="templateRoot" SnapsToDevicePixels="true">
+                            <ToggleButton x:Name="toggleButton"
+                                          Background="{TemplateBinding Background}"
+                                          BorderBrush="{TemplateBinding BorderBrush}"
+                                          BorderThickness="{TemplateBinding BorderThickness}"
+                                          ClickMode="Press"
+                                          Focusable="false"
+                                          IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                          Template="{StaticResource ComboBoxToggleButtonTemplate}" />
+                            <ContentPresenter x:Name="contentPresenter"
+                                              Content="{TemplateBinding SelectionBoxItem}"
+                                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                              ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                                              ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}"
+                                              HorizontalAlignment="Left"
+                                              VerticalAlignment="Center"
+                                              IsHitTestVisible="false"
+                                              Margin="10,0,28,0" />
+                            <Popup x:Name="PART_Popup"
+                                   AllowsTransparency="true"
+                                   IsOpen="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                   Placement="Bottom"
+                                   PopupAnimation="Slide"
+                                   Margin="1">
+                                <Border x:Name="dropDownBorder"
+                                        MinWidth="{Binding ActualWidth, ElementName=templateRoot}"
+                                        MaxHeight="{TemplateBinding MaxDropDownHeight}"
+                                        Background="{DynamicResource BgSurfaceElevated}"
+                                        BorderBrush="{DynamicResource BorderSubtle}"
+                                        BorderThickness="1"
+                                        CornerRadius="6"
+                                        Padding="4"
+                                        Margin="0,2,0,0">
+                                    <ScrollViewer x:Name="DropDownScrollViewer" CanContentScroll="true">
+                                        <ItemsPresenter x:Name="ItemsPresenter" KeyboardNavigation.DirectionalNavigation="Contained" />
+                                    </ScrollViewer>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="HasItems" Value="false">
+                                <Setter TargetName="dropDownBorder" Property="Height" Value="95" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="false">
+                                <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+                            </Trigger>
+                            <Trigger Property="IsGrouping" Value="true">
+                                <Setter Property="ScrollViewer.CanContentScroll" Value="false" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="ComboBox" BasedOn="{StaticResource ModernComboBox}" />
+        <Style TargetType="ComboBoxItem" BasedOn="{StaticResource ModernComboBoxItem}" />
     </Window.Resources>
 
     <Window.InputBindings>
@@ -146,6 +327,7 @@
 
                 <!-- Brand -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Image Source="Assets/logo.png" Width="24" Height="24" Margin="0,0,8,0" VerticalAlignment="Center" />
                     <TextBlock Text="TaskFlow" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource AccentBlue}" />
                     <Border Background="{DynamicResource BgSurfaceElevated}" CornerRadius="4" Padding="6,2" Margin="10,0,0,0" VerticalAlignment="Center">
                         <TextBlock Text="Windows" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" />
@@ -160,7 +342,7 @@
                              Padding="12,7"
                              AutomationProperties.Name="Global search input"
                              AutomationProperties.HelpText="Search across tasks, follow-ups, and notes" />
-                    <TextBlock Text="Search tasks, commitments, notes (Ctrl+F)..."
+                    <TextBlock Text="Search tasks, commitments, notes (Ctrl+F)"
                                Foreground="{DynamicResource TextMuted}"
                                VerticalAlignment="Center"
                                Margin="14,0,0,0"
@@ -245,7 +427,7 @@
                     <!-- Navigation Items -->
                     <StackPanel Grid.Row="0">
                         <!-- 1. Tasks -->
-                        <Button Style="{StaticResource SidebarButton}" Command="{Binding NavigateToTasksCommand}" Margin="0,0,0,4" AutomationProperties.Name="Navigate to Tasks">
+                        <Button Style="{StaticResource SidebarButton}" Tag="{Binding IsTasksTabActive}" Command="{Binding NavigateToTasksCommand}" Margin="0,0,0,4" AutomationProperties.Name="Navigate to Tasks">
                             <Grid Width="180">
                                 <TextBlock Text="Tasks" HorizontalAlignment="Left" />
                                 <TextBlock Text="Ctrl+1" FontSize="11" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Right" />
@@ -253,7 +435,7 @@
                         </Button>
 
                         <!-- 2. Follow Ups -->
-                        <Button Style="{StaticResource SidebarButton}" Command="{Binding NavigateToFollowUpsCommand}" Margin="0,0,0,4" AutomationProperties.Name="Navigate to Follow Ups">
+                        <Button Style="{StaticResource SidebarButton}" Tag="{Binding IsFollowUpsTabActive}" Command="{Binding NavigateToFollowUpsCommand}" Margin="0,0,0,4" AutomationProperties.Name="Navigate to Follow Ups">
                             <Grid Width="180">
                                 <TextBlock Text="Follow Ups" HorizontalAlignment="Left" />
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
@@ -266,7 +448,7 @@
                         </Button>
 
                         <!-- 3. Plan My Day -->
-                        <Button Style="{StaticResource SidebarButton}" Command="{Binding NavigateToPlanMyDayCommand}" Margin="0,0,0,4" AutomationProperties.Name="Navigate to Plan My Day">
+                        <Button Style="{StaticResource SidebarButton}" Tag="{Binding IsPlanMyDayTabActive}" Command="{Binding NavigateToPlanMyDayCommand}" Margin="0,0,0,4" AutomationProperties.Name="Navigate to Plan My Day">
                             <Grid Width="180">
                                 <TextBlock Text="Plan My Day" HorizontalAlignment="Left" />
                                 <TextBlock Text="Ctrl+3" FontSize="11" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Right" />
@@ -274,7 +456,7 @@
                         </Button>
 
                         <!-- 4. Notes -->
-                        <Button Style="{StaticResource SidebarButton}" Command="{Binding NavigateToNotesCommand}" Margin="0,0,0,4" AutomationProperties.Name="Navigate to Notes">
+                        <Button Style="{StaticResource SidebarButton}" Tag="{Binding IsNotesTabActive}" Command="{Binding NavigateToNotesCommand}" Margin="0,0,0,4" AutomationProperties.Name="Navigate to Notes">
                             <Grid Width="180">
                                 <TextBlock Text="Notes" HorizontalAlignment="Left" />
                                 <TextBlock Text="Ctrl+4" FontSize="11" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Right" />
@@ -282,7 +464,7 @@
                         </Button>
 
                         <!-- 5. Fast Capture Inbox -->
-                        <Button Style="{StaticResource SidebarButton}" Command="{Binding NavigateToInboxCommand}" Margin="0,0,0,4" AutomationProperties.Name="Navigate to Fast Capture Inbox">
+                        <Button Style="{StaticResource SidebarButton}" Tag="{Binding IsInboxTabActive}" Command="{Binding NavigateToInboxCommand}" Margin="0,0,0,4" AutomationProperties.Name="Navigate to Fast Capture Inbox">
                             <Grid Width="180">
                                 <TextBlock Text="Inbox" HorizontalAlignment="Left" />
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
@@ -295,7 +477,7 @@
                         </Button>
 
                         <!-- 6. Calendar -->
-                        <Button Style="{StaticResource SidebarButton}" Command="{Binding NavigateToCalendarCommand}" Margin="0,0,0,4" AutomationProperties.Name="Navigate to Calendar">
+                        <Button Style="{StaticResource SidebarButton}" Tag="{Binding IsCalendarTabActive}" Command="{Binding NavigateToCalendarCommand}" Margin="0,0,0,4" AutomationProperties.Name="Navigate to Calendar">
                             <Grid Width="180">
                                 <TextBlock Text="Calendar" HorizontalAlignment="Left" />
                                 <TextBlock Text="Ctrl+6" FontSize="11" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Right" />
@@ -303,7 +485,7 @@
                         </Button>
 
                         <!-- 7. Analytics -->
-                        <Button Style="{StaticResource SidebarButton}" Command="{Binding NavigateToAnalyticsCommand}" Margin="0,0,0,4" AutomationProperties.Name="Navigate to Analytics">
+                        <Button Style="{StaticResource SidebarButton}" Tag="{Binding IsAnalyticsTabActive}" Command="{Binding NavigateToAnalyticsCommand}" Margin="0,0,0,4" AutomationProperties.Name="Navigate to Analytics">
                             <Grid Width="180">
                                 <TextBlock Text="Analytics" HorizontalAlignment="Left" />
                                 <TextBlock Text="Ctrl+7" FontSize="11" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Right" />
@@ -311,7 +493,7 @@
                         </Button>
 
                         <!-- 8. Backup & Restore -->
-                        <Button Style="{StaticResource SidebarButton}" Command="{Binding NavigateToBackupCommand}" Margin="0,0,0,4" AutomationProperties.Name="Navigate to Backup and Restore">
+                        <Button Style="{StaticResource SidebarButton}" Tag="{Binding IsBackupTabActive}" Command="{Binding NavigateToBackupCommand}" Margin="0,0,0,4" AutomationProperties.Name="Navigate to Backup and Restore">
                             <Grid Width="180">
                                 <TextBlock Text="Backup &amp; Restore" HorizontalAlignment="Left" />
                                 <TextBlock Text="Ctrl+8" FontSize="11" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Right" />
@@ -319,7 +501,7 @@
                         </Button>
 
                         <!-- 9. Account & Cloud Sync -->
-                        <Button Style="{StaticResource SidebarButton}" Command="{Binding NavigateToAccountCommand}" Margin="0,0,0,4" AutomationProperties.Name="Navigate to Account and Cloud Sync">
+                        <Button Style="{StaticResource SidebarButton}" Tag="{Binding IsAccountTabActive}" Command="{Binding NavigateToAccountCommand}" Margin="0,0,0,4" AutomationProperties.Name="Navigate to Account and Cloud Sync">
                             <Grid Width="180">
                                 <TextBlock Text="Account &amp; Sync" HorizontalAlignment="Left" />
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
@@ -378,20 +560,95 @@
                     <!-- Create Task Form -->
                     <Border Grid.Row="1" Visibility="{Binding TasksVM.IsCreatePanelVisible, Converter={StaticResource BoolToVis}}" Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,16">
                         <StackPanel>
-                            <TextBlock Text="New Task" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,10" />
-                            <Grid Margin="0,0,0,10">
+                            <TextBlock Text="New Task" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,12" />
+                            <Grid Margin="0,0,0,12">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="140" />
                                     <ColumnDefinition Width="140" />
                                     <ColumnDefinition Width="140" />
                                 </Grid.ColumnDefinitions>
-                                <TextBox Grid.Column="0" Style="{StaticResource ModernTextBox}" Text="{Binding TasksVM.NewTaskTitle, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,10,0" AutomationProperties.Name="New task title" />
-                                <ComboBox Grid.Column="1" ItemsSource="{Binding TasksVM.Categories}" SelectedItem="{Binding TasksVM.NewTaskCategory}" Height="32" Margin="0,0,10,0" AutomationProperties.Name="New task category" />
-                                <ComboBox Grid.Column="2" ItemsSource="{Binding TasksVM.Priorities}" SelectedItem="{Binding TasksVM.NewTaskPriority}" Height="32" Margin="0,0,10,0" AutomationProperties.Name="New task priority" />
-                                <TextBox Grid.Column="3" Style="{StaticResource ModernTextBox}" Text="{Binding TasksVM.NewTaskDueDate, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="New task due date" />
+                                <!-- Title Field -->
+                                <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                    <TextBlock Text="Title *" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4" />
+                                    <Grid>
+                                        <TextBox x:Name="NewTaskTitleInput" Style="{StaticResource ModernTextBox}" Text="{Binding TasksVM.NewTaskTitle, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="New task title" />
+                                        <TextBlock Text="What needs to be done?" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Margin="10,0,0,0" IsHitTestVisible="False">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Text, ElementName=NewTaskTitleInput}" Value="">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Grid>
+                                </StackPanel>
+                                <!-- Category Field -->
+                                <StackPanel Grid.Column="1" Margin="0,0,10,0">
+                                    <TextBlock Text="Category" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4" />
+                                    <ComboBox ItemsSource="{Binding TasksVM.Categories}" SelectedItem="{Binding TasksVM.NewTaskCategory}" Height="34" AutomationProperties.Name="New task category" />
+                                </StackPanel>
+                                <!-- Priority Field -->
+                                <StackPanel Grid.Column="2" Margin="0,0,10,0">
+                                    <TextBlock Text="Priority" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4" />
+                                    <ComboBox ItemsSource="{Binding TasksVM.Priorities}" SelectedItem="{Binding TasksVM.NewTaskPriority}" Height="34" AutomationProperties.Name="New task priority" />
+                                </StackPanel>
+                                <!-- Due Date Field -->
+                                <StackPanel Grid.Column="3">
+                                    <TextBlock Text="Due Date" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4" />
+                                    <Grid>
+                                        <TextBox x:Name="NewTaskDueDateInput" Style="{StaticResource ModernTextBox}" Text="{Binding TasksVM.NewTaskDueDate, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="New task due date" />
+                                        <TextBlock Text="YYYY-MM-DD" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Margin="10,0,0,0" IsHitTestVisible="False">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Text, ElementName=NewTaskDueDateInput}" Value="">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Grid>
+                                </StackPanel>
                             </Grid>
-                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding TasksVM.NewTaskDescription, UpdateSourceTrigger=PropertyChanged}" Height="60" AcceptsReturn="True" TextWrapping="Wrap" Margin="0,0,0,12" AutomationProperties.Name="New task description" />
+                            <!-- Description Field with Formatting Toolbar -->
+                            <StackPanel Margin="0,0,0,12">
+                                <Grid Margin="0,0,0,4">
+                                    <TextBlock Text="Description" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Left" VerticalAlignment="Center" />
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                        <Button Content="B" Tag="bold" CommandParameter="NewTaskDescriptionInput" Click="OnFormatTextClick" Style="{StaticResource FormatButton}" FontWeight="Bold" ToolTip="Bold" />
+                                        <Button Content="I" Tag="italic" CommandParameter="NewTaskDescriptionInput" Click="OnFormatTextClick" Style="{StaticResource FormatButton}" FontStyle="Italic" ToolTip="Italic" />
+                                        <Button Content="S" Tag="strikethrough" CommandParameter="NewTaskDescriptionInput" Click="OnFormatTextClick" Style="{StaticResource FormatButton}" ToolTip="Strikethrough" />
+                                        <Button Content="H1" Tag="h1" CommandParameter="NewTaskDescriptionInput" Click="OnFormatTextClick" Style="{StaticResource FormatButton}" ToolTip="Heading 1" />
+                                        <Button Content="H2" Tag="h2" CommandParameter="NewTaskDescriptionInput" Click="OnFormatTextClick" Style="{StaticResource FormatButton}" ToolTip="Heading 2" />
+                                        <Button Content="List" Tag="bullet" CommandParameter="NewTaskDescriptionInput" Click="OnFormatTextClick" Style="{StaticResource FormatButton}" ToolTip="Bullet list" />
+                                        <Button Content="1. List" Tag="numbered" CommandParameter="NewTaskDescriptionInput" Click="OnFormatTextClick" Style="{StaticResource FormatButton}" ToolTip="Numbered list" />
+                                        <Button Content="Quote" Tag="quote" CommandParameter="NewTaskDescriptionInput" Click="OnFormatTextClick" Style="{StaticResource FormatButton}" ToolTip="Quote" />
+                                        <Button Content="Code" Tag="code" CommandParameter="NewTaskDescriptionInput" Click="OnFormatTextClick" Style="{StaticResource FormatButton}" ToolTip="Code" />
+                                    </StackPanel>
+                                </Grid>
+                                <Grid>
+                                    <TextBox x:Name="NewTaskDescriptionInput" Style="{StaticResource ModernTextBox}" Text="{Binding TasksVM.NewTaskDescription, UpdateSourceTrigger=PropertyChanged}" Height="64" AcceptsReturn="True" TextWrapping="Wrap" AutomationProperties.Name="New task description" />
+                                    <TextBlock Text="Add extra details, checklist notes, or instructions" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Top" Margin="10,8,0,0" IsHitTestVisible="False">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Text, ElementName=NewTaskDescriptionInput}" Value="">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </Grid>
+                            </StackPanel>
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                 <Button Content="Cancel" Style="{StaticResource SecondaryButton}" Command="{Binding TasksVM.CloseCreatePanelCommand}" Margin="0,0,8,0" AutomationProperties.Name="Cancel new task" />
                                 <Button Content="Save Task" Style="{StaticResource ModernButton}" Command="{Binding TasksVM.CreateTaskCommand}" AutomationProperties.Name="Save new task" />
@@ -489,32 +746,144 @@
                     <!-- Create Follow-up Panel -->
                     <Border Grid.Row="1" Visibility="{Binding FollowUpsVM.IsCreatePanelVisible, Converter={StaticResource BoolToVis}}" Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,16">
                         <StackPanel>
-                            <TextBlock Text="New Follow-Up Commitment" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,10" />
-                            <Grid Margin="0,0,0,10">
+                            <TextBlock Text="New Follow-Up Commitment" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,12" />
+                            <Grid Margin="0,0,0,12">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="160" />
                                 </Grid.ColumnDefinitions>
-                                <TextBox Grid.Column="0" Style="{StaticResource ModernTextBox}" Text="{Binding FollowUpsVM.PersonName, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,10,0" AutomationProperties.Name="Contact person name" />
-                                <TextBox Grid.Column="1" Style="{StaticResource ModernTextBox}" Text="{Binding FollowUpsVM.Commitment, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,10,0" AutomationProperties.Name="Commitment details" />
-                                <TextBox Grid.Column="2" Style="{StaticResource ModernTextBox}" Text="{Binding FollowUpsVM.DueAt, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Commitment due date" />
+                                <!-- Person Name -->
+                                <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                    <TextBlock Text="Contact Person *" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4" />
+                                    <Grid>
+                                        <TextBox x:Name="NewFollowUpPersonInput" Style="{StaticResource ModernTextBox}" Text="{Binding FollowUpsVM.PersonName, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Contact person name" />
+                                        <TextBlock Text="e.g. Alex Johnson" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Margin="10,0,0,0" IsHitTestVisible="False">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Text, ElementName=NewFollowUpPersonInput}" Value="">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Grid>
+                                </StackPanel>
+                                <!-- Commitment -->
+                                <StackPanel Grid.Column="1" Margin="0,0,10,0">
+                                    <TextBlock Text="Commitment Details *" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4" />
+                                    <Grid>
+                                        <TextBox x:Name="NewFollowUpCommitmentInput" Style="{StaticResource ModernTextBox}" Text="{Binding FollowUpsVM.Commitment, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Commitment details" />
+                                        <TextBlock Text="e.g. Send proposal document" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Margin="10,0,0,0" IsHitTestVisible="False">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Text, ElementName=NewFollowUpCommitmentInput}" Value="">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Grid>
+                                </StackPanel>
+                                <!-- Due Date -->
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Due Date *" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4" />
+                                    <Grid>
+                                        <TextBox x:Name="NewFollowUpDueAtInput" Style="{StaticResource ModernTextBox}" Text="{Binding FollowUpsVM.DueAt, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Commitment due date" />
+                                        <TextBlock Text="YYYY-MM-DD" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Margin="10,0,0,0" IsHitTestVisible="False">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Text, ElementName=NewFollowUpDueAtInput}" Value="">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Grid>
+                                </StackPanel>
                             </Grid>
-                            <Grid Margin="0,0,0,10">
+                            <Grid Margin="0,0,0,12">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="140" />
                                 </Grid.ColumnDefinitions>
-                                <TextBox Grid.Column="0" Style="{StaticResource ModernTextBox}" Text="{Binding FollowUpsVM.EmailAddress, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,10,0" AutomationProperties.Name="Contact email address" />
-                                <TextBox Grid.Column="1" Style="{StaticResource ModernTextBox}" Text="{Binding FollowUpsVM.PhoneNumber, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,10,0" AutomationProperties.Name="Contact phone number" />
-                                <TextBox Grid.Column="2" Style="{StaticResource ModernTextBox}" Text="{Binding FollowUpsVM.WhatsAppNumber, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,10,0" AutomationProperties.Name="Contact WhatsApp number" />
-                                <ComboBox Grid.Column="3" SelectedValuePath="Content" SelectedValue="{Binding FollowUpsVM.PreferredAction}" Height="32" AutomationProperties.Name="Preferred action">
-                                    <ComboBoxItem Content="email" />
-                                    <ComboBoxItem Content="phone" />
-                                    <ComboBoxItem Content="whatsapp" />
-                                </ComboBox>
+                                <!-- Email Address -->
+                                <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                    <TextBlock Text="Email Address" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4" />
+                                    <Grid>
+                                        <TextBox x:Name="NewFollowUpEmailInput" Style="{StaticResource ModernTextBox}" Text="{Binding FollowUpsVM.EmailAddress, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Contact email address" />
+                                        <TextBlock Text="alex@example.com" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Margin="10,0,0,0" IsHitTestVisible="False">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Text, ElementName=NewFollowUpEmailInput}" Value="">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Grid>
+                                </StackPanel>
+                                <!-- Phone Number -->
+                                <StackPanel Grid.Column="1" Margin="0,0,10,0">
+                                    <TextBlock Text="Phone Number" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4" />
+                                    <Grid>
+                                        <TextBox x:Name="NewFollowUpPhoneInput" Style="{StaticResource ModernTextBox}" Text="{Binding FollowUpsVM.PhoneNumber, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Contact phone number" />
+                                        <TextBlock Text="+1 555 0199" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Margin="10,0,0,0" IsHitTestVisible="False">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Text, ElementName=NewFollowUpPhoneInput}" Value="">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Grid>
+                                </StackPanel>
+                                <!-- WhatsApp Number -->
+                                <StackPanel Grid.Column="2" Margin="0,0,10,0">
+                                    <TextBlock Text="WhatsApp Number" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4" />
+                                    <Grid>
+                                        <TextBox x:Name="NewFollowUpWhatsAppInput" Style="{StaticResource ModernTextBox}" Text="{Binding FollowUpsVM.WhatsAppNumber, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Contact WhatsApp number" />
+                                        <TextBlock Text="+1 555 0199" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Margin="10,0,0,0" IsHitTestVisible="False">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Text, ElementName=NewFollowUpWhatsAppInput}" Value="">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Grid>
+                                </StackPanel>
+                                <!-- Preferred Action -->
+                                <StackPanel Grid.Column="3">
+                                    <TextBlock Text="Preferred Action" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4" />
+                                    <ComboBox SelectedValuePath="Content" SelectedValue="{Binding FollowUpsVM.PreferredAction}" Height="34" AutomationProperties.Name="Preferred action">
+                                        <ComboBoxItem Content="email" />
+                                        <ComboBoxItem Content="phone" />
+                                        <ComboBoxItem Content="whatsapp" />
+                                    </ComboBox>
+                                </StackPanel>
                             </Grid>
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                 <Button Content="Cancel" Style="{StaticResource SecondaryButton}" Command="{Binding FollowUpsVM.ClosePanelsCommand}" Margin="0,0,8,0" AutomationProperties.Name="Cancel follow-up" />
@@ -730,9 +1099,58 @@
                     <!-- Create Note Panel -->
                     <Border Grid.Row="1" Visibility="{Binding NotesVM.IsCreatePanelVisible, Converter={StaticResource BoolToVis}}" Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,16">
                         <StackPanel>
-                            <TextBlock Text="Create New Note" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,10" />
-                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding NotesVM.NewNoteTitle, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10" AutomationProperties.Name="New note title" />
-                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding NotesVM.NewNoteBody, UpdateSourceTrigger=PropertyChanged}" Height="80" AcceptsReturn="True" TextWrapping="Wrap" Margin="0,0,0,12" AutomationProperties.Name="New note body" />
+                            <TextBlock Text="Create New Note" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,12" />
+                            <!-- Note Title -->
+                            <StackPanel Margin="0,0,0,10">
+                                <TextBlock Text="Note Title *" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4" />
+                                <Grid>
+                                    <TextBox x:Name="NewNoteTitleInput" Style="{StaticResource ModernTextBox}" Text="{Binding NotesVM.NewNoteTitle, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="New note title" />
+                                    <TextBlock Text="e.g. Weekly architecture sync" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Margin="10,0,0,0" IsHitTestVisible="False">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Text, ElementName=NewNoteTitleInput}" Value="">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </Grid>
+                            </StackPanel>
+                            <!-- Note Body with Formatting Toolbar -->
+                            <StackPanel Margin="0,0,0,12">
+                                <Grid Margin="0,0,0,4">
+                                    <TextBlock Text="Note Content" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Left" VerticalAlignment="Center" />
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                        <Button Content="B" Tag="bold" CommandParameter="NewNoteBodyInput" Click="OnFormatTextClick" Style="{StaticResource FormatButton}" FontWeight="Bold" ToolTip="Bold" />
+                                        <Button Content="I" Tag="italic" CommandParameter="NewNoteBodyInput" Click="OnFormatTextClick" Style="{StaticResource FormatButton}" FontStyle="Italic" ToolTip="Italic" />
+                                        <Button Content="S" Tag="strikethrough" CommandParameter="NewNoteBodyInput" Click="OnFormatTextClick" Style="{StaticResource FormatButton}" ToolTip="Strikethrough" />
+                                        <Button Content="H1" Tag="h1" CommandParameter="NewNoteBodyInput" Click="OnFormatTextClick" Style="{StaticResource FormatButton}" ToolTip="Heading 1" />
+                                        <Button Content="H2" Tag="h2" CommandParameter="NewNoteBodyInput" Click="OnFormatTextClick" Style="{StaticResource FormatButton}" ToolTip="Heading 2" />
+                                        <Button Content="List" Tag="bullet" CommandParameter="NewNoteBodyInput" Click="OnFormatTextClick" Style="{StaticResource FormatButton}" ToolTip="Bullet list" />
+                                        <Button Content="1. List" Tag="numbered" CommandParameter="NewNoteBodyInput" Click="OnFormatTextClick" Style="{StaticResource FormatButton}" ToolTip="Numbered list" />
+                                        <Button Content="Quote" Tag="quote" CommandParameter="NewNoteBodyInput" Click="OnFormatTextClick" Style="{StaticResource FormatButton}" ToolTip="Quote" />
+                                        <Button Content="Code" Tag="code" CommandParameter="NewNoteBodyInput" Click="OnFormatTextClick" Style="{StaticResource FormatButton}" ToolTip="Code" />
+                                    </StackPanel>
+                                </Grid>
+                                <Grid>
+                                    <TextBox x:Name="NewNoteBodyInput" Style="{StaticResource ModernTextBox}" Text="{Binding NotesVM.NewNoteBody, UpdateSourceTrigger=PropertyChanged}" Height="80" AcceptsReturn="True" TextWrapping="Wrap" AutomationProperties.Name="New note body" />
+                                    <TextBlock Text="Write your thoughts, meeting notes, or ideas" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Top" Margin="10,8,0,0" IsHitTestVisible="False">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Text, ElementName=NewNoteBodyInput}" Value="">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </Grid>
+                            </StackPanel>
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                 <Button Content="Cancel" Style="{StaticResource SecondaryButton}" Command="{Binding NotesVM.CloseCreatePanelCommand}" Margin="0,0,8,0" AutomationProperties.Name="Cancel note creation" />
                                 <Button Content="Save Note" Style="{StaticResource ModernButton}" Command="{Binding NotesVM.CreateNoteCommand}" AutomationProperties.Name="Save new note" />
@@ -787,17 +1205,38 @@
                                 </Grid.RowDefinitions>
 
                                 <!-- Title and Metadata Bar -->
-                                <Grid Grid.Row="0" Margin="0,0,0,10">
+                                <StackPanel Grid.Row="0" Margin="0,0,0,10">
+                                    <TextBlock Text="Note Title" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4" />
                                     <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding NotesVM.SelectedNote.Title, UpdateSourceTrigger=PropertyChanged}" FontSize="16" FontWeight="Bold" AutomationProperties.Name="Selected note title" />
-                                </Grid>
+                                </StackPanel>
 
                                 <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10">
                                     <TextBlock Text="{Binding NotesVM.WordCount, StringFormat='Words: {0}'}" FontSize="11" Foreground="{DynamicResource TextMuted}" Margin="0,0,12,0" />
                                     <TextBlock Text="{Binding NotesVM.ReadingTimeMinutes}" FontSize="11" Foreground="{DynamicResource AccentBlue}" FontWeight="SemiBold" />
                                 </StackPanel>
 
-                                <!-- Body / Reader Mode -->
-                                <TextBox Grid.Row="2" Style="{StaticResource ModernTextBox}" Text="{Binding NotesVM.SelectedNote.Body, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" VerticalContentAlignment="Top" Margin="0,0,0,12" AutomationProperties.Name="Selected note body editor" />
+                                <!-- Body / Reader Mode with Formatting Toolbar -->
+                                <Grid Grid.Row="2" Margin="0,0,0,12">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="*" />
+                                    </Grid.RowDefinitions>
+                                    <Grid Grid.Row="0" Margin="0,0,0,4">
+                                        <TextBlock Text="Note Content" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Left" VerticalAlignment="Center" />
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                            <Button Content="B" Tag="bold" CommandParameter="SelectedNoteBodyInput" Click="OnFormatTextClick" Style="{StaticResource FormatButton}" FontWeight="Bold" ToolTip="Bold" />
+                                            <Button Content="I" Tag="italic" CommandParameter="SelectedNoteBodyInput" Click="OnFormatTextClick" Style="{StaticResource FormatButton}" FontStyle="Italic" ToolTip="Italic" />
+                                            <Button Content="S" Tag="strikethrough" CommandParameter="SelectedNoteBodyInput" Click="OnFormatTextClick" Style="{StaticResource FormatButton}" ToolTip="Strikethrough" />
+                                            <Button Content="H1" Tag="h1" CommandParameter="SelectedNoteBodyInput" Click="OnFormatTextClick" Style="{StaticResource FormatButton}" ToolTip="Heading 1" />
+                                            <Button Content="H2" Tag="h2" CommandParameter="SelectedNoteBodyInput" Click="OnFormatTextClick" Style="{StaticResource FormatButton}" ToolTip="Heading 2" />
+                                            <Button Content="List" Tag="bullet" CommandParameter="SelectedNoteBodyInput" Click="OnFormatTextClick" Style="{StaticResource FormatButton}" ToolTip="Bullet list" />
+                                            <Button Content="1. List" Tag="numbered" CommandParameter="SelectedNoteBodyInput" Click="OnFormatTextClick" Style="{StaticResource FormatButton}" ToolTip="Numbered list" />
+                                            <Button Content="Quote" Tag="quote" CommandParameter="SelectedNoteBodyInput" Click="OnFormatTextClick" Style="{StaticResource FormatButton}" ToolTip="Quote" />
+                                            <Button Content="Code" Tag="code" CommandParameter="SelectedNoteBodyInput" Click="OnFormatTextClick" Style="{StaticResource FormatButton}" ToolTip="Code" />
+                                        </StackPanel>
+                                    </Grid>
+                                    <TextBox Grid.Row="1" x:Name="SelectedNoteBodyInput" Style="{StaticResource ModernTextBox}" Text="{Binding NotesVM.SelectedNote.Body, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" VerticalContentAlignment="Top" AutomationProperties.Name="Selected note body editor" />
+                                </Grid>
 
                                 <!-- Actionable Excerpt Extractor Bar -->
                                 <Border Grid.Row="3" Background="{DynamicResource BgSurfaceElevated}" CornerRadius="6" Padding="12" Margin="0,0,0,12">
@@ -919,17 +1358,70 @@
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Button Command="{Binding DataContext.CalendarVM.SelectDateCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}" Background="Transparent" BorderThickness="0" Padding="4">
-                                        <Border CornerRadius="6" Background="{DynamicResource BgSurfaceElevated}" Padding="8">
+                                    <Button Command="{Binding DataContext.CalendarVM.SelectDateCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}" Background="Transparent" BorderThickness="0" Padding="3">
+                                        <Border x:Name="dayCellBorder"
+                                                CornerRadius="6"
+                                                Background="{DynamicResource BgSurfaceElevated}"
+                                                BorderThickness="2"
+                                                BorderBrush="Transparent"
+                                                Padding="8">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsToday}" Value="True">
+                                                            <Setter Property="BorderBrush" Value="{DynamicResource AccentBlue}" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                            <Setter Property="Background" Value="{DynamicResource BgSurface}" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
                                             <Grid>
                                                 <Grid.RowDefinitions>
                                                     <RowDefinition Height="Auto" />
                                                     <RowDefinition Height="*" />
                                                 </Grid.RowDefinitions>
-                                                <TextBlock Grid.Row="0" Text="{Binding DayNumber}" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
-                                                <Border Grid.Row="1" Visibility="{Binding ItemCount, Converter={StaticResource BoolToVis}}" Background="{DynamicResource AccentBlue}" CornerRadius="4" Padding="4,1" Margin="0,4,0,0" HorizontalAlignment="Left">
-                                                    <TextBlock Text="{Binding ItemCount, StringFormat='{}{0} due'}" FontSize="10" Foreground="White" />
-                                                </Border>
+                                                <!-- Day Number and Today Badge Header -->
+                                                <Grid Grid.Row="0">
+                                                    <TextBlock Text="{Binding DayNumber}" FontSize="12" FontWeight="Bold">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsCurrentMonth}" Value="False">
+                                                                        <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                    <Border Visibility="{Binding IsToday, Converter={StaticResource BoolToVis}}"
+                                                            Background="{DynamicResource AccentBlue}"
+                                                            CornerRadius="3"
+                                                            Padding="4,1"
+                                                            HorizontalAlignment="Right">
+                                                        <TextBlock Text="Today" FontSize="9" FontWeight="Bold" Foreground="White" />
+                                                    </Border>
+                                                </Grid>
+                                                <!-- Dual Task and Follow-up Badges -->
+                                                <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,4,0,0">
+                                                    <!-- Tasks Due Badge (Blue) -->
+                                                    <Border Visibility="{Binding HasTasks, Converter={StaticResource BoolToVis}}"
+                                                            Background="{DynamicResource AccentBlue}"
+                                                            CornerRadius="4"
+                                                            Padding="4,1"
+                                                            Margin="0,0,4,0">
+                                                        <TextBlock Text="{Binding TaskCount, StringFormat='{}{0} task'}" FontSize="10" Foreground="White" FontWeight="SemiBold" />
+                                                    </Border>
+                                                    <!-- Follow-ups Due Badge (Amber) -->
+                                                    <Border Visibility="{Binding HasFollowUps, Converter={StaticResource BoolToVis}}"
+                                                            Background="{DynamicResource AccentAmber}"
+                                                            CornerRadius="4"
+                                                            Padding="4,1">
+                                                        <TextBlock Text="{Binding FollowUpCount, StringFormat='{}{0} follow-up'}" FontSize="10" Foreground="Black" FontWeight="Bold" />
+                                                    </Border>
+                                                </StackPanel>
                                             </Grid>
                                         </Border>
                                     </Button>
