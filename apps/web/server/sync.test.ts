@@ -298,5 +298,125 @@ describe("Synchronization and Conflict Engine (server/sync.ts)", () => {
       expect(result.nextCursor).toBe(9); // Max revision across returned items is 9
       expect(result.hasMore).toBe(false);
     });
+
+    it("rejects put mutation when active tombstone exists, preventing entity resurrection", async () => {
+      vi.spyOn(dbClient, "executeQuery").mockImplementation(async (query: string) => {
+        if (query.includes("FROM sync_mutation_receipts")) {
+          return mockQueryResult([]);
+        }
+        if (query.includes("FROM tasks WHERE id = $1")) {
+          return mockQueryResult([]); // Not in active tasks table
+        }
+        if (query.includes("FROM tombstones WHERE account_id = $1 AND id = $2")) {
+          return mockQueryResult([
+            {
+              revision: "6",
+              deleted_at: "2026-05-02T12:00:00.000Z",
+            },
+          ]);
+        }
+        return mockQueryResult([]);
+      });
+
+      const result = await processSyncBatch("acc_test", {
+        mutations: [
+          {
+            mutationId: "mut_resurrect_1",
+            entityType: "task",
+            entityId: "tsk_dead_1",
+            action: "put",
+            baseRevision: 2,
+            payload: {
+              title: "Zombie Task",
+            },
+          },
+        ],
+      });
+
+      expect(result.receipts).toHaveLength(1);
+      expect(result.receipts[0].status).toBe("conflict");
+      expect(result.receipts[0].conflictDetails).toBeDefined();
+      expect(result.receipts[0].conflictDetails?.serverRevision).toBe(6);
+      expect(result.receipts[0].conflictDetails?.message).toContain("tombstone");
+      expect(result.receipts[0].conflictDetails?.currentServerEntity).toBeNull();
+    });
+
+    it("verifies multi-device convergence with concurrent updates and receipts", async () => {
+      // Device A applies a valid task mutation
+      // Device B tries to update same task with stale base revision
+      vi.spyOn(dbClient, "executeQuery").mockImplementation(async (query: string, params?: unknown[]) => {
+        if (query.includes("FROM sync_mutation_receipts")) {
+          return mockQueryResult([]);
+        }
+        if (query.includes("FROM tasks WHERE id = $1")) {
+          const id = params?.[0];
+          if (id === "tsk_device_a") {
+            return mockQueryResult([
+              {
+                id: "tsk_device_a",
+                title: "Server Current Title",
+                revision: "4",
+              },
+            ]);
+          }
+        }
+        if (query.includes("INSERT INTO sync_revisions")) {
+          return mockQueryResult([{ current_cursor: "5" }]);
+        }
+        return mockQueryResult([], 1);
+      });
+
+      // Device A sends valid baseRevision 4, Device B sends stale baseRevision 2
+      const result = await processSyncBatch("acc_test", {
+        mutations: [
+          {
+            mutationId: "mut_dev_a_1",
+            entityType: "task",
+            entityId: "tsk_device_a",
+            action: "put",
+            baseRevision: 4,
+            payload: { title: "Device A Fresh Update" },
+          },
+          {
+            mutationId: "mut_dev_b_1",
+            entityType: "task",
+            entityId: "tsk_device_a",
+            action: "put",
+            baseRevision: 2,
+            payload: { title: "Device B Stale Overwrite" },
+          },
+        ],
+      });
+
+      expect(result.receipts).toHaveLength(2);
+      expect(result.receipts[0].status).toBe("applied");
+      expect(result.receipts[0].appliedRevision).toBe(5);
+
+      expect(result.receipts[1].status).toBe("conflict");
+      expect(result.receipts[1].conflictDetails?.serverRevision).toBeGreaterThanOrEqual(4);
+    });
+
+    it("correctly signals hasMore when result set reaches limit", async () => {
+      vi.spyOn(dbClient, "executeQuery").mockImplementation(async (query: string) => {
+        if (query.includes("FROM tasks") && query.includes("revision > $2")) {
+          // Return 3 tasks when limit is 2 (query fetches limit + 1)
+          return mockQueryResult([
+            { id: "t1", title: "Task 1", revision: 10 },
+            { id: "t2", title: "Task 2", revision: 11 },
+            { id: "t3", title: "Task 3", revision: 12 },
+          ]);
+        }
+        return mockQueryResult([]);
+      });
+
+      const result = await processSyncBatch("acc_test", {
+        cursor: 0,
+        limit: 2,
+      });
+
+      expect(result.changes.tasks).toHaveLength(2);
+      expect(result.hasMore).toBe(true);
+      expect(result.nextCursor).toBe(11);
+    });
   });
 });

@@ -1,0 +1,116 @@
+{
+  "testCases": [
+    {
+      "id": "calendar_daily_interval_1",
+      "description": "Daily recurrence with interval 1 at 09:00",
+      "rule": {
+        "mode": "calendarAnchored",
+        "frequency": "daily",
+        "interval": 1,
+        "localTime": "09:00",
+        "timeOfDay": "09:00",
+        "timeZone": "UTC"
+      },
+      "baseDate": "2026-06-15T09:00:00.000Z",
+      "expectedNext": "2026-06-16T09:00:00.000Z"
+    },
+    {
+      "id": "calendar_daily_interval_3",
+      "description": "Daily recurrence with interval 3 at 14:30",
+      "rule": {
+        "mode": "calendarAnchored",
+        "frequency": "daily",
+        "interval": 3,
+        "localTime": "14:30",
+        "timeOfDay": "14:30",
+        "timeZone": "UTC"
+      },
+      "baseDate": "2026-06-15T14:30:00.000Z",
+      "expectedNext": "2026-06-18T14:30:00.000Z"
+    },
+    {
+      "id": "calendar_weekly_single_weekday",
+      "description": "Weekly recurrence on Friday (day 5) at 10:00",
+      "rule": {
+        "mode": "calendarAnchored",
+        "frequency": "weekly",
+        "interval": 1,
+        "weekdays": [5],
+        "localTime": "10:00",
+        "timeOfDay": "10:00",
+        "timeZone": "UTC"
+      },
+      "baseDate": "2026-06-12T10:00:00.000Z",
+      "expectedNext": "2026-06-19T10:00:00.000Z"
+    },
+    {
+      "id": "calendar_weekly_multiple_weekdays",
+      "description": "Weekly recurrence on Monday (1) and Thursday (4)",
+      "rule": {
+        "mode": "calendarAnchored",
+        "frequency": "weekly",
+        "interval": 1,
+        "weekdays": [1, 4],
+        "localTime": "09:00",
+        "timeOfDay": "09:00",
+        "timeZone": "UTC"
+      },
+      "baseDate": "2026-06-15T09:00:00.000Z",
+      "expectedNext": "2026-06-18T09:00:00.000Z"
+    },
+    {
+      "id": "calendar_monthly_clamp_february_non_leap",
+      "description": "Monthly on day 31 clamped to Feb 28 in non-leap year 2026",
+      "rule": {
+        "mode": "calendarAnchored",
+        "frequency": "monthly",
+        "interval": 1,
+        "monthDay": 31,
+        "localTime": "09:00",
+        "timeOfDay": "09:00",
+        "timeZone": "UTC"
+      },
+      "baseDate": "2026-01-31T09:00:00.000Z",
+      "expectedNext": "2026-02-28T09:00:00.000Z"
+    },
+    {
+      "id": "calendar_monthly_clamp_february_leap_year",
+      "description": "Monthly on day 31 clamped to Feb 29 in leap year 2028",
+      "rule": {
+        "mode": "calendarAnchored",
+        "frequency": "monthly",
+        "interval": 1,
+        "monthDay": 31,
+        "localTime": "09:00",
+        "timeOfDay": "09:00",
+        "timeZone": "UTC"
+      },
+      "baseDate": "2028-01-31T09:00:00.000Z",
+      "expectedNext": "2028-02-29T09:00:00.000Z"
+    },
+    {
+      "id": "completion_relative_daily",
+      "description": "Completion-relative 2 days after completion",
+      "rule": {
+        "mode": "completionRelative",
+        "frequency": "daily",
+        "interval": 2,
+        "timeZone": "UTC"
+      },
+      "baseDate": "2026-04-10T11:15:00.000Z",
+      "expectedNext": "2026-04-12T11:15:00.000Z"
+    },
+    {
+      "id": "completion_relative_weekly",
+      "description": "Completion-relative 1 week after completion",
+      "rule": {
+        "mode": "completionRelative",
+        "frequency": "weekly",
+        "interval": 1,
+        "timeZone": "UTC"
+      },
+      "baseDate": "2026-04-10T11:15:00.000Z",
+      "expectedNext": "2026-04-17T11:15:00.000Z"
+    }
+  ]
+}

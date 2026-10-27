@@ -122,4 +122,64 @@ public class RecurrenceEngineTests
     {
         Assert.Throws<ArgumentException>(() => RecurrenceEngine.Reschedule("not-a-timestamp"));
     }
+
+    [Fact]
+    public void ComputeNextDueAt_SatisfiesSharedCrossPlatformRecurrenceFixtures()
+    {
+        string? fixturePath = null;
+        var directCandidate = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "fixtures", "recurrence.json");
+        if (System.IO.File.Exists(directCandidate))
+        {
+            fixturePath = directCandidate;
+        }
+        else
+        {
+            string? current = AppContext.BaseDirectory;
+            for (int i = 0; i < 12 && current != null; i++)
+            {
+                var candidate = System.IO.Path.Combine(current, "fixtures", "recurrence.json");
+                if (System.IO.File.Exists(candidate))
+                {
+                    fixturePath = candidate;
+                    break;
+                }
+                current = System.IO.Directory.GetParent(current)?.FullName;
+            }
+        }
+
+        Assert.NotNull(fixturePath);
+        string json = System.IO.File.ReadAllText(fixturePath!);
+        using var doc = System.Text.Json.JsonDocument.Parse(json);
+        var testCases = doc.RootElement.GetProperty("testCases");
+
+        foreach (var tc in testCases.EnumerateArray())
+        {
+            var ruleElement = tc.GetProperty("rule");
+            var rule = new RecurrenceRule
+            {
+                Mode = ruleElement.GetProperty("mode").GetString() ?? "calendarAnchored",
+                Frequency = ruleElement.GetProperty("frequency").GetString() ?? "daily",
+                Interval = ruleElement.GetProperty("interval").GetInt32(),
+                LocalTime = ruleElement.TryGetProperty("localTime", out var lt) ? lt.GetString() : null,
+                MonthDay = ruleElement.TryGetProperty("monthDay", out var md) ? md.GetInt32() : null,
+            };
+
+            if (ruleElement.TryGetProperty("weekdays", out var wd))
+            {
+                rule.Weekdays = new List<int>();
+                foreach (var day in wd.EnumerateArray())
+                {
+                    rule.Weekdays.Add(day.GetInt32());
+                }
+            }
+
+            var baseDate = DateTimeOffset.Parse(tc.GetProperty("baseDate").GetString()!);
+            var expectedNext = DateTimeOffset.Parse(tc.GetProperty("expectedNext").GetString()!);
+
+            var actualStr = RecurrenceEngine.ComputeNextDueAt(rule, baseDate);
+            var actual = DateTimeOffset.Parse(actualStr);
+
+            Assert.Equal(expectedNext, actual);
+        }
+    }
 }

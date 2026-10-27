@@ -138,4 +138,30 @@ describe("Recurrence Engine", () => {
       expect(isFollowUpOverdue("2026-10-15T00:00:00.000Z", "archived", fixedNow)).toBe(false);
     });
   });
+
+  describe("Shared Cross-Platform Fixtures", () => {
+    it("satisfies all shared recurrence fixture test cases", async () => {
+      const fs = await import("node:fs");
+      const path = await import("node:path");
+      const candidates = [
+        path.resolve(process.cwd(), "../../fixtures/recurrence.json"),
+        path.resolve(process.cwd(), "fixtures/recurrence.json"),
+        path.resolve(process.cwd(), "../fixtures/recurrence.json"),
+      ];
+      const fixturePath = candidates.find((p) => fs.existsSync(p));
+      expect(fixturePath).toBeDefined();
+
+      const raw = fs.readFileSync(fixturePath!, "utf8");
+      const { testCases } = JSON.parse(raw);
+
+      for (const tc of testCases) {
+        const next = calculateNextOccurrence(
+          tc.rule,
+          tc.baseDate,
+          tc.rule.mode === "completionRelative" ? tc.baseDate : undefined
+        );
+        expect(next).toBe(tc.expectedNext);
+      }
+    });
+  });
 });

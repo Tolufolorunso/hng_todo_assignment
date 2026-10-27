@@ -73,4 +73,27 @@ describe("NotificationScheduler", () => {
     const granted = await scheduler.requestPermission();
     expect(granted).toBe(true);
   });
+
+  it("falls back gracefully when permissions are denied and still records schedule", async () => {
+    const deniedScheduler = new NotificationScheduler();
+    const notif = await deniedScheduler.scheduleFollowUpReminder(sampleFollowUp);
+    expect(notif.id).toBe("notif_fu_fu_123");
+    expect(notif.title).toContain("Alice Walker");
+
+    const pending = await deniedScheduler.listPending();
+    expect(pending).toHaveLength(1);
+  });
+
+  it("catches up overdue notifications when resumed after due time", async () => {
+    const pastFollowUp: FollowUp = {
+      ...sampleFollowUp,
+      id: "fu_past",
+      dueAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(), // 30 minutes ago
+    };
+
+    await scheduler.scheduleFollowUpReminder(pastFollowUp, 0);
+    const overdue = await scheduler.listOverdue();
+    expect(overdue.length).toBeGreaterThanOrEqual(1);
+    expect(overdue.find((n) => n.targetId === "fu_past")).toBeDefined();
+  });
 });

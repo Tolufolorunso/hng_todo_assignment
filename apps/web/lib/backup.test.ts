@@ -689,4 +689,65 @@ describe("backup and restore logic", () => {
       expect(restored).toEqual(sampleCapture);
     });
   });
+
+  describe("Cross-Platform Backup Fixtures", () => {
+    it("imports valid v1 and v2 cross-platform backup fixtures", async () => {
+      const fs = await import("node:fs");
+      const path = await import("node:path");
+
+      const resolveFixture = (rel: string) => {
+        const candidates = [
+          path.resolve(process.cwd(), "../../fixtures", rel),
+          path.resolve(process.cwd(), "fixtures", rel),
+          path.resolve(process.cwd(), "../fixtures", rel),
+        ];
+        const match = candidates.find((p) => fs.existsSync(p));
+        expect(match).toBeDefined();
+        return match!;
+      };
+
+      // Test v1 valid
+      const v1Raw = fs.readFileSync(resolveFixture("backups/v1-valid.json"), "utf8");
+      const v1Result = parseAndValidateBackup(v1Raw);
+      expect(v1Result.ok).toBe(true);
+      if (v1Result.ok) {
+        const restoreV1 = await restoreDatabaseBackup(v1Result.value, "replace");
+        expect(restoreV1.tasksCount).toBe(2);
+        expect(restoreV1.notesCount).toBe(1);
+      }
+
+      const v2Raw = fs.readFileSync(resolveFixture("backups/v2-valid.json"), "utf8");
+      const v2Result = parseAndValidateBackup(v2Raw);
+      expect(v2Result.ok).toBe(true);
+      if (v2Result.ok) {
+        const restoreV2 = await restoreDatabaseBackup(v2Result.value, "replace");
+        expect(restoreV2.tasksCount).toBe(1);
+        expect(restoreV2.notesCount).toBe(1);
+        expect(restoreV2.followupsCount).toBe(1);
+        expect(restoreV2.plansCount).toBe(1);
+        expect(restoreV2.capturesCount).toBe(1);
+      }
+    });
+
+    it("cleanly rejects corrupted backup fixtures", async () => {
+      const fs = await import("node:fs");
+      const path = await import("node:path");
+
+      const resolveFixture = (rel: string) => {
+        const candidates = [
+          path.resolve(process.cwd(), "../../fixtures", rel),
+          path.resolve(process.cwd(), "fixtures", rel),
+          path.resolve(process.cwd(), "../fixtures", rel),
+        ];
+        return candidates.find((p) => fs.existsSync(p))!;
+      };
+
+      const corruptedRaw = fs.readFileSync(resolveFixture("backups/v2-corrupted.json"), "utf8");
+      const result = parseAndValidateBackup(corruptedRaw);
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error).toBeTruthy();
+      }
+    });
+  });
 });

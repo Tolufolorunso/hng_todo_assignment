@@ -70,4 +70,26 @@ describe("Mobile Recurrence Engine", () => {
     expect(valid).toBe("2026-11-01T15:00:00.000Z");
     expect(() => rescheduleFollowUp("not-a-date")).toThrow("Invalid reschedule timestamp");
   });
+
+  describe("Shared Cross-Platform Fixtures", () => {
+    it("satisfies all shared recurrence fixture test cases", async () => {
+      const fs = await import("node:fs");
+      const path = await import("node:path");
+      const candidates = [
+        path.resolve(process.cwd(), "../../fixtures/recurrence.json"),
+        path.resolve(process.cwd(), "fixtures/recurrence.json"),
+        path.resolve(process.cwd(), "../fixtures/recurrence.json"),
+      ];
+      const fixturePath = candidates.find((p) => fs.existsSync(p));
+      expect(fixturePath).toBeDefined();
+
+      const raw = fs.readFileSync(fixturePath!, "utf8");
+      const { testCases } = JSON.parse(raw);
+
+      for (const tc of testCases) {
+        const next = computeNextDueAt(tc.rule, new Date(tc.baseDate));
+        expect(next).toBe(tc.expectedNext);
+      }
+    });
+  });
 });

@@ -50,8 +50,21 @@ export class BackupService {
       throw new Error("Invalid backup: payload must be an object");
     }
 
-    const tasksRaw = Array.isArray(payload.tasks) ? payload.tasks : [];
-    const notesRaw = Array.isArray(payload.notes) ? payload.notes : [];
+    const dataObj =
+      payload.data && typeof payload.data === "object"
+        ? (payload.data as Record<string, unknown>)
+        : payload;
+
+    const tasksRaw = Array.isArray(dataObj.tasks)
+      ? dataObj.tasks
+      : Array.isArray(payload.tasks)
+        ? payload.tasks
+        : [];
+    const notesRaw = Array.isArray(dataObj.notes)
+      ? dataObj.notes
+      : Array.isArray(payload.notes)
+        ? payload.notes
+        : [];
 
     // Validate all tasks
     const validTasks: Task[] = [];

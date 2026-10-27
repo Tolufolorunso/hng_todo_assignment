@@ -110,4 +110,49 @@ describe("Mobile BackupService", () => {
       "Invalid backup: no valid tasks or notes found in snapshot"
     );
   });
+
+  describe("Cross-Platform Backup Fixtures", () => {
+    it("imports valid v1 and v2 cross-platform backup fixtures", async () => {
+      const fs = await import("node:fs");
+      const path = await import("node:path");
+
+      const resolveFixture = (rel: string) => {
+        const candidates = [
+          path.resolve(process.cwd(), "../../fixtures", rel),
+          path.resolve(process.cwd(), "fixtures", rel),
+          path.resolve(process.cwd(), "../fixtures", rel),
+        ];
+        const match = candidates.find((p) => fs.existsSync(p));
+        expect(match).toBeDefined();
+        return match!;
+      };
+
+      const v1Raw = fs.readFileSync(resolveFixture("backups/v1-valid.json"), "utf8");
+      const v1Result = await backupService.importSnapshot(v1Raw, "replace");
+      expect(v1Result.tasksImported).toBe(2);
+      expect(v1Result.notesImported).toBe(1);
+
+      const v2Raw = fs.readFileSync(resolveFixture("backups/v2-valid.json"), "utf8");
+      const v2Result = await backupService.importSnapshot(v2Raw, "replace");
+      expect(v2Result.tasksImported).toBe(1);
+      expect(v2Result.notesImported).toBe(1);
+    });
+
+    it("rejects corrupted backup fixtures", async () => {
+      const fs = await import("node:fs");
+      const path = await import("node:path");
+
+      const resolveFixture = (rel: string) => {
+        const candidates = [
+          path.resolve(process.cwd(), "../../fixtures", rel),
+          path.resolve(process.cwd(), "fixtures", rel),
+          path.resolve(process.cwd(), "../fixtures", rel),
+        ];
+        return candidates.find((p) => fs.existsSync(p))!;
+      };
+
+      const corruptedRaw = fs.readFileSync(resolveFixture("backups/v2-corrupted.json"), "utf8");
+      await expect(backupService.importSnapshot(corruptedRaw)).rejects.toThrow();
+    });
+  });
 });

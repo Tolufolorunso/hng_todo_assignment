@@ -1,0 +1,119 @@
+{
+  "version": 2,
+  "app": "TaskFlow",
+  "exportedAt": "2026-05-02T14:00:00.000Z",
+  "workspaceId": "ws_portable_001",
+  "metadata": {
+    "format": "taskflow-backup-v2",
+    "exportedFrom": "web",
+    "schemaVersion": 3
+  },
+  "data": {
+    "tasks": [
+      {
+        "id": "t_v2_001",
+        "title": "Review Multi-Device Convergence",
+        "description": "<p>Verify outbox mutations and conflict resolution.</p>",
+        "completed": false,
+        "priority": "high",
+        "dueDate": "2026-07-01",
+        "category": "work",
+        "estimatedMinutes": 60,
+        "sourceNoteId": "n_v2_001",
+        "sourceExcerpt": "Verify outbox mutations and conflict resolution.",
+        "createdAt": "2026-05-02T10:00:00.000Z",
+        "updatedAt": "2026-05-02T10:00:00.000Z"
+      }
+    ],
+    "notes": [
+      {
+        "id": "n_v2_001",
+        "title": "Portability Specification",
+        "body": "<h2>Portable Data</h2><p>Cross-platform backup imports must preserve all fields.</p>",
+        "createdAt": "2026-05-02T09:00:00.000Z",
+        "updatedAt": "2026-05-02T09:00:00.000Z"
+      }
+    ],
+    "followups": [
+      {
+        "id": "fu_v2_001",
+        "personName": "Alex Chen",
+        "commitment": "Send quarterly productivity report",
+        "details": "Include analytics breakdown",
+        "dueAt": "2026-05-10T10:00:00.000Z",
+        "timeZone": "UTC",
+        "emailAddress": "alex@example.com",
+        "phoneNumber": "+15550199",
+        "whatsAppNumber": "+15550199",
+        "preferredAction": "email",
+        "recurrence": {
+          "mode": "calendarAnchored",
+          "frequency": "weekly",
+          "interval": 1,
+          "weekdays": [1],
+          "localTime": "10:00"
+        },
+        "status": "open",
+        "sourceNoteId": "n_v2_001",
+        "sourceExcerpt": "Send quarterly productivity report",
+        "createdAt": "2026-05-02T09:30:00.000Z",
+        "updatedAt": "2026-05-02T09:30:00.000Z"
+      }
+    ],
+    "followupOccurrences": [
+      {
+        "id": "occ_v2_001",
+        "followUpId": "fu_v2_001",
+        "dueAt": "2026-05-10T10:00:00.000Z",
+        "outcome": "unresolved",
+        "resolvedAt": null,
+        "nextDueAt": null
+      }
+    ],
+    "dailyPlans": [
+      {
+        "id": "plan_v2_001",
+        "date": "2026-05-02",
+        "localDate": "2026-05-02",
+        "timeZone": "UTC",
+        "availableMinutes": 240,
+        "items": [
+          {
+            "id": "pitem_001",
+            "type": "task",
+            "entityType": "task",
+            "targetId": "t_v2_001",
+            "entityId": "t_v2_001",
+            "title": "Review Multi-Device Convergence",
+            "estimatedMinutes": 60,
+            "allocatedMinutes": 60,
+            "order": 1,
+            "completed": false
+          }
+        ],
+        "acceptedAt": "2026-05-02T08:00:00.000Z",
+        "createdAt": "2026-05-02T08:00:00.000Z",
+        "updatedAt": "2026-05-02T08:00:00.000Z"
+      }
+    ],
+    "inboxCaptures": [
+      {
+        "id": "inbox_v2_001",
+        "text": "Check out https://taskflow.dev for release updates",
+        "sharedUrl": "https://taskflow.dev",
+        "sourceAppLabel": "Browser",
+        "capturedAt": "2026-05-02T07:30:00.000Z",
+        "state": "pending",
+        "resultEntityType": null,
+        "resultEntityId": null,
+        "processedAt": null
+      }
+    ],
+    "taskOrders": [
+      {
+        "id": "default",
+        "orderedIds": ["t_v2_001"]
+      }
+    ]
+  }
+}

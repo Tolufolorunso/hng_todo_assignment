@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { POST as postSyncHandler } from "@/app/api/v1/sync/route";
 import { createAccessToken } from "@/server/auth";
+import { resetRateLimits } from "@/server/rate-limit";
 import * as authModule from "@/server/auth";
 import * as dbClient from "@/server/db/client";
 import * as syncModule from "@/server/sync";
@@ -19,6 +20,7 @@ describe("Sync Route Handler (POST /api/v1/sync)", () => {
 
   beforeEach(() => {
     vi.restoreAllMocks();
+    resetRateLimits();
   });
 
   it("returns 401 Unauthorized when no Bearer token is provided", async () => {
@@ -229,5 +231,52 @@ describe("Sync Route Handler (POST /api/v1/sync)", () => {
     expect(json.receipts).toHaveLength(1);
     expect(json.receipts[0].status).toBe("applied");
     expect(json.nextCursor).toBe(10);
+  });
+
+  it("returns 429 Too Many Requests when sync request rate limit is exceeded", async () => {
+    vi.spyOn(authModule, "authenticateRequest").mockResolvedValue({
+      sub: "acc_sync_routes_test",
+      sid: "ses_sync_routes_test",
+      email: "sync.routes@example.com",
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + 3600,
+    });
+    vi.spyOn(dbClient, "isDatabaseConfigured").mockReturnValue(true);
+    vi.spyOn(syncModule, "processSyncBatch").mockResolvedValue({
+      protocolVersion: 1,
+      receipts: [],
+      changes: {
+        tasks: [],
+        notes: [],
+        followups: [],
+        occurrences: [],
+        plans: [],
+        inbox: [],
+        taskOrder: null,
+        tombstones: [],
+      },
+      nextCursor: 0,
+      hasMore: false,
+      serverTime: "2026-10-25T18:00:00.000Z",
+    });
+
+    const makeReq = () =>
+      new Request("http://localhost:3000/api/v1/sync", {
+        method: "POST",
+        body: JSON.stringify({ mutations: [] }),
+        headers: authHeaders,
+      });
+
+    // Rate limit defaults to 120 per minute
+    for (let i = 0; i < 120; i++) {
+      const res = await postSyncHandler(makeReq());
+      expect(res.status).toBe(200);
+    }
+
+    const rateLimitedRes = await postSyncHandler(makeReq());
+    expect(rateLimitedRes.status).toBe(429);
+    expect(rateLimitedRes.headers.get("Retry-After")).toBeDefined();
+    const json = await rateLimitedRes.json();
+    expect(json.error.code).toBe("RATE_LIMITED");
   });
 });

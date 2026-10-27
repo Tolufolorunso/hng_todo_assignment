@@ -7,7 +7,8 @@ export interface RecurrenceRule {
   interval: number;
   weekdays?: number[];
   monthDay?: number;
-  timeOfDay: string;
+  timeOfDay?: string;
+  localTime?: string;
   timeZone: string;
   endDate?: string | null;
 }

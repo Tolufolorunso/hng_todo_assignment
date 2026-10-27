@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "app": "TaskFlow",
+  "exportedAt": "2026-05-01T12:00:00.000Z",
+  "data": {
+    "tasks": [
+      {
+        "id": "t_v1_001",
+        "title": "Complete Milestone N Hardening",
+        "description": "<p>Verify cross-platform compatibility.</p>",
+        "completed": false,
+        "priority": "high",
+        "dueDate": "2026-06-01",
+        "category": "work",
+        "createdAt": "2026-05-01T10:00:00.000Z",
+        "updatedAt": "2026-05-01T10:00:00.000Z"
+      },
+      {
+        "id": "t_v1_002",
+        "title": "Document Operations Playbook",
+        "description": "Standardize health checks and rollback procedures.",
+        "completed": true,
+        "completedAt": "2026-05-01T11:00:00.000Z",
+        "priority": "medium",
+        "dueDate": "2026-05-01",
+        "category": "study",
+        "createdAt": "2026-05-01T09:00:00.000Z",
+        "updatedAt": "2026-05-01T11:00:00.000Z"
+      }
+    ],
+    "notes": [
+      {
+        "id": "n_v1_001",
+        "title": "Architecture Overview",
+        "body": "<h1>TaskFlow Monorepo</h1><p>Three independent applications connected via HTTP API v1.</p>",
+        "createdAt": "2026-05-01T08:00:00.000Z",
+        "updatedAt": "2026-05-01T08:00:00.000Z"
+      }
+    ]
+  }
+}

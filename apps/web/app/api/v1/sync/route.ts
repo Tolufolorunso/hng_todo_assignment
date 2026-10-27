@@ -1,6 +1,7 @@
 import { apiError, apiSuccess } from "@/server/errors";
 import { authenticateRequest } from "@/server/auth";
 import { isDatabaseConfigured } from "@/server/db/client";
+import { checkRateLimit, getRateLimitHeaders } from "@/server/rate-limit";
 import { parseJsonBody, validateEnum, validateString } from "@/server/validation";
 import {
   processSyncBatch,
@@ -36,6 +37,24 @@ export async function POST(request: Request): Promise<Response> {
     return apiError("UNAUTHORIZED", "Authentication required. Please provide a valid Bearer token.", {
       headers: RESPONSE_HEADERS,
     });
+  }
+
+  const rateLimit = checkRateLimit(`sync:${auth.sub}`, {
+    max: Number(process.env.SYNC_RATE_LIMIT_MAX ?? 120),
+    windowSeconds: 60,
+  });
+
+  const rateHeaders = {
+    ...RESPONSE_HEADERS,
+    ...getRateLimitHeaders(rateLimit),
+  };
+
+  if (!rateLimit.allowed) {
+    return apiError(
+      "RATE_LIMITED",
+      "Too many synchronization requests. Please try again later.",
+      { headers: rateHeaders }
+    );
   }
 
   const parsed = await parseJsonBody<{

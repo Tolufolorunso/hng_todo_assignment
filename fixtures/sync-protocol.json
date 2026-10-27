@@ -1,0 +1,76 @@
+{
+  "protocolVersion": 1,
+  "mutations": [
+    {
+      "mutationId": "mut_task_001",
+      "protocolVersion": 1,
+      "entityType": "tasks",
+      "entityId": "task_fixture_001",
+      "action": "put",
+      "baseRevision": null,
+      "payload": {
+        "id": "task_fixture_001",
+        "title": "Cross-Platform Hardened Task",
+        "description": "<p>Verified across Web, Mobile, and Windows.</p>",
+        "completed": false,
+        "priority": "high",
+        "dueDate": "2026-06-30",
+        "category": "work",
+        "estimatedMinutes": 45,
+        "createdAt": "2026-05-01T10:00:00.000Z",
+        "updatedAt": "2026-05-01T10:00:00.000Z"
+      }
+    },
+    {
+      "mutationId": "mut_note_001",
+      "protocolVersion": 1,
+      "entityType": "notes",
+      "entityId": "note_fixture_001",
+      "action": "put",
+      "baseRevision": null,
+      "payload": {
+        "id": "note_fixture_001",
+        "title": "Cross-Platform Specifications",
+        "body": "<h1>Operational Runbook</h1><p>Zero cross-app runtime imports.</p>",
+        "createdAt": "2026-05-01T10:00:00.000Z",
+        "updatedAt": "2026-05-01T10:00:00.000Z"
+      }
+    },
+    {
+      "mutationId": "mut_delete_001",
+      "protocolVersion": 1,
+      "entityType": "tasks",
+      "entityId": "task_fixture_002",
+      "action": "delete",
+      "baseRevision": 2
+    }
+  ],
+  "expectedReceipts": [
+    {
+      "mutationId": "mut_task_001",
+      "status": "applied",
+      "revision": 1
+    },
+    {
+      "mutationId": "mut_task_001",
+      "status": "duplicate",
+      "revision": 1
+    },
+    {
+      "mutationId": "mut_stale_001",
+      "status": "conflict",
+      "serverRevision": 3
+    },
+    {
+      "mutationId": "mut_invalid_001",
+      "status": "invalid",
+      "error": "Payload validation failed"
+    }
+  ],
+  "tombstoneVector": {
+    "entityType": "tasks",
+    "entityId": "task_fixture_002",
+    "deletedAt": "2026-05-02T12:00:00.000Z",
+    "tombstonePreventsResurrection": true
+  }
+}

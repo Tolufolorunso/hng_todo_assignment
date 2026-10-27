@@ -232,4 +232,50 @@ public class BackupServiceTests : IDisposable
             await _backupService.ImportJsonAsync(emptyPayload);
         });
     }
+
+    [Fact]
+    public async Task ImportJsonAsync_SatisfiesSharedCrossPlatformBackupFixtures()
+    {
+        string? current = AppContext.BaseDirectory;
+        string? root = null;
+        for (int i = 0; i < 12 && current != null; i++)
+        {
+            var candidate = System.IO.Path.Combine(current, "fixtures", "backups", "v1-valid.json");
+            if (System.IO.File.Exists(candidate))
+            {
+                root = current;
+                break;
+            }
+            current = System.IO.Directory.GetParent(current)?.FullName;
+        }
+
+        if (root == null && System.IO.Directory.Exists("fixtures"))
+        {
+            root = System.IO.Directory.GetCurrentDirectory();
+        }
+
+        Assert.NotNull(root);
+
+        // 1. Valid v1
+        string v1Path = System.IO.Path.Combine(root!, "fixtures", "backups", "v1-valid.json");
+        string v1Json = System.IO.File.ReadAllText(v1Path);
+        var v1Result = await _backupService.ImportJsonAsync(v1Json, "replace");
+        Assert.Equal(2, v1Result.TasksImported);
+        Assert.Equal(1, v1Result.NotesImported);
+
+        // 2. Valid v2
+        string v2Path = System.IO.Path.Combine(root!, "fixtures", "backups", "v2-valid.json");
+        string v2Json = System.IO.File.ReadAllText(v2Path);
+        var v2Result = await _backupService.ImportJsonAsync(v2Json, "replace");
+        Assert.Equal(1, v2Result.TasksImported);
+        Assert.Equal(1, v2Result.NotesImported);
+
+        // 3. Corrupted v2
+        string corruptedPath = System.IO.Path.Combine(root!, "fixtures", "backups", "v2-corrupted.json");
+        string corruptedJson = System.IO.File.ReadAllText(corruptedPath);
+        await Assert.ThrowsAnyAsync<Exception>(async () =>
+        {
+            await _backupService.ImportJsonAsync(corruptedJson, "replace");
+        });
+    }
 }

@@ -92,11 +92,16 @@ export function isValidTask(item: unknown): item is Task {
     return false;
   }
 
-  if (candidate.dueDate !== null && typeof candidate.dueDate !== "string") {
+  if (
+    candidate.dueDate !== undefined &&
+    candidate.dueDate !== null &&
+    typeof candidate.dueDate !== "string"
+  ) {
     return false;
   }
 
   if (
+    candidate.category !== undefined &&
     candidate.category !== null &&
     (typeof candidate.category !== "string" ||
       !VALID_CATEGORIES.has(candidate.category as TaskCategory))
@@ -106,7 +111,11 @@ export function isValidTask(item: unknown): item is Task {
 
   if (typeof candidate.createdAt !== "string") return false;
   if (typeof candidate.updatedAt !== "string") return false;
-  if (candidate.completedAt !== null && typeof candidate.completedAt !== "string") {
+  if (
+    candidate.completedAt !== undefined &&
+    candidate.completedAt !== null &&
+    typeof candidate.completedAt !== "string"
+  ) {
     return false;
   }
 
@@ -213,12 +222,15 @@ export function isValidDailyPlanItem(item: unknown): item is DailyPlanItem {
   const candidate = item as Record<string, unknown>;
 
   if (typeof candidate.id !== "string" || !candidate.id) return false;
-  if (candidate.type !== "task" && candidate.type !== "followup") return false;
-  if (typeof candidate.targetId !== "string" || !candidate.targetId) return false;
+  const itemType = candidate.type ?? candidate.entityType;
+  if (itemType !== "task" && itemType !== "followup") return false;
+  const targetId = candidate.targetId ?? candidate.entityId;
+  if (typeof targetId !== "string" || !targetId) return false;
   if (typeof candidate.title !== "string") return false;
-  if (typeof candidate.estimatedMinutes !== "number") return false;
+  const minutes = candidate.estimatedMinutes ?? candidate.allocatedMinutes;
+  if (typeof minutes !== "number") return false;
   if (typeof candidate.completed !== "boolean") return false;
-  if (typeof candidate.order !== "number") return false;
+  if (candidate.order !== undefined && typeof candidate.order !== "number") return false;
 
   return true;
 }
@@ -228,7 +240,8 @@ export function isValidDailyPlan(item: unknown): item is DailyPlan {
   const candidate = item as Record<string, unknown>;
 
   if (typeof candidate.id !== "string" || !candidate.id) return false;
-  if (typeof candidate.date !== "string") return false;
+  const dateField = candidate.date ?? candidate.localDate;
+  if (typeof dateField !== "string") return false;
   if (typeof candidate.timeZone !== "string") return false;
   if (typeof candidate.availableMinutes !== "number") return false;
   if (!Array.isArray(candidate.items)) return false;
@@ -258,8 +271,8 @@ export function isValidInboxCapture(item: unknown): item is InboxCapture {
   ) {
     return false;
   }
-  if (typeof candidate.createdAt !== "string") return false;
-  if (typeof candidate.updatedAt !== "string") return false;
+  if (candidate.createdAt !== undefined && typeof candidate.createdAt !== "string") return false;
+  if (candidate.updatedAt !== undefined && typeof candidate.updatedAt !== "string") return false;
 
   return true;
 }
@@ -630,8 +643,17 @@ export async function restoreDatabaseBackup(
 
   if (payload.data.inboxCaptures) {
     for (const capture of payload.data.inboxCaptures) {
+      const rawCapture = capture as unknown as Record<string, unknown>;
       await captureStore.put({
         ...capture,
+        createdAt:
+          typeof rawCapture.createdAt === "string"
+            ? rawCapture.createdAt
+            : capture.capturedAt ?? new Date().toISOString(),
+        updatedAt:
+          typeof rawCapture.updatedAt === "string"
+            ? rawCapture.updatedAt
+            : capture.capturedAt ?? new Date().toISOString(),
         workspaceId,
       });
     }

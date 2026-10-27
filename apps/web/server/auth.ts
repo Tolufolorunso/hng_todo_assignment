@@ -52,12 +52,8 @@ export interface OtpVerificationResult {
 
 export type EmailSender = (to: string, subject: string, text: string) => Promise<boolean>;
 
-// Default email sender logs in non-production or resolves true
-let activeEmailSender: EmailSender = async (to: string, subject: string, text: string) => {
-  if (process.env.NODE_ENV !== "production") {
-    // Development or test environment logging
-    console.log(`[TaskFlow Auth] Email to ${to}: ${subject} - ${text}`);
-  }
+// Default email sender resolves true without leaking credentials or PII
+let activeEmailSender: EmailSender = async () => {
   return true;
 };
 
@@ -66,13 +62,10 @@ export function setEmailSender(sender: EmailSender): void {
 }
 
 export function resetEmailSender(): void {
-  activeEmailSender = async (to: string, subject: string, text: string) => {
-    if (process.env.NODE_ENV !== "production") {
-      console.log(`[TaskFlow Auth] Email to ${to}: ${subject} - ${text}`);
-    }
+  activeEmailSender = async () => {
     return true;
   };
-}
+};
 
 export function getAuthSecret(): string {
   const secret = process.env.AUTH_SECRET;
@@ -537,14 +530,12 @@ export async function deleteAccount(accountId: string): Promise<boolean> {
     throw new Error("DATABASE_UNAVAILABLE: Database connection is not configured");
   }
 
-  // Soft delete account and revoke all sessions
-  await executeQuery(
-    `UPDATE sessions SET revoked_at = NOW() WHERE account_id = $1`,
-    [accountId]
-  );
-
+  // Atomic cascade deletion: deleting from accounts cascades across all child tables
+  // (sessions, tasks, notes, followups, occurrences, daily plans, inbox captures,
+  // task orders, mutation receipts, tombstones, push subscriptions, delivery logs)
+  // due to foreign key ON DELETE CASCADE constraints.
   const result = await executeQuery(
-    `UPDATE accounts SET deleted_at = NOW(), updated_at = NOW() WHERE id = $1 AND deleted_at IS NULL`,
+    `DELETE FROM accounts WHERE id = $1`,
     [accountId]
   );
 

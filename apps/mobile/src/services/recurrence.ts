@@ -2,7 +2,8 @@ import type { RecurrenceRule } from "../types/followup.js";
 
 export function computeNextDueAt(rule: RecurrenceRule, baseDate: Date): string {
   const current = new Date(baseDate);
-  const [hoursStr, minutesStr] = rule.timeOfDay.split(":");
+  const timeStr = rule.localTime || rule.timeOfDay || "09:00";
+  const [hoursStr, minutesStr] = timeStr.split(":");
   const targetHour = parseInt(hoursStr || "09", 10);
   const targetMinute = parseInt(minutesStr || "00", 10);
 
@@ -33,7 +34,8 @@ export function computeNextDueAt(rule: RecurrenceRule, baseDate: Date): string {
     if (rule.frequency === "monthly") {
       const targetDay = rule.monthDay || current.getUTCDate();
       const nextMonth = new Date(current);
-      nextMonth.setUTCMonth(nextMonth.getUTCMonth() + (rule.interval || 1));
+      const targetMonth = nextMonth.getUTCMonth() + (rule.interval || 1);
+      nextMonth.setUTCMonth(targetMonth, 1);
 
       // Handle month overflow (e.g. Feb 30 clamped to Feb 28/29)
       const lastDayOfNextMonth = new Date(
@@ -59,7 +61,13 @@ export function computeNextDueAt(rule: RecurrenceRule, baseDate: Date): string {
 
   if (rule.frequency === "monthly") {
     const next = new Date(baseDate);
-    next.setUTCMonth(next.getUTCMonth() + (rule.interval || 1));
+    const targetDay = next.getUTCDate();
+    const targetMonth = next.getUTCMonth() + (rule.interval || 1);
+    next.setUTCMonth(targetMonth, 1);
+    const lastDay = new Date(
+      Date.UTC(next.getUTCFullYear(), next.getUTCMonth() + 1, 0)
+    ).getUTCDate();
+    next.setUTCDate(Math.min(targetDay, lastDay));
     return next.toISOString();
   }
 

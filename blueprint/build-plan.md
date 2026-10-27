@@ -238,7 +238,7 @@ The Blueprint overlay, `AGENTS.md`, and onboarding setup are already present.
 
 ## Milestone N: Cross-Platform Hardening
 
-- [ ] 51. **Cross-platform compatibility and operational hardening** - verify
+- [x] 51. **Cross-platform compatibility and operational hardening** - verify
   migration recovery, API backward compatibility, recurrence consistency,
   multi-device convergence, notification permission and delivery failure,
   account deletion, abuse controls, accessibility, synchronized-mode privacy,

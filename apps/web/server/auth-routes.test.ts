@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { POST as requestOtpHandler } from "@/app/api/v1/auth/otp/request/route";
 import { POST as verifyOtpHandler } from "@/app/api/v1/auth/otp/verify/route";
 import { POST as refreshHandler } from "@/app/api/v1/auth/refresh/route";
@@ -9,6 +9,8 @@ import { DELETE as deleteSessionHandler } from "@/app/api/v1/auth/sessions/[id]/
 import { GET as getAccountHandler, DELETE as deleteAccountHandler } from "@/app/api/v1/account/route";
 import { resetRateLimits } from "@/server/rate-limit";
 import { createAccessToken } from "@/server/auth";
+import * as authServer from "@/server/auth";
+import * as dbClient from "@/server/db/client";
 
 describe("Authentication Route Handlers", () => {
   const validToken = createAccessToken({
@@ -18,6 +20,7 @@ describe("Authentication Route Handlers", () => {
   });
 
   beforeEach(() => {
+    vi.restoreAllMocks();
     resetRateLimits();
   });
 
@@ -297,6 +300,51 @@ describe("Authentication Route Handlers", () => {
         const res = await deleteAccountHandler(req);
         expect(res.status).toBe(503);
       }
+    });
+
+    it("deletes account and cascades across all tables returning 200 when authenticated with configured db", async () => {
+      vi.spyOn(authServer, "authenticateRequest").mockResolvedValue({
+        sub: "acc_test_routes",
+        sid: "ses_test_routes",
+        email: "test.routes@example.com",
+        iat: Math.floor(Date.now() / 1000),
+        exp: Math.floor(Date.now() / 1000) + 3600,
+      });
+      vi.spyOn(dbClient, "isDatabaseConfigured").mockReturnValue(true);
+      vi.spyOn(authServer, "deleteAccount").mockResolvedValue(true);
+
+      const req = new Request("http://localhost:3000/api/v1/account", {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${validToken}` },
+      });
+      const res = await deleteAccountHandler(req);
+      expect(res.status).toBe(200);
+
+      const json = await res.json();
+      expect(json.success).toBe(true);
+      expect(json.message).toContain("deleted successfully");
+    });
+
+    it("returns 404 when account does not exist or was already deleted", async () => {
+      vi.spyOn(authServer, "authenticateRequest").mockResolvedValue({
+        sub: "acc_nonexistent",
+        sid: "ses_nonexistent",
+        email: "missing@example.com",
+        iat: Math.floor(Date.now() / 1000),
+        exp: Math.floor(Date.now() / 1000) + 3600,
+      });
+      vi.spyOn(dbClient, "isDatabaseConfigured").mockReturnValue(true);
+      vi.spyOn(authServer, "deleteAccount").mockResolvedValue(false);
+
+      const req = new Request("http://localhost:3000/api/v1/account", {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${validToken}` },
+      });
+      const res = await deleteAccountHandler(req);
+      expect(res.status).toBe(404);
+
+      const json = await res.json();
+      expect(json.error.code).toBe("NOT_FOUND");
     });
   });
 });

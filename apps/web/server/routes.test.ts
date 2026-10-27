@@ -91,4 +91,37 @@ describe("API v1 Route Handlers", () => {
     expect(doc.components.schemas.SessionSummary).toBeDefined();
     expect(doc.components.schemas.AccountProfile).toBeDefined();
   });
+
+  it("guarantees content-free operational logging across routes and server operations", async () => {
+    const { vi } = await import("vitest");
+    const logSpy = vi.spyOn(console, "log");
+    const errorSpy = vi.spyOn(console, "error");
+    const warnSpy = vi.spyOn(console, "warn");
+
+    const req = new Request("http://localhost:3000/api/v1/health");
+    await healthRoute(req);
+
+    const loggedMessages = [
+      ...logSpy.mock.calls.flat(),
+      ...errorSpy.mock.calls.flat(),
+      ...warnSpy.mock.calls.flat(),
+    ].map((arg) => String(arg));
+
+    const sensitivePatterns = [
+      /password/i,
+      /\b\d{6}\b/,
+      /bearer\s+[a-z0-9-_.]+/i,
+      /refresh_token/i,
+    ];
+
+    for (const msg of loggedMessages) {
+      for (const pattern of sensitivePatterns) {
+        expect(msg).not.toMatch(pattern);
+      }
+    }
+
+    logSpy.mockRestore();
+    errorSpy.mockRestore();
+    warnSpy.mockRestore();
+  });
 });

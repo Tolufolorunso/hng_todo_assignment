@@ -168,6 +168,32 @@ async function processSingleMutation(
   // 2. Look up current server entity to check revision concurrency
   const currentEntity = await fetchCurrentServerEntity(accountId, entityType, entityId);
 
+  // 2b. Check tombstone to prevent resurrection of deleted entities
+  if (!currentEntity && action === "put") {
+    const tombstoneRes = await executeQuery<{ revision: string; deleted_at: string }>(
+      `SELECT revision, deleted_at FROM tombstones WHERE account_id = $1 AND id = $2`,
+      [accountId, entityId]
+    );
+    if (tombstoneRes.rows.length > 0) {
+      const tombstoneRev = parseInt(tombstoneRes.rows[0].revision, 10);
+      const conflictDetails: ConflictDetails = {
+        message: "Entity was deleted by tombstone and cannot be resurrected",
+        serverRevision: tombstoneRev,
+        currentServerEntity: null,
+      };
+
+      await recordMutationReceipt(accountId, mutationId, entityType, entityId, action, "conflict", null, conflictDetails);
+
+      return {
+        mutationId,
+        status: "conflict",
+        entityType,
+        entityId,
+        conflictDetails,
+      };
+    }
+  }
+
   // 3. Check for conflict on existing entity if baseRevision is provided
   if (currentEntity && baseRevision !== undefined && baseRevision !== null) {
     const serverRev = currentEntity.revision;
@@ -196,6 +222,14 @@ async function processSingleMutation(
     const deleted = await deleteEntityFromDatabase(accountId, entityType, entityId);
     if (deleted) {
       tombstoneRev = await recordTombstone(accountId, entityId, entityType);
+    } else {
+      const existingTombstone = await executeQuery<{ revision: string }>(
+        `SELECT revision FROM tombstones WHERE account_id = $1 AND id = $2`,
+        [accountId, entityId]
+      );
+      if (existingTombstone.rows.length > 0) {
+        tombstoneRev = parseInt(existingTombstone.rows[0].revision, 10);
+      }
     }
 
     await recordMutationReceipt(accountId, mutationId, entityType, entityId, "delete", "applied", tombstoneRev, null);

@@ -174,6 +174,13 @@ export class NotificationScheduler {
       .sort((a, b) => a.triggerAt.localeCompare(b.triggerAt));
   }
 
+  async listOverdue(now: Date = new Date()): Promise<ScheduledNotification[]> {
+    const nowIso = now.toISOString();
+    return Array.from(this.scheduled.values())
+      .filter((n) => n.triggerAt < nowIso)
+      .sort((a, b) => a.triggerAt.localeCompare(b.triggerAt));
+  }
+
   clear(): void {
     this.scheduled.clear();
   }

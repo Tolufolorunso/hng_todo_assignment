@@ -74,4 +74,36 @@ public class DatabaseMigrationTests
         long count = (long)(cmd.ExecuteScalar() ?? 0);
         Assert.Equal(3, count);
     }
+
+    [Fact]
+    public void Database_RecoversCleanlyFromAbortedTransaction()
+    {
+        var factory = DatabaseConnectionFactory.CreateInMemory();
+        using var connection = factory.CreateConnection();
+        connection.Open();
+
+        var runner = new MigrationRunner(factory);
+        runner.RunMigrations(connection);
+
+        // Simulate failed operation in transaction
+        Assert.Throws<SqliteException>(() =>
+        {
+            using var tx = connection.BeginTransaction();
+            using var cmd = connection.CreateCommand();
+            cmd.Transaction = tx;
+            cmd.CommandText = "INSERT INTO tasks (id, title, priority, created_at, updated_at) VALUES ('abort_1', 'Rollback Task', 'high', '2026-05-01', '2026-05-01');";
+            cmd.ExecuteNonQuery();
+
+            // Intentionally provoke constraint violation or bad query
+            cmd.CommandText = "INSERT INTO non_existent_table (id) VALUES ('fail');";
+            cmd.ExecuteNonQuery();
+            tx.Commit();
+        });
+
+        // Verify task was rolled back
+        using var verifyCmd = connection.CreateCommand();
+        verifyCmd.CommandText = "SELECT COUNT(*) FROM tasks WHERE id = 'abort_1';";
+        long taskCount = (long)(verifyCmd.ExecuteScalar() ?? 0);
+        Assert.Equal(0, taskCount);
+    }
 }
