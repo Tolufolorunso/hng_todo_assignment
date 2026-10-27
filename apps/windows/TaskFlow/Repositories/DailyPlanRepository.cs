@@ -12,11 +12,13 @@ namespace TaskFlow.Repositories;
 public class DailyPlanRepository : IDailyPlanRepository
 {
     private readonly DatabaseConnectionFactory _connectionFactory;
+    private readonly ISyncRepository? _syncRepository;
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
-    public DailyPlanRepository(DatabaseConnectionFactory connectionFactory)
+    public DailyPlanRepository(DatabaseConnectionFactory connectionFactory, ISyncRepository? syncRepository = null)
     {
         _connectionFactory = connectionFactory;
+        _syncRepository = syncRepository;
     }
 
     public async Task<DailyPlanItem?> GetByDateAsync(string localDate)
@@ -122,6 +124,14 @@ public class DailyPlanRepository : IDailyPlanRepository
         }
 
         await cmd.ExecuteNonQueryAsync();
+
+        if (_syncRepository != null)
+        {
+            var baseRev = await _syncRepository.GetServerRevisionAsync("plan", plan.Id);
+            var payload = JsonSerializer.Serialize(plan);
+            await _syncRepository.EnqueueMutationAsync("plan", plan.Id, "put", baseRev, payload, connection);
+        }
+
         return plan;
     }
 
@@ -151,6 +161,14 @@ public class DailyPlanRepository : IDailyPlanRepository
         cmd.Parameters.AddWithValue("@updated_at", now);
 
         await cmd.ExecuteNonQueryAsync();
+
+        if (_syncRepository != null)
+        {
+            var baseRev = await _syncRepository.GetServerRevisionAsync("plan", existing.Id);
+            var payload = JsonSerializer.Serialize(existing);
+            await _syncRepository.EnqueueMutationAsync("plan", existing.Id, "put", baseRev, payload, connection);
+        }
+
         return existing;
     }
 

@@ -20,12 +20,24 @@ public partial class App : Application
             runner.RunMigrations(connection);
         }
 
-        var taskRepo = new TaskRepository(factory);
-        var noteRepo = new NoteRepository(factory);
-        var followUpRepo = new FollowUpRepository(factory);
-        var dailyPlanRepo = new DailyPlanRepository(factory);
-        var inboxRepo = new InboxRepository(factory);
-        var taskOrderRepo = new TaskOrderRepository(factory);
+        var syncRepo = new SyncRepository(factory);
+        var taskRepo = new TaskRepository(factory, syncRepo);
+        var noteRepo = new NoteRepository(factory, syncRepo);
+        var followUpRepo = new FollowUpRepository(factory, syncRepo);
+        var dailyPlanRepo = new DailyPlanRepository(factory, syncRepo);
+        var inboxRepo = new InboxRepository(factory, syncRepo);
+        var taskOrderRepo = new TaskOrderRepository(factory, syncRepo);
+
+        var sessionStore = new DpapiSessionStore();
+        var authService = new AuthService(sessionStore);
+        var syncEngine = new SyncEngine(factory, syncRepo, authService);
+        var adoptionService = new AdoptionService(factory, syncRepo, taskRepo, noteRepo, followUpRepo, dailyPlanRepo, inboxRepo, taskOrderRepo);
+        var conflictService = new ConflictService(factory, syncRepo);
+        var networkRecoveryService = new NetworkRecoveryService(syncEngine, followUpRepo);
+        networkRecoveryService.Start();
+
+        var accountVm = new AccountViewModel(authService, adoptionService, syncEngine);
+        var conflictVm = new ConflictViewModel(conflictService);
 
         var launcherService = new LauncherService();
         var triageService = new InboxTriageService(inboxRepo, taskRepo, noteRepo, followUpRepo);
@@ -51,9 +63,12 @@ public partial class App : Application
             inboxVm,
             calendarVm,
             analyticsVm,
-            themeVm);
+            themeVm,
+            accountVm,
+            conflictVm,
+            syncEngine);
 
-        var mainWindow = new MainWindow(mainVm);
+        var mainWindow = new MainWindow(mainVm, networkRecoveryService);
         mainWindow.Show();
     }
 }

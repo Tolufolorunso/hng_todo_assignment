@@ -36,8 +36,17 @@ public class DatabaseMigrationTests
         long m2Count = (long)(cmd.ExecuteScalar() ?? 0);
         Assert.Equal(1, m2Count);
 
-        // Verify all core and differentiated tables exist
-        var requiredTables = new[] { "tasks", "notes", "followups", "followup_occurrences", "daily_plans", "inbox_captures", "task_orders" };
+        cmd.CommandText = "SELECT COUNT(*) FROM __migrations WHERE name = '003_SyncEngine';";
+        long m3Count = (long)(cmd.ExecuteScalar() ?? 0);
+        Assert.Equal(1, m3Count);
+
+        // Verify all core, differentiated, and sync tables exist
+        var requiredTables = new[]
+        {
+            "tasks", "notes", "followups", "followup_occurrences", "daily_plans",
+            "inbox_captures", "task_orders", "outbox", "sync_cursors", "conflicts",
+            "tombstones", "server_revisions"
+        };
         foreach (var table in requiredTables)
         {
             cmd.CommandText = $"SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='{table}';";
@@ -63,6 +72,6 @@ public class DatabaseMigrationTests
         using var cmd = connection.CreateCommand();
         cmd.CommandText = "SELECT COUNT(*) FROM __migrations;";
         long count = (long)(cmd.ExecuteScalar() ?? 0);
-        Assert.Equal(2, count);
+        Assert.Equal(3, count);
     }
 }

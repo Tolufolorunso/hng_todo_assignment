@@ -5,15 +5,19 @@ using Microsoft.Data.Sqlite;
 using TaskFlow.Data;
 using TaskFlow.Models;
 
+using System.Text.Json;
+
 namespace TaskFlow.Repositories;
 
 public class TaskRepository : ITaskRepository
 {
     private readonly DatabaseConnectionFactory _connectionFactory;
+    private readonly ISyncRepository? _syncRepository;
 
-    public TaskRepository(DatabaseConnectionFactory connectionFactory)
+    public TaskRepository(DatabaseConnectionFactory connectionFactory, ISyncRepository? syncRepository = null)
     {
         _connectionFactory = connectionFactory;
+        _syncRepository = syncRepository;
     }
 
     public async Task<IReadOnlyList<TaskItem>> ListAsync(string? status = null, string? category = null, string? search = null)
@@ -123,6 +127,12 @@ public class TaskRepository : ITaskRepository
         AddParameters(cmd, task);
         await cmd.ExecuteNonQueryAsync();
 
+        if (_syncRepository != null)
+        {
+            var payload = JsonSerializer.Serialize(task);
+            await _syncRepository.EnqueueMutationAsync("task", task.Id, "put", null, payload, connection);
+        }
+
         return task;
     }
 
@@ -164,6 +174,13 @@ public class TaskRepository : ITaskRepository
             throw new InvalidOperationException($"Task with id '{task.Id}' not found.");
         }
 
+        if (_syncRepository != null)
+        {
+            var baseRev = await _syncRepository.GetServerRevisionAsync("task", task.Id);
+            var payload = JsonSerializer.Serialize(task);
+            await _syncRepository.EnqueueMutationAsync("task", task.Id, "put", baseRev, payload, connection);
+        }
+
         return task;
     }
 
@@ -196,6 +213,14 @@ public class TaskRepository : ITaskRepository
         cmd.Parameters.AddWithValue("@updated_at", existing.UpdatedAt);
 
         await cmd.ExecuteNonQueryAsync();
+
+        if (_syncRepository != null)
+        {
+            var baseRev = await _syncRepository.GetServerRevisionAsync("task", existing.Id);
+            var payload = JsonSerializer.Serialize(existing);
+            await _syncRepository.EnqueueMutationAsync("task", existing.Id, "put", baseRev, payload, connection);
+        }
+
         return existing;
     }
 
@@ -209,6 +234,14 @@ public class TaskRepository : ITaskRepository
         cmd.Parameters.AddWithValue("@id", id);
 
         int rows = await cmd.ExecuteNonQueryAsync();
+
+        if (rows > 0 && _syncRepository != null)
+        {
+            var baseRev = await _syncRepository.GetServerRevisionAsync("task", id);
+            await _syncRepository.EnqueueMutationAsync("task", id, "delete", baseRev, null, connection);
+            await _syncRepository.RecordTombstoneAsync("task", id);
+        }
+
         return rows > 0;
     }
 

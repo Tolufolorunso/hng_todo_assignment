@@ -5,15 +5,19 @@ using Microsoft.Data.Sqlite;
 using TaskFlow.Data;
 using TaskFlow.Models;
 
+using System.Text.Json;
+
 namespace TaskFlow.Repositories;
 
 public class NoteRepository : INoteRepository
 {
     private readonly DatabaseConnectionFactory _connectionFactory;
+    private readonly ISyncRepository? _syncRepository;
 
-    public NoteRepository(DatabaseConnectionFactory connectionFactory)
+    public NoteRepository(DatabaseConnectionFactory connectionFactory, ISyncRepository? syncRepository = null)
     {
         _connectionFactory = connectionFactory;
+        _syncRepository = syncRepository;
     }
 
     public async Task<IReadOnlyList<NoteItem>> ListAsync(string? search = null)
@@ -116,6 +120,13 @@ public class NoteRepository : INoteRepository
         cmd.Parameters.AddWithValue("@updated_at", note.UpdatedAt);
 
         await cmd.ExecuteNonQueryAsync();
+
+        if (_syncRepository != null)
+        {
+            var payload = JsonSerializer.Serialize(note);
+            await _syncRepository.EnqueueMutationAsync("note", note.Id, "put", null, payload, connection);
+        }
+
         return note;
     }
 
@@ -145,6 +156,13 @@ public class NoteRepository : INoteRepository
             throw new InvalidOperationException($"Note with id '{note.Id}' not found.");
         }
 
+        if (_syncRepository != null)
+        {
+            var baseRev = await _syncRepository.GetServerRevisionAsync("note", note.Id);
+            var payload = JsonSerializer.Serialize(note);
+            await _syncRepository.EnqueueMutationAsync("note", note.Id, "put", baseRev, payload, connection);
+        }
+
         return note;
     }
 
@@ -158,6 +176,14 @@ public class NoteRepository : INoteRepository
         cmd.Parameters.AddWithValue("@id", id);
 
         int rows = await cmd.ExecuteNonQueryAsync();
+
+        if (rows > 0 && _syncRepository != null)
+        {
+            var baseRev = await _syncRepository.GetServerRevisionAsync("note", id);
+            await _syncRepository.EnqueueMutationAsync("note", id, "delete", baseRev, null, connection);
+            await _syncRepository.RecordTombstoneAsync("note", id);
+        }
+
         return rows > 0;
     }
 }

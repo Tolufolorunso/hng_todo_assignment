@@ -11,10 +11,12 @@ namespace TaskFlow.Repositories;
 public class TaskOrderRepository : ITaskOrderRepository
 {
     private readonly DatabaseConnectionFactory _connectionFactory;
+    private readonly ISyncRepository? _syncRepository;
 
-    public TaskOrderRepository(DatabaseConnectionFactory connectionFactory)
+    public TaskOrderRepository(DatabaseConnectionFactory connectionFactory, ISyncRepository? syncRepository = null)
     {
         _connectionFactory = connectionFactory;
+        _syncRepository = syncRepository;
     }
 
     public async Task<IReadOnlyList<string>> GetOrderAsync(string id = "default")
@@ -67,5 +69,12 @@ public class TaskOrderRepository : ITaskOrderRepository
         cmd.Parameters.AddWithValue("@updated_at", now);
 
         await cmd.ExecuteNonQueryAsync();
+
+        if (_syncRepository != null)
+        {
+            var baseRev = await _syncRepository.GetServerRevisionAsync("task_order", id);
+            var payload = JsonSerializer.Serialize(new { id, orderedIds = orderedIds.ToList(), updatedAt = now });
+            await _syncRepository.EnqueueMutationAsync("task_order", id, "put", baseRev, payload, connection);
+        }
     }
 }

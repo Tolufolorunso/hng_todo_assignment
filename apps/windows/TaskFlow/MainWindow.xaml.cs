@@ -9,15 +9,17 @@ namespace TaskFlow;
 public partial class MainWindow : Window
 {
     private MainViewModel? _viewModel;
+    private Services.INetworkRecoveryService? _networkRecoveryService;
 
     public MainWindow()
     {
         InitializeComponent();
     }
 
-    public MainWindow(MainViewModel viewModel) : this()
+    public MainWindow(MainViewModel viewModel, Services.INetworkRecoveryService? networkRecoveryService = null) : this()
     {
         _viewModel = viewModel;
+        _networkRecoveryService = networkRecoveryService;
         DataContext = viewModel;
 
         viewModel.ThemeVM.ThemeChanged += ApplyTheme;
@@ -26,6 +28,11 @@ public partial class MainWindow : Window
         {
             ApplyTheme(viewModel.ThemeVM.CurrentTheme);
             await viewModel.InitializeAsync();
+        };
+
+        Activated += (_, _) =>
+        {
+            _ = _networkRecoveryService?.HandleWindowActivatedAsync();
         };
     }
 
@@ -84,6 +91,11 @@ public partial class MainWindow : Window
                 case Key.D8:
                 case Key.NumPad8:
                     _viewModel.NavigateToBackupCommand.Execute(null);
+                    e.Handled = true;
+                    break;
+                case Key.D9:
+                case Key.NumPad9:
+                    _viewModel.NavigateToAccountCommand.Execute(null);
                     e.Handled = true;
                     break;
                 case Key.N:

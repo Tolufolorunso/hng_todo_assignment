@@ -7,16 +7,20 @@ using Microsoft.Data.Sqlite;
 using TaskFlow.Data;
 using TaskFlow.Models;
 
+using System.Text.Json;
+
 namespace TaskFlow.Repositories;
 
 public class InboxRepository : IInboxRepository
 {
     private readonly DatabaseConnectionFactory _connectionFactory;
+    private readonly ISyncRepository? _syncRepository;
     private static readonly Regex UrlRegex = new(@"https?://[^\s]+", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-    public InboxRepository(DatabaseConnectionFactory connectionFactory)
+    public InboxRepository(DatabaseConnectionFactory connectionFactory, ISyncRepository? syncRepository = null)
     {
         _connectionFactory = connectionFactory;
+        _syncRepository = syncRepository;
     }
 
     public async Task<IReadOnlyList<InboxCaptureItem>> ListAsync(string? state = null, string? search = null)
@@ -133,6 +137,13 @@ public class InboxRepository : IInboxRepository
         cmd.Parameters.AddWithValue("@captured_at", item.CapturedAt);
 
         await cmd.ExecuteNonQueryAsync();
+
+        if (_syncRepository != null)
+        {
+            var payload = JsonSerializer.Serialize(item);
+            await _syncRepository.EnqueueMutationAsync("inbox", item.Id, "put", null, payload, connection);
+        }
+
         return item;
     }
 
@@ -168,6 +179,14 @@ public class InboxRepository : IInboxRepository
         cmd.Parameters.AddWithValue("@id", id);
 
         await cmd.ExecuteNonQueryAsync();
+
+        if (_syncRepository != null)
+        {
+            var baseRev = await _syncRepository.GetServerRevisionAsync("inbox", existing.Id);
+            var payload = JsonSerializer.Serialize(existing);
+            await _syncRepository.EnqueueMutationAsync("inbox", existing.Id, "put", baseRev, payload, connection);
+        }
+
         return existing;
     }
 
@@ -197,6 +216,14 @@ public class InboxRepository : IInboxRepository
         cmd.Parameters.AddWithValue("@id", id);
 
         await cmd.ExecuteNonQueryAsync();
+
+        if (_syncRepository != null)
+        {
+            var baseRev = await _syncRepository.GetServerRevisionAsync("inbox", existing.Id);
+            var payload = JsonSerializer.Serialize(existing);
+            await _syncRepository.EnqueueMutationAsync("inbox", existing.Id, "put", baseRev, payload, connection);
+        }
+
         return existing;
     }
 
@@ -210,6 +237,14 @@ public class InboxRepository : IInboxRepository
         cmd.Parameters.AddWithValue("@id", id);
 
         int rows = await cmd.ExecuteNonQueryAsync();
+
+        if (rows > 0 && _syncRepository != null)
+        {
+            var baseRev = await _syncRepository.GetServerRevisionAsync("inbox", id);
+            await _syncRepository.EnqueueMutationAsync("inbox", id, "delete", baseRev, null, connection);
+            await _syncRepository.RecordTombstoneAsync("inbox", id);
+        }
+
         return rows > 0;
     }
 

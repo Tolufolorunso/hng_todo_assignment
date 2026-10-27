@@ -113,6 +113,7 @@
         <KeyBinding Key="D6" Modifiers="Control" Command="{Binding NavigateToCalendarCommand}" />
         <KeyBinding Key="D7" Modifiers="Control" Command="{Binding NavigateToAnalyticsCommand}" />
         <KeyBinding Key="D8" Modifiers="Control" Command="{Binding NavigateToBackupCommand}" />
+        <KeyBinding Key="D9" Modifiers="Control" Command="{Binding NavigateToAccountCommand}" />
         <KeyBinding Key="NumPad1" Modifiers="Control" Command="{Binding NavigateToTasksCommand}" />
         <KeyBinding Key="NumPad2" Modifiers="Control" Command="{Binding NavigateToFollowUpsCommand}" />
         <KeyBinding Key="NumPad3" Modifiers="Control" Command="{Binding NavigateToPlanMyDayCommand}" />
@@ -121,6 +122,7 @@
         <KeyBinding Key="NumPad6" Modifiers="Control" Command="{Binding NavigateToCalendarCommand}" />
         <KeyBinding Key="NumPad7" Modifiers="Control" Command="{Binding NavigateToAnalyticsCommand}" />
         <KeyBinding Key="NumPad8" Modifiers="Control" Command="{Binding NavigateToBackupCommand}" />
+        <KeyBinding Key="NumPad9" Modifiers="Control" Command="{Binding NavigateToAccountCommand}" />
         <KeyBinding Key="N" Modifiers="Control" Command="{Binding QuickCreateCommand}" />
         <KeyBinding Key="Delete" Command="{Binding DeleteSelectedCommand}" />
         <KeyBinding Key="Space" Command="{Binding ToggleSelectedCommand}" />
@@ -176,8 +178,25 @@
                     </TextBlock>
                 </Grid>
 
-                <!-- Actions: Theme and Quick Create -->
+                <!-- Actions: Sync, Theme and Quick Create -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Sync Status Indicator -->
+                    <Border Background="{DynamicResource BgSurfaceElevated}" CornerRadius="6" Padding="8,4" Margin="0,0,12,0" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <Ellipse Width="8" Height="8" Fill="{Binding SyncStatusColor}" VerticalAlignment="Center" Margin="0,0,6,0" />
+                            <TextBlock Text="{Binding SyncStatusText}" FontSize="12" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <Button Content="Sync" Style="{StaticResource SecondaryButton}" Padding="6,2" FontSize="11" Command="{Binding SyncNowCommand}" AutomationProperties.Name="Trigger sync now" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Unresolved Conflicts Alert Button -->
+                    <Button Content="Resolve Conflicts"
+                            Style="{StaticResource DangerButton}"
+                            Padding="8,4" FontSize="11" Margin="0,0,12,0"
+                            Command="{Binding OpenConflictsCommand}"
+                            Visibility="{Binding UnresolvedConflictsCount, Converter={StaticResource BoolToVis}}"
+                            AutomationProperties.Name="Open conflict resolution" />
+
                     <!-- Theme Selector -->
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,14,0">
                         <TextBlock Text="Theme:" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondary}" FontSize="12" Margin="0,0,6,0" />
@@ -298,13 +317,24 @@
                                 <TextBlock Text="Ctrl+8" FontSize="11" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Right" />
                             </Grid>
                         </Button>
+
+                        <!-- 9. Account & Cloud Sync -->
+                        <Button Style="{StaticResource SidebarButton}" Command="{Binding NavigateToAccountCommand}" Margin="0,0,0,4" AutomationProperties.Name="Navigate to Account and Cloud Sync">
+                            <Grid Width="180">
+                                <TextBlock Text="Account &amp; Sync" HorizontalAlignment="Left" />
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                    <Ellipse Width="8" Height="8" Fill="{Binding SyncStatusColor}" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                    <TextBlock Text="Ctrl+9" FontSize="11" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Grid>
+                        </Button>
                     </StackPanel>
 
                     <!-- Keyboard Help Box -->
                     <Border Grid.Row="2" Background="{DynamicResource BgSurfaceElevated}" CornerRadius="6" Padding="12" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1">
                         <StackPanel>
                             <TextBlock Text="Shortcuts" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,6" />
-                            <TextBlock Text="Ctrl+1..8: Switch tabs" FontSize="11" Foreground="{DynamicResource TextMuted}" Margin="0,1" />
+                            <TextBlock Text="Ctrl+1..9: Switch tabs" FontSize="11" Foreground="{DynamicResource TextMuted}" Margin="0,1" />
                             <TextBlock Text="Ctrl+N: Quick create" FontSize="11" Foreground="{DynamicResource TextMuted}" Margin="0,1" />
                             <TextBlock Text="Ctrl+F: Focus search" FontSize="11" Foreground="{DynamicResource TextMuted}" Margin="0,1" />
                             <TextBlock Text="Space: Toggle complete" FontSize="11" Foreground="{DynamicResource TextMuted}" Margin="0,1" />
@@ -1076,6 +1106,241 @@
                         </Grid>
                     </Grid>
                 </ScrollViewer>
+
+                <!-- ==================== 9. ACCOUNT & CLOUD SYNC VIEW ==================== -->
+                <ScrollViewer Visibility="{Binding IsAccountTabActive, Converter={StaticResource BoolToVis}}" VerticalScrollBarVisibility="Auto">
+                    <Grid Margin="24">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <!-- Header -->
+                        <StackPanel Grid.Row="0" Margin="0,0,0,20">
+                            <TextBlock Text="Account &amp; Cloud Synchronization" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
+                            <TextBlock Text="Sign in to sync your tasks, notes, follow-ups, and daily plans across your devices." FontSize="13" Foreground="{DynamicResource TextSecondary}" Margin="0,4,0,0" />
+                        </StackPanel>
+
+                        <!-- Status & Error Banners -->
+                        <StackPanel Grid.Row="1" Margin="0,0,0,16">
+                            <Border Visibility="{Binding AccountVM.ErrorMessage, Converter={StaticResource BoolToVis}}" Background="#7F1D1D" BorderBrush="{DynamicResource AccentRose}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,0,8">
+                                <TextBlock Text="{Binding AccountVM.ErrorMessage}" Foreground="#FEE2E2" FontSize="13" />
+                            </Border>
+                            <Border Visibility="{Binding AccountVM.StatusMessage, Converter={StaticResource BoolToVis}}" Background="#064E3B" BorderBrush="{DynamicResource AccentGreen}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,0,8">
+                                <TextBlock Text="{Binding AccountVM.StatusMessage}" Foreground="#A7F3D0" FontSize="13" />
+                            </Border>
+                            <!-- Adoption Prompt Banner -->
+                            <Border Visibility="{Binding AccountVM.HasPendingAdoption, Converter={StaticResource BoolToVis}}" Background="#1E293B" BorderBrush="{DynamicResource AccentBlue}" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,8">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Adopt Local Data" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource AccentBlue}" />
+                                        <TextBlock Text="You have local tasks and notes created on this device. Would you like to upload and adopt them into your cloud account?" FontSize="13" Foreground="{DynamicResource TextSecondary}" Margin="0,4,0,0" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Button Content="Adopt Data" Style="{StaticResource ModernButton}" Command="{Binding AccountVM.AdoptDataCommand}" Margin="0,0,8,0" AutomationProperties.Name="Adopt local data into cloud account" />
+                                        <Button Content="Dismiss" Style="{StaticResource SecondaryButton}" Command="{Binding AccountVM.DismissAdoptionCommand}" AutomationProperties.Name="Dismiss data adoption" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+
+                        <!-- Content Cards -->
+                        <Grid Grid.Row="2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="20" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Left Column: Sign In or Profile -->
+                            <StackPanel Grid.Column="0">
+                                <!-- Signed-In Card -->
+                                <Border Visibility="{Binding AccountVM.IsAuthenticated, Converter={StaticResource BoolToVis}}" Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="8" Padding="20" Margin="0,0,0,16">
+                                    <StackPanel>
+                                        <TextBlock Text="Current Account" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
+                                        <TextBlock Text="{Binding AccountVM.UserEmail, StringFormat='Signed in as: {0}'}" FontSize="13" Foreground="{DynamicResource TextSecondary}" Margin="0,8,0,2" />
+                                        <TextBlock Text="{Binding AccountVM.UserId, StringFormat='User ID: {0}'}" FontSize="11" Foreground="{DynamicResource TextMuted}" Margin="0,0,0,14" />
+                                        <Button Content="Sign Out" Style="{StaticResource DangerButton}" Command="{Binding AccountVM.LogoutCommand}" HorizontalAlignment="Left" AutomationProperties.Name="Sign out of account" />
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Unauthenticated Sign-In Card -->
+                                <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="8" Padding="20" Margin="0,0,0,16">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding AccountVM.IsAuthenticated}" Value="True">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <StackPanel>
+                                        <TextBlock Text="Passwordless Sign In" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
+                                        <TextBlock Text="Enter your email to receive a secure 6-digit one-time passcode." FontSize="12" Foreground="{DynamicResource TextSecondary}" Margin="0,4,0,14" />
+
+                                        <!-- Email Step -->
+                                        <StackPanel Visibility="{Binding AccountVM.IsOtpSent, Converter={StaticResource BoolToVis}}">
+                                            <StackPanel.Style>
+                                                <Style TargetType="StackPanel">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding AccountVM.IsOtpSent}" Value="False">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </StackPanel.Style>
+                                            <TextBlock Text="Email Address:" FontSize="12" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,6" />
+                                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding AccountVM.Email, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12" AutomationProperties.Name="Sign in email address" />
+                                            <Button Content="Send Verification Code" Style="{StaticResource ModernButton}" Command="{Binding AccountVM.RequestOtpCommand}" AutomationProperties.Name="Request verification code" />
+                                        </StackPanel>
+
+                                        <!-- OTP Step -->
+                                        <StackPanel Visibility="{Binding AccountVM.IsOtpSent, Converter={StaticResource BoolToVis}}">
+                                            <TextBlock Text="{Binding AccountVM.Email, StringFormat='Verification code sent to {0}:'}" FontSize="12" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,6" />
+                                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding AccountVM.OtpCode, UpdateSourceTrigger=PropertyChanged}" MaxLength="6" Margin="0,0,0,12" AutomationProperties.Name="Enter 6-digit code" />
+                                            <StackPanel Orientation="Horizontal">
+                                                <Button Content="Verify &amp; Sign In" Style="{StaticResource ModernButton}" Command="{Binding AccountVM.VerifyOtpCommand}" Margin="0,0,8,0" AutomationProperties.Name="Verify and sign in" />
+                                                <Button Content="Change Email" Style="{StaticResource SecondaryButton}" Command="{Binding AccountVM.RequestOtpCommand}" AutomationProperties.Name="Change email" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Sync Health Card -->
+                                <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="8" Padding="20">
+                                    <StackPanel>
+                                        <TextBlock Text="Cloud Synchronization Engine" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
+                                        <TextBlock Text="Protocol version 1 bidirectional sync with local SQLite cache." FontSize="12" Foreground="{DynamicResource TextSecondary}" Margin="0,4,0,14" />
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                            <TextBlock Text="Status:" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondary}" Margin="0,0,8,0" />
+                                            <Ellipse Width="8" Height="8" Fill="{Binding SyncStatusColor}" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                            <TextBlock Text="{Binding SyncStatusText}" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                        <Button Content="Sync Now" Style="{StaticResource ModernButton}" Command="{Binding SyncNowCommand}" HorizontalAlignment="Left" AutomationProperties.Name="Manual sync now" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+
+                            <!-- Right Column: Active Sessions & Account Deletion -->
+                            <StackPanel Grid.Column="2">
+                                <!-- Active Sessions Card -->
+                                <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="8" Padding="20" Margin="0,0,0,16">
+                                    <StackPanel>
+                                        <Grid Margin="0,0,0,12">
+                                            <TextBlock Text="Active Devices &amp; Sessions" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" HorizontalAlignment="Left" />
+                                            <Button Content="Refresh" Style="{StaticResource SecondaryButton}" Padding="8,4" FontSize="11" Command="{Binding AccountVM.RefreshSessionsCommand}" HorizontalAlignment="Right" AutomationProperties.Name="Refresh active sessions" />
+                                        </Grid>
+                                        <ItemsControl ItemsSource="{Binding AccountVM.Sessions}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border Background="{DynamicResource BgSurfaceElevated}" CornerRadius="6" Padding="12" Margin="0,0,0,8">
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*" />
+                                                                <ColumnDefinition Width="Auto" />
+                                                            </Grid.ColumnDefinitions>
+                                                            <StackPanel Grid.Column="0">
+                                                                <TextBlock Text="{Binding ClientPlatform}" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
+                                                                <TextBlock Text="{Binding IpAddress, StringFormat='IP: {0}'}" FontSize="11" Foreground="{DynamicResource TextSecondary}" />
+                                                                <TextBlock Text="{Binding CreatedAt, StringFormat='Active since: {0}'}" FontSize="10" Foreground="{DynamicResource TextMuted}" />
+                                                            </StackPanel>
+                                                            <Button Grid.Column="1" Content="Revoke" Style="{StaticResource DangerButton}" Padding="8,4" FontSize="11" VerticalAlignment="Center"
+                                                                    Command="{Binding DataContext.AccountVM.RevokeSessionCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                    CommandParameter="{Binding Id}" AutomationProperties.Name="Revoke session" />
+                                                        </Grid>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Danger Zone -->
+                                <Border Visibility="{Binding AccountVM.IsAuthenticated, Converter={StaticResource BoolToVis}}" Background="#2A1215" BorderBrush="#991B1B" BorderThickness="1" CornerRadius="8" Padding="20">
+                                    <StackPanel>
+                                        <TextBlock Text="Danger Zone" FontSize="16" FontWeight="Bold" Foreground="#FCA5A5" />
+                                        <TextBlock Text="Permanently delete your account and all associated cloud sync data." FontSize="12" Foreground="{DynamicResource TextSecondary}" Margin="0,4,0,14" />
+                                        <Button Content="Delete Account" Style="{StaticResource DangerButton}" Command="{Binding AccountVM.DeleteAccountCommand}" HorizontalAlignment="Left" AutomationProperties.Name="Delete account permanently" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+                </ScrollViewer>
+            </Grid>
+
+            <!-- ==================== CONFLICT RESOLUTION MODAL OVERLAY ==================== -->
+            <Grid Grid.Column="0" Grid.ColumnSpan="2" Background="#99000000" Visibility="{Binding ConflictVM.IsOpen, Converter={StaticResource BoolToVis}}">
+                <Border Background="{DynamicResource BgSurfaceElevated}" BorderBrush="{DynamicResource AccentAmber}" BorderThickness="1" CornerRadius="10" Padding="24" Width="720" MaxHeight="600" VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <!-- Header -->
+                        <Grid Grid.Row="0" Margin="0,0,0,12">
+                            <TextBlock Text="Sync Conflict Resolution" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource AccentAmber}" HorizontalAlignment="Left" />
+                            <Button Content="✕" Style="{StaticResource SecondaryButton}" Padding="8,4" Command="{Binding ConflictVM.CloseCommand}" HorizontalAlignment="Right" AutomationProperties.Name="Close conflict modal" />
+                        </Grid>
+
+                        <TextBlock Grid.Row="1" Text="A cloud revision differs from your local modification. Inspect the diff and choose which version to retain." FontSize="12" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,16" />
+
+                        <!-- Side by Side Diff -->
+                        <Grid Grid.Row="2" Margin="0,0,0,20">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="16" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Local Card -->
+                            <Border Grid.Column="0" Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="6" Padding="14">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="*" />
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Text="Local Modification (This Device)" FontWeight="Bold" FontSize="13" Foreground="{DynamicResource AccentBlue}" Margin="0,0,0,8" />
+                                    <ScrollViewer Grid.Row="1" MaxHeight="280" VerticalScrollBarVisibility="Auto">
+                                        <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding ConflictVM.LocalSummary, Mode=OneWay}" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap" Background="Transparent" BorderThickness="0" FontFamily="Consolas" FontSize="11" />
+                                    </ScrollViewer>
+                                </Grid>
+                            </Border>
+
+                            <!-- Server Card -->
+                            <Border Grid.Column="2" Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="6" Padding="14">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="*" />
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Text="Server Revision (Cloud)" FontWeight="Bold" FontSize="13" Foreground="{DynamicResource AccentAmber}" Margin="0,0,0,8" />
+                                    <ScrollViewer Grid.Row="1" MaxHeight="280" VerticalScrollBarVisibility="Auto">
+                                        <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding ConflictVM.ServerSummary, Mode=OneWay}" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap" Background="Transparent" BorderThickness="0" FontFamily="Consolas" FontSize="11" />
+                                    </ScrollViewer>
+                                </Grid>
+                            </Border>
+                        </Grid>
+
+                        <!-- Actions -->
+                        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button Content="Keep Local Version" Style="{StaticResource ModernButton}" Command="{Binding ConflictVM.KeepLocalCommand}" Margin="0,0,10,0" AutomationProperties.Name="Keep local version and re-upload" />
+                            <Button Content="Keep Server Version" Style="{StaticResource SecondaryButton}" Command="{Binding ConflictVM.KeepServerCommand}" Margin="0,0,10,0" AutomationProperties.Name="Accept server version" />
+                            <Button Content="Cancel" Style="{StaticResource SecondaryButton}" Command="{Binding ConflictVM.CloseCommand}" AutomationProperties.Name="Cancel conflict resolution" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
             </Grid>
         </Grid>
 

@@ -13,10 +13,12 @@ namespace TaskFlow.Repositories;
 public class FollowUpRepository : IFollowUpRepository
 {
     private readonly DatabaseConnectionFactory _connectionFactory;
+    private readonly ISyncRepository? _syncRepository;
 
-    public FollowUpRepository(DatabaseConnectionFactory connectionFactory)
+    public FollowUpRepository(DatabaseConnectionFactory connectionFactory, ISyncRepository? syncRepository = null)
     {
         _connectionFactory = connectionFactory;
+        _syncRepository = syncRepository;
     }
 
     public async Task<IReadOnlyList<FollowUpItem>> ListAsync(string? status = null, string? search = null)
@@ -145,6 +147,12 @@ public class FollowUpRepository : IFollowUpRepository
             await occCmd.ExecuteNonQueryAsync();
         }
 
+        if (_syncRepository != null)
+        {
+            var payload = JsonSerializer.Serialize(item);
+            await _syncRepository.EnqueueMutationAsync("followup", item.Id, "put", null, payload, connection, transaction);
+        }
+
         transaction.Commit();
         return item;
     }
@@ -178,6 +186,13 @@ public class FollowUpRepository : IFollowUpRepository
 
         AddParameters(cmd, item);
         await cmd.ExecuteNonQueryAsync();
+
+        if (_syncRepository != null)
+        {
+            var baseRev = await _syncRepository.GetServerRevisionAsync("followup", item.Id);
+            var payload = JsonSerializer.Serialize(item);
+            await _syncRepository.EnqueueMutationAsync("followup", item.Id, "put", baseRev, payload, connection);
+        }
 
         return item;
     }
@@ -414,6 +429,13 @@ public class FollowUpRepository : IFollowUpRepository
             deleteFu.CommandText = "DELETE FROM followups WHERE id = @id;";
             deleteFu.Parameters.AddWithValue("@id", id);
             rows = await deleteFu.ExecuteNonQueryAsync();
+        }
+
+        if (rows > 0 && _syncRepository != null)
+        {
+            var baseRev = await _syncRepository.GetServerRevisionAsync("followup", id);
+            await _syncRepository.EnqueueMutationAsync("followup", id, "delete", baseRev, null, connection, transaction);
+            await _syncRepository.RecordTombstoneAsync("followup", id);
         }
 
         transaction.Commit();

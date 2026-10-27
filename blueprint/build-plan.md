@@ -231,7 +231,7 @@ The Blueprint overlay, `AGENTS.md`, and onboarding setup are already present.
   Follow Up recurrence, Windows closed-app notifications, communication
   launchers, keyboard-oriented fast capture, Narrator support, contrast themes,
   and high-DPI layouts.
-- [ ] 50. **WPF API integration and release readiness** - independently implement
+- [x] 50. **WPF API integration and release readiness** - independently implement
   authentication, synchronization for all supported entities, DPAPI-protected
   sessions, conflict resolution, network and notification recovery, signed x64
   and Arm64 MSIX packaging, and Microsoft Store readiness.
