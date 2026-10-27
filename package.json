@@ -9,7 +9,9 @@
     "lint": "npm --prefix apps/web run lint",
     "test": "npm --prefix apps/web run test",
     "test:mobile": "npm --prefix apps/mobile run test",
-    "verify": "npm run check:boundaries && npm --prefix apps/mobile run typecheck && npm --prefix apps/mobile run test && npm --prefix apps/web run lint && npm --prefix apps/web run test && npm --prefix apps/web run build",
+    "test:windows": "dotnet test apps/windows/TaskFlow.sln",
+    "build:windows": "dotnet build apps/windows/TaskFlow.sln",
+    "verify": "npm run check:boundaries && npm --prefix apps/mobile run typecheck && npm --prefix apps/mobile run test && npm --prefix apps/web run lint && npm --prefix apps/web run test && npm --prefix apps/web run build && npm run test:windows && npm run build:windows",
     "check:boundaries": "node scripts/check-boundaries.mjs",
     "db:migrate": "npm --prefix apps/web run db:migrate"
   }

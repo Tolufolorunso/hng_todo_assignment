@@ -221,7 +221,7 @@ The Blueprint overlay, `AGENTS.md`, and onboarding setup are already present.
 
 ## Milestone M: Native Windows Application
 
-- [ ] 48. **WPF offline foundation** - create the independent .NET 10 WPF
+- [x] 48. **WPF offline foundation** - create the independent .NET 10 WPF
   application with MVVM, Windows-owned SQLite migrations, task and note CRUD,
   search, backup import and export, keyboard navigation, and offline restart
   behavior.

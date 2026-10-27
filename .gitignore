@@ -44,3 +44,9 @@ next-env.d.ts
 # expo
 .expo/
 
+# .NET / C#
+bin/
+obj/
+*.user
+*.suo
+
