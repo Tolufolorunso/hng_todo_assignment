@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { createDatabase, runMigrations } from "./db/index.js";
-import { TaskRepository, NoteRepository } from "./storage/index.js";
-import { SearchService, BackupService } from "./services/index.js";
+import { createDatabase, runMigrations } from "./db/index";
+import { TaskRepository, NoteRepository } from "./storage/index";
+import { SearchService, BackupService } from "./services/index";
 
 describe("Mobile App Lifecycle and Offline Restart Behavior", () => {
   it("initializes database, runs migrations, and sets up repositories cleanly", async () => {

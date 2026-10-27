@@ -244,3 +244,10 @@ The Blueprint overlay, `AGENTS.md`, and onboarding setup are already present.
   account deletion, abuse controls, accessibility, synchronized-mode privacy,
   backup portability, observability, release rollback, and production support
   procedures.
+
+## Milestone O: Cross-Platform UX Polish and Parity
+
+- [x] 52. **Mobile bundling resolution and launch recovery** - remove explicit `.js` import extensions across all Expo Router route files in `apps/mobile/app/`, restore native module resolution for `.tsx` and `.ts` files, verify bundling without errors on Android and iOS, and validate clean launch into the 4-tab native navigation interface.
+- [ ] 53. **Web usability, modal clearance, and form polish** - eliminate initial light theme flash on page load by enforcing immediate root dark background before hydration and removing body color transitions, expand Quick Add task details to include priority, due date, category, and time estimate inputs, allow clicking task cards for detail/edit inspection without toggling the completion checkbox, adjust More popover z-index and opacity to prevent background text bleed, constrain search bar width during flex wrapping, add bounded scrollable containers (`max-h-[85vh]` and `overflow-y-auto`) to Account and Fast Capture modals to guarantee close buttons and actions remain on-screen, improve mobile bottom sheet responsiveness, and unpin desktop footer from fixed positioning into normal document flow.
+- [ ] 54. **Windows desktop parity, navigation highlighting, and visual design** - add visual active tab indicators in the sidebar navigation with accent background and border highlights, provide explicit labels and placeholder watermarks for all input fields across task, follow-up, and note forms, replace default OS ComboBox controls with custom themed dark/light templates, generate and configure the official TaskFlow application icon on the main window and taskbar, enhance the monthly calendar with prominent today highlighting and distinct badges for tasks versus follow-ups, and align rich text formatting capabilities with the web client.
+

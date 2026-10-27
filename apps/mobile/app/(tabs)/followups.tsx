@@ -1,6 +1,6 @@
 import React from "react";
-import { useAppServices, useAppServicesState } from "../../src/context/AppContext.js";
-import { FollowUpsScreen } from "../../src/screens/FollowUpsScreen.js";
+import { useAppServices, useAppServicesState } from "../../src/context/AppContext";
+import { FollowUpsScreen } from "../../src/screens/FollowUpsScreen";
 
 export default function FollowUpsTabScreen(): React.JSX.Element {
   const { followUpRepo } = useAppServices();

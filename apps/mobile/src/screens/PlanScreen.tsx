@@ -7,13 +7,13 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from "react-native";
-import type { TaskRepository } from "../storage/taskRepository.js";
-import type { FollowUpRepository } from "../storage/followUpRepository.js";
-import type { DailyPlanRepository } from "../storage/dailyPlanRepository.js";
-import type { DailyPlan, DailyPlanItem } from "../types/plan.js";
-import { generateDailyRecommendations } from "../services/planEngine.js";
-import { TouchButton, Badge, EmptyState } from "../components/primitives.js";
-import { useTheme } from "../services/theme.js";
+import type { TaskRepository } from "../storage/taskRepository";
+import type { FollowUpRepository } from "../storage/followUpRepository";
+import type { DailyPlanRepository } from "../storage/dailyPlanRepository";
+import type { DailyPlan, DailyPlanItem } from "../types/plan";
+import { generateDailyRecommendations } from "../services/planEngine";
+import { TouchButton, Badge, EmptyState } from "../components/primitives";
+import { useTheme } from "../services/theme";
 
 export interface PlanScreenProps {
   taskRepo: TaskRepository;

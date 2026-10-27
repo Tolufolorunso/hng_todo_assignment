@@ -1,13 +1,13 @@
-import type { SqliteDatabase } from "../db/driver.js";
+import type { SqliteDatabase } from "../db/driver";
 import type {
   FollowUp,
   CreateFollowUpInput,
   UpdateFollowUpInput,
   FollowUpOccurrence,
   FollowUpStatus,
-} from "../types/followup.js";
-import { computeNextDueAt, snoozeFollowUp, rescheduleFollowUp } from "../services/recurrence.js";
-import { SyncRepository, type RepositoryOptions } from "./syncRepository.js";
+} from "../types/followup";
+import { computeNextDueAt, snoozeFollowUp, rescheduleFollowUp } from "../services/recurrence";
+import { SyncRepository, type RepositoryOptions } from "./syncRepository";
 
 interface FollowUpRow {
   id: string;

@@ -1,4 +1,4 @@
-import type { RecurrenceRule } from "../types/followup.js";
+import type { RecurrenceRule } from "../types/followup";
 
 export function computeNextDueAt(rule: RecurrenceRule, baseDate: Date): string {
   const current = new Date(baseDate);

@@ -7,8 +7,8 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from "react-native";
-import type { ConflictRecord } from "../types/sync.js";
-import { useTheme } from "../services/theme.js";
+import type { ConflictRecord } from "../types/sync";
+import { useTheme } from "../services/theme";
 
 export interface ConflictModalProps {
   conflicts: ConflictRecord[];

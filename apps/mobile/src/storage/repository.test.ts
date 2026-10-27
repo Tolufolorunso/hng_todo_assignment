@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { InMemorySqliteDatabase } from "../db/driver.js";
-import { runMigrations } from "../db/migrations.js";
-import { TaskRepository } from "./taskRepository.js";
-import { NoteRepository } from "./noteRepository.js";
+import { InMemorySqliteDatabase } from "../db/driver";
+import { runMigrations } from "../db/migrations";
+import { TaskRepository } from "./taskRepository";
+import { NoteRepository } from "./noteRepository";
 
 describe("Mobile Task and Note Repositories", () => {
   let db: InMemorySqliteDatabase;

@@ -1,7 +1,7 @@
 import React from "react";
 import { useRouter } from "expo-router";
-import { useAppServices, useAppServicesState } from "../../src/context/AppContext.js";
-import { NotesScreen } from "../../src/screens/NotesScreen.js";
+import { useAppServices, useAppServicesState } from "../../src/context/AppContext";
+import { NotesScreen } from "../../src/screens/NotesScreen";
 
 export default function NotesTabScreen(): React.JSX.Element {
   const router = useRouter();

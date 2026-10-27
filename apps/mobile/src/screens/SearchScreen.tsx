@@ -7,11 +7,11 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from "react-native";
-import type { SearchService, SearchResults } from "../services/search.js";
-import { TaskItemCard } from "../components/TaskItemCard.js";
-import { NoteItemCard } from "../components/NoteItemCard.js";
-import type { TaskRepository } from "../storage/taskRepository.js";
-import { useTheme } from "../services/theme.js";
+import type { SearchService, SearchResults } from "../services/search";
+import { TaskItemCard } from "../components/TaskItemCard";
+import { NoteItemCard } from "../components/NoteItemCard";
+import type { TaskRepository } from "../storage/taskRepository";
+import { useTheme } from "../services/theme";
 
 export interface SearchScreenProps {
   searchService: SearchService;

@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { generateDailyRecommendations } from "./planEngine.js";
-import { DailyPlanRepository } from "../storage/dailyPlanRepository.js";
-import { InMemorySqliteDatabase } from "../db/driver.js";
-import { runMigrations } from "../db/migrations.js";
-import type { Task } from "../types/task.js";
-import type { FollowUp } from "../types/followup.js";
+import { generateDailyRecommendations } from "./planEngine";
+import { DailyPlanRepository } from "../storage/dailyPlanRepository";
+import { InMemorySqliteDatabase } from "../db/driver";
+import { runMigrations } from "../db/migrations";
+import type { Task } from "../types/task";
+import type { FollowUp } from "../types/followup";
 
 describe("planEngine", () => {
   const targetDate = "2026-10-25";

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
-import { useAppServices, useAppServicesState } from "../../src/context/AppContext.js";
-import { MoreScreen } from "../../src/screens/MoreScreen.js";
-import type { MobileScreen } from "../../src/types/navigation.js";
+import { useAppServices, useAppServicesState } from "../../src/context/AppContext";
+import { MoreScreen } from "../../src/screens/MoreScreen";
+import type { MobileScreen } from "../../src/types/navigation";
 
 export default function MoreTabScreen(): React.JSX.Element {
   const router = useRouter();

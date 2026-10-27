@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useTheme } from "../../src/services/theme.js";
-import { useAppServices, useAppServicesState } from "../../src/context/AppContext.js";
+import { useTheme } from "../../src/services/theme";
+import { useAppServices, useAppServicesState } from "../../src/context/AppContext";
 
 export function TabBarIcon({
   name,

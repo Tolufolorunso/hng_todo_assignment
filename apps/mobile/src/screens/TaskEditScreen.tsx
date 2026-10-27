@@ -7,10 +7,10 @@ import {
   ScrollView,
   StyleSheet,
 } from "react-native";
-import type { TaskPriority, TaskCategory } from "../types/task.js";
-import type { TaskRepository } from "../storage/taskRepository.js";
-import { TouchButton } from "../components/primitives.js";
-import { useTheme } from "../services/theme.js";
+import type { TaskPriority, TaskCategory } from "../types/task";
+import type { TaskRepository } from "../storage/taskRepository";
+import { TouchButton } from "../components/primitives";
+import { useTheme } from "../services/theme";
 
 export interface TaskEditScreenProps {
   taskRepo: TaskRepository;

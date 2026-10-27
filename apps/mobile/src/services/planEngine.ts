@@ -1,6 +1,6 @@
-import type { Task } from "../types/task.js";
-import type { FollowUp } from "../types/followup.js";
-import type { DailyPlanItem, PlanRecommendationResult } from "../types/plan.js";
+import type { Task } from "../types/task";
+import type { FollowUp } from "../types/followup";
+import type { DailyPlanItem, PlanRecommendationResult } from "../types/plan";
 
 export interface PlanEngineOptions {
   targetDate?: string;

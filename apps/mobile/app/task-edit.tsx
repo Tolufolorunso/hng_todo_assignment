@@ -1,7 +1,7 @@
 import React from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useAppServices, useAppServicesState } from "../src/context/AppContext.js";
-import { TaskEditScreen } from "../src/screens/TaskEditScreen.js";
+import { useAppServices, useAppServicesState } from "../src/context/AppContext";
+import { TaskEditScreen } from "../src/screens/TaskEditScreen";
 
 export default function TaskEditRoute(): React.JSX.Element {
   const router = useRouter();

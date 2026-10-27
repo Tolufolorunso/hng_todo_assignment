@@ -6,12 +6,12 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from "react-native";
-import type { TaskRepository } from "../storage/taskRepository.js";
-import type { FollowUpRepository } from "../storage/followUpRepository.js";
-import type { ProductivityAnalytics } from "../types/analytics.js";
-import { calculateProductivityAnalytics } from "../services/analytics.js";
-import { TouchButton } from "../components/primitives.js";
-import { useTheme } from "../services/theme.js";
+import type { TaskRepository } from "../storage/taskRepository";
+import type { FollowUpRepository } from "../storage/followUpRepository";
+import type { ProductivityAnalytics } from "../types/analytics";
+import { calculateProductivityAnalytics } from "../services/analytics";
+import { TouchButton } from "../components/primitives";
+import { useTheme } from "../services/theme";
 
 export interface AnalyticsScreenProps {
   taskRepo: TaskRepository;

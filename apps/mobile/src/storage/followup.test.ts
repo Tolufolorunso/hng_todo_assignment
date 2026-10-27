@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { InMemorySqliteDatabase } from "../db/driver.js";
-import { runMigrations } from "../db/migrations.js";
-import { FollowUpRepository } from "./followUpRepository.js";
+import { InMemorySqliteDatabase } from "../db/driver";
+import { runMigrations } from "../db/migrations";
+import { FollowUpRepository } from "./followUpRepository";
 
 describe("Mobile FollowUpRepository", () => {
   let db: InMemorySqliteDatabase;

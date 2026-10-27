@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { InMemorySqliteDatabase } from "../db/driver.js";
-import { runMigrations } from "../db/migrations.js";
-import { LifecycleService } from "./lifecycle.js";
-import { AuthService } from "./auth.js";
-import { SyncEngine } from "./syncEngine.js";
+import { InMemorySqliteDatabase } from "../db/driver";
+import { runMigrations } from "../db/migrations";
+import { LifecycleService } from "./lifecycle";
+import { AuthService } from "./auth";
+import { SyncEngine } from "./syncEngine";
 
 describe("Mobile LifecycleService", () => {
   let db: InMemorySqliteDatabase;

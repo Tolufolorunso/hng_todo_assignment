@@ -2,8 +2,8 @@ import React from "react";
 import { View, Text, ActivityIndicator, StyleSheet, StatusBar } from "react-native";
 import { Stack } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { ThemeProvider, useTheme } from "../src/services/theme.js";
-import { AppServicesProvider, useAppServicesState } from "../src/context/AppContext.js";
+import { ThemeProvider, useTheme } from "../src/services/theme";
+import { AppServicesProvider, useAppServicesState } from "../src/context/AppContext";
 
 function RootNavigator(): React.JSX.Element {
   const { colors, mode } = useTheme();

@@ -14,14 +14,14 @@ import type {
   FollowUp,
   FollowUpStatus,
   RecurrenceRule,
-} from "../types/followup.js";
-import type { FollowUpRepository } from "../storage/followUpRepository.js";
-import { TouchButton, Badge, EmptyState } from "../components/primitives.js";
-import { launchAction } from "../services/launchers.js";
-import { notificationScheduler } from "../services/notifications.js";
-import { useTheme } from "../services/theme.js";
-import { hapticFeedback } from "../services/haptics.js";
-import { getPlatformCardStyle } from "../styles/platform.js";
+} from "../types/followup";
+import type { FollowUpRepository } from "../storage/followUpRepository";
+import { TouchButton, Badge, EmptyState } from "../components/primitives";
+import { launchAction } from "../services/launchers";
+import { notificationScheduler } from "../services/notifications";
+import { useTheme } from "../services/theme";
+import { hapticFeedback } from "../services/haptics";
+import { getPlatformCardStyle } from "../styles/platform";
 
 export interface FollowUpsScreenProps {
   followUpRepo: FollowUpRepository;

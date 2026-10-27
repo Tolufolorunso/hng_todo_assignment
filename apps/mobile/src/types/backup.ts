@@ -1,5 +1,5 @@
-import type { Task } from "./task.js";
-import type { Note } from "./note.js";
+import type { Task } from "./task";
+import type { Note } from "./note";
 
 export interface MobileBackupSnapshot {
   version: 1 | 2;

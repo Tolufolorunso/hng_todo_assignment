@@ -1,11 +1,11 @@
-import type { InboxRepository } from "../storage/inboxRepository.js";
-import type { TaskRepository } from "../storage/taskRepository.js";
-import type { NoteRepository } from "../storage/noteRepository.js";
-import type { FollowUpRepository } from "../storage/followUpRepository.js";
-import type { InboxCapture } from "../types/inbox.js";
-import type { Task, CreateTaskInput } from "../types/task.js";
-import type { Note } from "../types/note.js";
-import type { FollowUp, CreateFollowUpInput } from "../types/followup.js";
+import type { InboxRepository } from "../storage/inboxRepository";
+import type { TaskRepository } from "../storage/taskRepository";
+import type { NoteRepository } from "../storage/noteRepository";
+import type { FollowUpRepository } from "../storage/followUpRepository";
+import type { InboxCapture } from "../types/inbox";
+import type { Task, CreateTaskInput } from "../types/task";
+import type { Note } from "../types/note";
+import type { FollowUp, CreateFollowUpInput } from "../types/followup";
 
 export class InboxTriageService {
   constructor(

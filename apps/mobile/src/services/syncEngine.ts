@@ -1,4 +1,4 @@
-import type { SqliteDatabase } from "../db/driver.js";
+import type { SqliteDatabase } from "../db/driver";
 import type {
   SyncEntityType,
   SyncMutation,
@@ -7,19 +7,19 @@ import type {
   MobileSyncState,
   OutboxRecord,
   ConflictRecord,
-} from "../types/sync.js";
-import { SyncRepository } from "../storage/syncRepository.js";
-import { TaskRepository } from "../storage/taskRepository.js";
-import { NoteRepository } from "../storage/noteRepository.js";
-import { FollowUpRepository } from "../storage/followUpRepository.js";
-import { DailyPlanRepository } from "../storage/dailyPlanRepository.js";
-import { InboxRepository } from "../storage/inboxRepository.js";
-import type { AuthService } from "./auth.js";
-import type { Task } from "../types/task.js";
-import type { Note } from "../types/note.js";
-import type { FollowUp, FollowUpOccurrence } from "../types/followup.js";
-import type { DailyPlan } from "../types/plan.js";
-import type { InboxCapture } from "../types/inbox.js";
+} from "../types/sync";
+import { SyncRepository } from "../storage/syncRepository";
+import { TaskRepository } from "../storage/taskRepository";
+import { NoteRepository } from "../storage/noteRepository";
+import { FollowUpRepository } from "../storage/followUpRepository";
+import { DailyPlanRepository } from "../storage/dailyPlanRepository";
+import { InboxRepository } from "../storage/inboxRepository";
+import type { AuthService } from "./auth";
+import type { Task } from "../types/task";
+import type { Note } from "../types/note";
+import type { FollowUp, FollowUpOccurrence } from "../types/followup";
+import type { DailyPlan } from "../types/plan";
+import type { InboxCapture } from "../types/inbox";
 
 export interface SyncEngineConfig {
   baseUrl?: string;

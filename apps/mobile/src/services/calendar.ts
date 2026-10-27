@@ -1,5 +1,5 @@
-import type { Task } from "../types/task.js";
-import type { FollowUp } from "../types/followup.js";
+import type { Task } from "../types/task";
+import type { FollowUp } from "../types/followup";
 
 export interface CalendarDaySchedule {
   date: string; // YYYY-MM-DD

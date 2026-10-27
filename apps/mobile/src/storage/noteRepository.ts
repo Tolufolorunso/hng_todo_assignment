@@ -1,7 +1,7 @@
-import type { SqliteDatabase } from "../db/driver.js";
-import type { Note, CreateNoteInput, UpdateNoteInput } from "../types/note.js";
-import { validateNoteInput } from "../services/validation.js";
-import { SyncRepository, type RepositoryOptions } from "./syncRepository.js";
+import type { SqliteDatabase } from "../db/driver";
+import type { Note, CreateNoteInput, UpdateNoteInput } from "../types/note";
+import { validateNoteInput } from "../services/validation";
+import { SyncRepository, type RepositoryOptions } from "./syncRepository";
 
 interface NoteRow {
   id: string;

@@ -1,14 +1,14 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { InMemorySqliteDatabase } from "../db/driver.js";
-import { runMigrations } from "../db/migrations.js";
-import { AuthService } from "./auth.js";
-import { InMemorySecureStorage } from "./secureStore.js";
-import { TaskRepository } from "../storage/taskRepository.js";
-import { NoteRepository } from "../storage/noteRepository.js";
-import { FollowUpRepository } from "../storage/followUpRepository.js";
-import { DailyPlanRepository } from "../storage/dailyPlanRepository.js";
-import { InboxRepository } from "../storage/inboxRepository.js";
-import { SyncRepository } from "../storage/syncRepository.js";
+import { InMemorySqliteDatabase } from "../db/driver";
+import { runMigrations } from "../db/migrations";
+import { AuthService } from "./auth";
+import { InMemorySecureStorage } from "./secureStore";
+import { TaskRepository } from "../storage/taskRepository";
+import { NoteRepository } from "../storage/noteRepository";
+import { FollowUpRepository } from "../storage/followUpRepository";
+import { DailyPlanRepository } from "../storage/dailyPlanRepository";
+import { InboxRepository } from "../storage/inboxRepository";
+import { SyncRepository } from "../storage/syncRepository";
 
 describe("Mobile AuthService", () => {
   let db: InMemorySqliteDatabase;

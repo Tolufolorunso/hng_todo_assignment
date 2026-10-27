@@ -7,7 +7,7 @@ import {
   SafeAreaView,
   StatusBar,
 } from "react-native";
-import { createDatabase, runMigrations } from "./src/db/index.js";
+import { createDatabase, runMigrations } from "./src/db/index";
 import {
   TaskRepository,
   NoteRepository,
@@ -15,7 +15,7 @@ import {
   DailyPlanRepository,
   InboxRepository,
   SyncRepository,
-} from "./src/storage/index.js";
+} from "./src/storage/index";
 import {
   SearchService,
   BackupService,
@@ -24,8 +24,8 @@ import {
   SyncEngine,
   LifecycleService,
   ThemeProvider,
-} from "./src/services/index.js";
-import { MobileNavigator } from "./src/navigation/Navigator.js";
+} from "./src/services/index";
+import { MobileNavigator } from "./src/navigation/Navigator";
 
 export function App(): React.JSX.Element {
   const [isReady, setIsReady] = useState(false);

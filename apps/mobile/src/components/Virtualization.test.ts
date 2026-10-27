@@ -7,10 +7,10 @@ import {
   getPlatformCardStyle,
   getPlatformGroupContainerStyle,
   getHairlineDividerStyle,
-} from "../styles/platform.js";
-import { TaskItemCard } from "./TaskItemCard.js";
-import { NoteItemCard } from "./NoteItemCard.js";
-import { hapticFeedback } from "../services/haptics.js";
+} from "../styles/platform";
+import { TaskItemCard } from "./TaskItemCard";
+import { NoteItemCard } from "./NoteItemCard";
+import { hapticFeedback } from "../services/haptics";
 
 describe("Platform Aesthetics and Styling Utilities", () => {
   it("determines platform flags correctly", () => {

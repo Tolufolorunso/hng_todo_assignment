@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { NotificationScheduler } from "./notifications.js";
-import type { FollowUp } from "../types/followup.js";
+import { NotificationScheduler } from "./notifications";
+import type { FollowUp } from "../types/followup";
 
 describe("NotificationScheduler", () => {
   let scheduler: NotificationScheduler;

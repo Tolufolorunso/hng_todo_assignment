@@ -6,17 +6,17 @@ import {
   ScrollView,
   StyleSheet,
 } from "react-native";
-import type { NoteRepository } from "../storage/noteRepository.js";
-import type { TaskRepository } from "../storage/taskRepository.js";
-import type { FollowUpRepository } from "../storage/followUpRepository.js";
-import type { NoteBacklinks } from "../services/actionableNotes.js";
+import type { NoteRepository } from "../storage/noteRepository";
+import type { TaskRepository } from "../storage/taskRepository";
+import type { FollowUpRepository } from "../storage/followUpRepository";
+import type { NoteBacklinks } from "../services/actionableNotes";
 import {
   createTaskFromNoteExcerpt,
   createFollowUpFromNoteExcerpt,
   getNoteBacklinks,
-} from "../services/actionableNotes.js";
-import { TouchButton, Badge } from "../components/primitives.js";
-import { useTheme } from "../services/theme.js";
+} from "../services/actionableNotes";
+import { TouchButton, Badge } from "../components/primitives";
+import { useTheme } from "../services/theme";
 
 export interface NoteEditScreenProps {
   noteRepo: NoteRepository;

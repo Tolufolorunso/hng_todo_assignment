@@ -1,1 +1,1 @@
-export * from "./AppContext.js";
+export * from "./AppContext";

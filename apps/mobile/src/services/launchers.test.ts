@@ -7,7 +7,7 @@ import {
   createMailtoUri,
   createTelUri,
   createWhatsAppUri,
-} from "./launchers.js";
+} from "./launchers";
 
 describe("Mobile Communication Launchers", () => {
   it("cleans phone numbers and preserves leading plus sign", () => {

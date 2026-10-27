@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { aggregateCalendarMonth, getScheduleForDate } from "./calendar.js";
-import type { Task } from "../types/task.js";
-import type { FollowUp } from "../types/followup.js";
+import { aggregateCalendarMonth, getScheduleForDate } from "./calendar";
+import type { Task } from "../types/task";
+import type { FollowUp } from "../types/followup";
 
 describe("calendar service", () => {
   const sampleTasks: Task[] = [

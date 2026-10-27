@@ -7,11 +7,11 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from "react-native";
-import type { InboxCapture } from "../types/inbox.js";
-import type { InboxRepository } from "../storage/inboxRepository.js";
-import type { InboxTriageService } from "../services/inbox.js";
-import { TouchButton, EmptyState } from "../components/primitives.js";
-import { useTheme } from "../services/theme.js";
+import type { InboxCapture } from "../types/inbox";
+import type { InboxRepository } from "../storage/inboxRepository";
+import type { InboxTriageService } from "../services/inbox";
+import { TouchButton, EmptyState } from "../components/primitives";
+import { useTheme } from "../services/theme";
 
 export interface InboxScreenProps {
   inboxRepo: InboxRepository;

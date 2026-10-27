@@ -1,7 +1,7 @@
 import React from "react";
 import { useRouter } from "expo-router";
-import { useAppServices, useAppServicesState } from "../../src/context/AppContext.js";
-import { TasksScreen } from "../../src/screens/TasksScreen.js";
+import { useAppServices, useAppServicesState } from "../../src/context/AppContext";
+import { TasksScreen } from "../../src/screens/TasksScreen";
 
 export default function TasksTabScreen(): React.JSX.Element {
   const router = useRouter();

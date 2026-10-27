@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { computeNextDueAt, snoozeFollowUp, rescheduleFollowUp } from "./recurrence.js";
-import type { RecurrenceRule } from "../types/followup.js";
+import { computeNextDueAt, snoozeFollowUp, rescheduleFollowUp } from "./recurrence";
+import type { RecurrenceRule } from "../types/followup";
 
 describe("Mobile Recurrence Engine", () => {
   it("computes calendar-anchored daily recurrence at target time of day", () => {

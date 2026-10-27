@@ -1,14 +1,14 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { InMemorySqliteDatabase } from "../db/driver.js";
-import { runMigrations } from "../db/migrations.js";
-import { AuthService } from "../services/auth.js";
-import { SyncEngine } from "../services/syncEngine.js";
-import { SyncRepository } from "../storage/syncRepository.js";
-import { AccountScreen } from "./AccountScreen.js";
-import { InMemorySecureStorage } from "../services/secureStore.js";
-import { TaskRepository } from "../storage/taskRepository.js";
-import { NoteRepository } from "../storage/noteRepository.js";
-import { FollowUpRepository } from "../storage/followUpRepository.js";
+import { InMemorySqliteDatabase } from "../db/driver";
+import { runMigrations } from "../db/migrations";
+import { AuthService } from "../services/auth";
+import { SyncEngine } from "../services/syncEngine";
+import { SyncRepository } from "../storage/syncRepository";
+import { AccountScreen } from "./AccountScreen";
+import { InMemorySecureStorage } from "../services/secureStore";
+import { TaskRepository } from "../storage/taskRepository";
+import { NoteRepository } from "../storage/noteRepository";
+import { FollowUpRepository } from "../storage/followUpRepository";
 
 describe("AccountScreen and Account Workflows", () => {
   let db: InMemorySqliteDatabase;

@@ -1,11 +1,11 @@
-import type { SqliteDatabase } from "../db/driver.js";
+import type { SqliteDatabase } from "../db/driver";
 import type {
   InboxCapture,
   InboxCaptureState,
   InboxResultEntityType,
   CreateInboxCaptureInput,
-} from "../types/inbox.js";
-import { SyncRepository, type RepositoryOptions } from "./syncRepository.js";
+} from "../types/inbox";
+import { SyncRepository, type RepositoryOptions } from "./syncRepository";
 
 interface InboxCaptureRow {
   id: string;

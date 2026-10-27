@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { InMemorySqliteDatabase } from "../db/driver.js";
-import { runMigrations, getMigrationVersion } from "../db/migrations.js";
-import { SyncRepository } from "./syncRepository.js";
-import { TaskRepository } from "./taskRepository.js";
-import { NoteRepository } from "./noteRepository.js";
-import { FollowUpRepository } from "./followUpRepository.js";
-import { DailyPlanRepository } from "./dailyPlanRepository.js";
-import { InboxRepository } from "./inboxRepository.js";
+import { InMemorySqliteDatabase } from "../db/driver";
+import { runMigrations, getMigrationVersion } from "../db/migrations";
+import { SyncRepository } from "./syncRepository";
+import { TaskRepository } from "./taskRepository";
+import { NoteRepository } from "./noteRepository";
+import { FollowUpRepository } from "./followUpRepository";
+import { DailyPlanRepository } from "./dailyPlanRepository";
+import { InboxRepository } from "./inboxRepository";
 
 describe("Mobile Sync Storage and Migration 3", () => {
   let db: InMemorySqliteDatabase;

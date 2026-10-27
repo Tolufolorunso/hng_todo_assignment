@@ -1,6 +1,6 @@
 import React from "react";
-import { useAppServices, useAppServicesState } from "../src/context/AppContext.js";
-import { PlanScreen } from "../src/screens/PlanScreen.js";
+import { useAppServices, useAppServicesState } from "../src/context/AppContext";
+import { PlanScreen } from "../src/screens/PlanScreen";
 
 export default function PlanRoute(): React.JSX.Element {
   const { taskRepo, followUpRepo, dailyPlanRepo } = useAppServices();

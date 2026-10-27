@@ -1,11 +1,11 @@
-import type { SqliteDatabase } from "../db/driver.js";
+import type { SqliteDatabase } from "../db/driver";
 import type {
   OutboxRecord,
   SyncCursor,
   ConflictRecord,
   TombstoneRecord,
   SyncEntityType,
-} from "../types/sync.js";
+} from "../types/sync";
 
 export interface RepositoryOptions {
   enqueueOutbox?: boolean;

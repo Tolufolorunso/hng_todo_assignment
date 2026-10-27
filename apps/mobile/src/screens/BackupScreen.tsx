@@ -7,10 +7,10 @@ import {
   Pressable,
   StyleSheet,
 } from "react-native";
-import type { BackupService } from "../services/backup.js";
-import type { BackupImportMode, BackupImportResult } from "../types/backup.js";
-import { TouchButton } from "../components/primitives.js";
-import { useTheme } from "../services/theme.js";
+import type { BackupService } from "../services/backup";
+import type { BackupImportMode, BackupImportResult } from "../types/backup";
+import { TouchButton } from "../components/primitives";
+import { useTheme } from "../services/theme";
 
 export interface BackupScreenProps {
   backupService: BackupService;

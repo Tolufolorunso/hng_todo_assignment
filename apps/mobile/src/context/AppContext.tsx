@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from "react";
-import { createDatabase, runMigrations } from "../db/index.js";
+import { createDatabase, runMigrations } from "../db/index";
 import {
   TaskRepository,
   NoteRepository,
@@ -7,7 +7,7 @@ import {
   DailyPlanRepository,
   InboxRepository,
   SyncRepository,
-} from "../storage/index.js";
+} from "../storage/index";
 import {
   SearchService,
   BackupService,
@@ -15,7 +15,7 @@ import {
   AuthService,
   SyncEngine,
   LifecycleService,
-} from "../services/index.js";
+} from "../services/index";
 
 export interface AppServices {
   taskRepo: TaskRepository;

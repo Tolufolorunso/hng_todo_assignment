@@ -1,5 +1,5 @@
-import type { CreateTaskInput, UpdateTaskInput, TaskPriority, TaskCategory } from "../types/task.js";
-import type { CreateNoteInput, UpdateNoteInput } from "../types/note.js";
+import type { CreateTaskInput, UpdateTaskInput, TaskPriority, TaskCategory } from "../types/task";
+import type { CreateNoteInput, UpdateNoteInput } from "../types/note";
 
 export interface ValidationResult {
   valid: boolean;

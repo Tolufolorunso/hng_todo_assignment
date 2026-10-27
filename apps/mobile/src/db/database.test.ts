@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { InMemorySqliteDatabase, createDatabase } from "./driver.js";
-import { runMigrations, getMigrationVersion, migrations } from "./migrations.js";
+import { InMemorySqliteDatabase, createDatabase } from "./driver";
+import { runMigrations, getMigrationVersion, migrations } from "./migrations";
 
 describe("Mobile SQLite Database and Migration Runner", () => {
   let db: InMemorySqliteDatabase;

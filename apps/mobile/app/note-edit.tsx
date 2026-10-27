@@ -1,7 +1,7 @@
 import React from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useAppServices, useAppServicesState } from "../src/context/AppContext.js";
-import { NoteEditScreen } from "../src/screens/NoteEditScreen.js";
+import { useAppServices, useAppServicesState } from "../src/context/AppContext";
+import { NoteEditScreen } from "../src/screens/NoteEditScreen";
 
 export default function NoteEditRoute(): React.JSX.Element {
   const router = useRouter();

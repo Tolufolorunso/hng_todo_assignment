@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { hapticFeedback } from "./haptics.js";
-import { hapticLog, clearHapticLog } from "../test/haptics-mock.js";
+import { hapticFeedback } from "./haptics";
+import { hapticLog, clearHapticLog } from "../test/haptics-mock";
 import * as Haptics from "expo-haptics";
 
 describe("Mobile Haptic Feedback Service", () => {

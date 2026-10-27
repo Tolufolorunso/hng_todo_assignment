@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import React from "react";
-import { AppServicesProvider, useAppServices, useAppServicesState, type AppServices } from "./AppContext.js";
-import { createDatabase, runMigrations } from "../db/index.js";
+import { AppServicesProvider, useAppServices, useAppServicesState, type AppServices } from "./AppContext";
+import { createDatabase, runMigrations } from "../db/index";
 import {
   TaskRepository,
   NoteRepository,
@@ -9,14 +9,14 @@ import {
   DailyPlanRepository,
   InboxRepository,
   SyncRepository,
-} from "../storage/index.js";
+} from "../storage/index";
 import {
   SearchService,
   BackupService,
   InboxTriageService,
   AuthService,
   SyncEngine,
-} from "../services/index.js";
+} from "../services/index";
 
 async function createTestServices(): Promise<AppServices> {
   const db = createDatabase("memory");

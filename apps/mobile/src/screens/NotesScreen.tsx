@@ -8,11 +8,11 @@ import {
   StyleSheet,
   Platform,
 } from "react-native";
-import type { Note } from "../types/note.js";
-import type { NoteRepository } from "../storage/noteRepository.js";
-import { NoteItemCard } from "../components/NoteItemCard.js";
-import { TouchButton, EmptyState } from "../components/primitives.js";
-import { useTheme } from "../services/theme.js";
+import type { Note } from "../types/note";
+import type { NoteRepository } from "../storage/noteRepository";
+import { NoteItemCard } from "../components/NoteItemCard";
+import { TouchButton, EmptyState } from "../components/primitives";
+import { useTheme } from "../services/theme";
 
 export interface NotesScreenProps {
   noteRepo: NoteRepository;

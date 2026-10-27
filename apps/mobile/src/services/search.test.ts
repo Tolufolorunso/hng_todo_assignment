@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { InMemorySqliteDatabase } from "../db/driver.js";
-import { runMigrations } from "../db/migrations.js";
-import { TaskRepository } from "../storage/taskRepository.js";
-import { NoteRepository } from "../storage/noteRepository.js";
-import { SearchService } from "./search.js";
+import { InMemorySqliteDatabase } from "../db/driver";
+import { runMigrations } from "../db/migrations";
+import { TaskRepository } from "../storage/taskRepository";
+import { NoteRepository } from "../storage/noteRepository";
+import { SearchService } from "./search";
 
 describe("Mobile SearchService", () => {
   let db: InMemorySqliteDatabase;

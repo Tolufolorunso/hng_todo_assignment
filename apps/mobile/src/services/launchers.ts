@@ -1,5 +1,5 @@
 import { Linking } from "react-native";
-import type { PreferredAction } from "../types/followup.js";
+import type { PreferredAction } from "../types/followup";
 
 export function cleanPhoneNumber(raw: string): string {
   return raw.replace(/[^0-9+]/g, "");

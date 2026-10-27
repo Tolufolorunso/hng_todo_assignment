@@ -1,9 +1,9 @@
-export * from "./TasksScreen.js";
-export * from "./TaskEditScreen.js";
-export * from "./NotesScreen.js";
-export * from "./NoteEditScreen.js";
-export * from "./SearchScreen.js";
-export * from "./BackupScreen.js";
-export * from "./AccountScreen.js";
-export * from "./MoreScreen.js";
+export * from "./TasksScreen";
+export * from "./TaskEditScreen";
+export * from "./NotesScreen";
+export * from "./NoteEditScreen";
+export * from "./SearchScreen";
+export * from "./BackupScreen";
+export * from "./AccountScreen";
+export * from "./MoreScreen";
 

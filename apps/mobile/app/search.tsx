@@ -1,7 +1,7 @@
 import React from "react";
 import { useRouter } from "expo-router";
-import { useAppServices } from "../src/context/AppContext.js";
-import { SearchScreen } from "../src/screens/SearchScreen.js";
+import { useAppServices } from "../src/context/AppContext";
+import { SearchScreen } from "../src/screens/SearchScreen";
 
 export default function SearchRoute(): React.JSX.Element {
   const router = useRouter();

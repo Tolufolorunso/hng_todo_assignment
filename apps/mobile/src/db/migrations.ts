@@ -1,4 +1,4 @@
-import type { SqliteDatabase } from "./driver.js";
+import type { SqliteDatabase } from "./driver";
 
 export interface Migration {
   version: number;

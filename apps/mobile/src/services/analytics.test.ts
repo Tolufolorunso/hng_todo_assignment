@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { calculateProductivityAnalytics } from "./analytics.js";
-import { NotificationScheduler } from "./notifications.js";
-import type { Task } from "../types/task.js";
-import type { FollowUp } from "../types/followup.js";
+import { calculateProductivityAnalytics } from "./analytics";
+import { NotificationScheduler } from "./notifications";
+import type { Task } from "../types/task";
+import type { FollowUp } from "../types/followup";
 
 describe("analytics service", () => {
   const sampleTasks: Task[] = [

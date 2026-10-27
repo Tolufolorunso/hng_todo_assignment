@@ -1,12 +1,12 @@
 # TaskFlow - Project Overview
 
-<!-- blueprint:source-hash 166ae7625adff4ec9d2879ae6320549d8833c9d88a44d603bada2145ca3e14d3 -->
+<!-- blueprint:source-hash 6b780c99d250b0a0ba3ccc4dcfa31f12e29882f6faf0dd399410cd21b3d7d5cc -->
 
 > A differentiated local-first personal productivity suite for web, Android/iOS, and Windows, with optional synchronization and proactive Follow Up reminders.
 
 ## Problem
 
-TaskFlow helps people capture work, plan a realistic day, remember commitments, and turn notes into action. The shipped offline browser app and initial mobile foundation are complete. Next come web navigation realignment with anchored popover and command palette, performance polish, official Expo Router file-based mobile architecture with native aesthetics, and the independent Windows client with synchronization.
+TaskFlow helps people capture work, plan a realistic day, remember commitments, and turn notes into action. The cross-platform foundation (Web, Mobile via Expo, and Windows via WPF) and cloud synchronization are complete through Feature 51. Milestone O delivers targeted usability polish, launch stability, and visual parity across all three client experiences.
 
 ## Users
 
@@ -33,88 +33,94 @@ TaskFlow helps people capture work, plan a realistic day, remember commitments, 
 
 ## Features
 
-Features 1 through 43 are shipped; Feature 44 is next. Headline capabilities are Follow Up, Plan My Day, actionable notes, fast capture, and unified 4-destination navigation.
+Features 1 through 51 are shipped; Feature 52 is next. Milestone O focuses on cross-platform UX polish, launch recovery, and visual parity.
 
 ### Shipped web product
 
-1. **Task data layer and persistence:** stores typed tasks and notes in IndexedDB with validation.
-2. **Task list (create, view, complete):** provides the complete local task workflow.
+1. **Task data layer:** IndexedDB storage with validation.
+2. **Task list:** create, view, complete workflows.
 3. **Edit and delete tasks:** updates and confirmed deletion.
 4. **Notes:** standalone note CRUD and search.
-5. **Due dates and priorities:** scheduling, urgency, and overdue states.
-6. **Search, filter, and sort:** manages local task collections.
-7. **Offline-first PWA:** installation, cached operation, connectivity feedback.
+5. **Due dates and priorities:** urgency and overdue states.
+6. **Search, filter, and sort:** manages task collections.
+7. **Offline-first PWA:** installation and cached operation.
 8. **Deployment readiness:** verifies public Vercel release.
-9. **Modern SaaS design:** responsive dark/light workspace and navigation.
-10. **Drag-and-drop task reordering:** persists user task sequence.
+9. **Modern SaaS design:** responsive dark/light workspace.
+10. **Drag-and-drop task reordering:** persists task order.
 11. **Task categories and filtering:** Work, Personal, Urgent, Study, Ideas.
-12. **Calendar view:** maps tasks into interactive monthly schedule.
-13. **Analytics:** derives completion, category, priority, and productivity insights.
-14. **Data backup and restore:** exports and validates portable JSON snapshots.
-15. **Theme toggle:** persists dark-default or light presentation.
-16. **TaskFlow branding:** product logo, favicon, and clean asset structure.
-17. **Footer and showcase:** attribution, social links, and developer profile.
-18. **Rich-text notes editor:** sanitized formatted HTML and plain-text excerpts.
-19. **Rich-text task descriptions:** formatted task content with safe rendering.
-20. **Standalone note reader:** focused reading, metrics, copying, print, PDF export.
-21. **SEO and social previews:** metadata, discovery files, deployment headers.
-22. **Mobile header and bottom navigation:** touch navigation for narrow viewports.
-23. **Fixed footer and scroll clearance:** prevents content collision with docked controls.
+12. **Calendar view:** maps tasks to monthly schedule.
+13. **Analytics:** completion, priority, and productivity insights.
+14. **Data backup and restore:** portable JSON snapshots.
+15. **Theme toggle:** persists dark-default or light theme.
+16. **TaskFlow branding:** vector logo, favicon, and clean assets.
+17. **Footer and showcase:** attribution and developer modal.
+18. **Rich-text notes editor:** sanitized HTML and plain-text excerpts.
+19. **Rich-text task descriptions:** formatted task content.
+20. **Standalone note reader:** reading view, metrics, print, PDF export.
+21. **SEO and social previews:** metadata and deployment headers.
+22. **Mobile header and bottom navigation:** touch navigation.
+23. **Fixed footer and scroll clearance:** docked control spacing.
 
 ### Product direction and web differentiation
 
-24. **Product, notification, and privacy realignment:** documents three clients, accounts, contact privacy, and limits.
-25. **Follow Up commitments and recurrence:** one-time and recurring commitments, history, snooze, reschedule, launchers.
-26. **Plan My Day:** capacity-aware day planning with explanations from tasks and due follow-ups.
-27. **Actionable notes:** creates tasks or follow-ups from note text with backlink context.
-28. **Fast capture inbox:** saves text and links offline with minimal input for later triage.
+24. **Product, notification, and privacy realignment:** multi-client architecture.
+25. **Follow Up commitments and recurrence:** recurring schedules, snooze, launchers.
+26. **Plan My Day:** capacity-aware day planning with explanations.
+27. **Actionable notes:** creates tasks or follow-ups from note text.
+28. **Fast capture inbox:** minimal offline text and link capture.
 
 ### Product and service foundation
 
 29. **Isolated monorepo layout:** establishes apps/web, apps/mobile, and apps/windows.
-30. **Web API and PostgreSQL foundation:** adds /api/v1, migrations, validation, OpenAPI, and health.
-31. **Optional accounts and sessions:** email OTP, secure refresh, revocation, logout, and deletion.
-32. **Cloud productivity persistence:** stores account-owned entities with validation and change sequencing.
-33. **Synchronization and conflicts:** idempotent push/pull, revisions, cursors, tombstones, and conflicts.
+30. **Web API and PostgreSQL foundation:** /api/v1, migrations, OpenAPI, health.
+31. **Optional accounts and sessions:** email OTP, refresh rotation, logout, deletion.
+32. **Cloud productivity persistence:** account-owned entities with change sequencing.
+33. **Synchronization and conflicts:** idempotent push/pull, revisions, tombstones.
 
 ### Synchronized web client
 
-34. **Web local-first storage upgrade:** migrates data into workspace-aware IndexedDB with sync metadata.
-35. **Web accounts and synchronization:** explicit local-data adoption, sync status, retries, and conflicts.
-36. **Closed-app web Follow Up notifications:** push subscriptions, durable dispatch, deduplication, and catch-up.
+34. **Web local-first storage upgrade:** workspace-aware IndexedDB with sync metadata.
+35. **Web accounts and synchronization:** adoption, sync status, retries, conflicts.
+36. **Closed-app web Follow Up notifications:** push subscriptions, dispatch, catch-up.
 
 ### Initial mobile milestone
 
-37. **React Native offline foundation:** creates independent task and note workflows on SQLite with backup support.
-38. **React Native product and differentiated parity:** core parity plus Plan My Day, notes, Follow Up, notifications, launchers.
-39. **React Native API integration and release:** adds auth, sync, secure sessions, conflicts, signed builds, store readiness.
+37. **React Native offline foundation:** SQLite tasks and notes with backup support.
+38. **React Native product and differentiated parity:** Plan My Day, Follow Up, launchers.
+39. **React Native API integration and release:** auth, sync, secure sessions, store readiness.
 
 ### Web realignment and React Native mobile foundation
 
-40. **Web navigation consolidation and responsive layout refinement:** streamlines web navigation to at most four primary destinations (Tasks, Follow Ups, Notes, and More drawer) to eliminate small-viewport overcrowding.
-41. **Expo and React Native mobile foundation with four-tab native navigation:** re-scaffolds apps/mobile with Expo, 4-tab bottom bar (Tasks, Follow Ups, Notes, More), native expo-sqlite, and native primitives (View, Text, Pressable, TextInput, StyleSheet).
-42. **React Native product parity and mobile-first workflows:** Follow Up recurrence, direct communication launchers (phone, email, WhatsApp), Plan My Day, Actionable Notes, Calendar, Analytics, expo-notifications, and native themes.
-43. **React Native cloud synchronization, accounts, and emulator launch:** secure token storage via expo-secure-store, OTP auth, local data adoption, outbox sync, native conflict resolution, and live verification on Android emulator.
+40. **Web navigation consolidation:** max 4 primary destinations (Tasks, Follow Ups, Notes, More).
+41. **Expo and React Native mobile foundation:** 4-tab bar, expo-sqlite, native primitives.
+42. **React Native product parity:** Follow Up recurrence, launchers, calendar, analytics.
+43. **React Native cloud synchronization:** secure tokens, OTP auth, outbox sync, emulator launch.
 
 ### Web navigation realignment, popover menu, and performance polish
 
-44. **Web anchored popover navigation, mobile bottom sheet, and command palette:** replaces slide-over drawer with anchored floating popover on desktop, interactive draggable bottom sheet on mobile web, keyboard shortcut navigation (G I, G C, G P), and global Cmd+K or Ctrl+K command palette.
-45. **Web performance optimization and layout memoization:** eliminates redundant layout re-renders across header, footer, and dialogs; optimizes list rendering and selector subscriptions for instantaneous filter and search response.
+44. **Web anchored popover and command palette:** floating popover, bottom sheet, Cmd+K palette.
+45. **Web performance optimization:** layout memoization and instantaneous filter response.
 
 ### Mobile architecture modernization with Expo Router and native polish
 
-46. **Expo Router file-based navigation and vector icon migration:** re-architects apps/mobile with official Expo Router (app/(tabs)/...), native stack modal screens, persistent scroll state, deep linking, and crisp @expo/vector-icons replacing placeholder emojis.
-47. **Mobile native aesthetics, haptics, and FlatList virtualization:** implements iOS inset grouped cards, Apple Settings style More hub, translucent Cupertino blur bars, Android Material 3 elevation and ripple feedback, expo-haptics tactile feedback, and FlatList virtualization.
+46. **Expo Router file-based navigation:** app/(tabs)/..., persistent state, vector icons.
+47. **Mobile native aesthetics and virtualization:** platform aesthetics, haptics, FlatList.
 
 ### Native Windows application
 
-48. **WPF offline foundation:** independent .NET WPF task and note application on SQLite with backup and keyboard use.
-49. **WPF product and differentiated parity:** core parity plus Plan My Day, actionable notes, Follow Up, notifications, launchers, fast capture, and accessibility.
-50. **WPF API integration and release readiness:** auth, sync, DPAPI-protected sessions, recovery, signed MSIX packaging, and Store readiness.
+48. **WPF offline foundation:** .NET WPF task and note app on SQLite with backup.
+49. **WPF product and differentiated parity:** Plan My Day, actionable notes, Follow Up, notifications.
+50. **WPF API integration and release readiness:** auth, sync, DPAPI sessions, MSIX packaging.
 
 ### Cross-platform hardening
 
-51. **Cross-platform compatibility and operational hardening:** verifies migration recovery, API backward compatibility, recurrence consistency, multi-device convergence, notification permission and delivery failure, account deletion, abuse controls, accessibility, synchronized-mode privacy, backup portability, observability, and release rollback.
+51. **Cross-platform compatibility and operational hardening:** migration recovery, recurrence consistency, sync convergence, notification recovery, cascade deletion, rate limits, and runbook.
+
+### Cross-platform UX polish and parity
+
+52. **Mobile bundling resolution and launch recovery:** fixes Metro bundler module resolution across Expo Router route screens, restores native TypeScript module loading, and verifies error-free launch.
+53. **Web usability, modal clearance, and form polish:** eliminates theme flash, expands Quick Add task details, enables safe task detail inspection, fixes popover z-index, constrains search bar width, adds modal scroll bounds, and unpins desktop footer.
+54. **Windows desktop parity, navigation highlighting, and visual design:** implements active tab sidebar indicators, adds field labels and watermarks, styles form ComboBoxes, bundles official TaskFlow icon, enhances calendar date indicators, and aligns text formatting.
 
 ## Architecture boundaries
 

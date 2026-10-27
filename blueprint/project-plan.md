@@ -1746,3 +1746,34 @@ dependent roadmap items:
   compatibility tests.
 - Signed Android, iOS, and Windows release candidates install and preserve local
   data and notification schedules across application updates.
+
+## 16. Milestone O: Cross-Platform UX Polish and Parity
+
+Milestone O builds directly on the completed 51-feature cross-platform foundation (Web, Mobile, Windows), addressing verified usability gaps, launch blockers, visual deficiencies, and platform parity issues discovered during real-device testing.
+
+### 16.1 Mobile platform launch recovery (Feature 52)
+
+- **Metro Module Resolution:** Remove all explicit `.js` import extensions from `apps/mobile/app/` route files (e.g. `(tabs)/_layout.tsx`, `task-edit.tsx`, `search.tsx`, `plan.tsx`, `note-edit.tsx`, `inbox.tsx`, `calendar.tsx`, `backup.tsx`, `analytics.tsx`, `account.tsx`, `(tabs)/tasks.tsx`, `(tabs)/notes.tsx`, `(tabs)/more.tsx`, `(tabs)/followups.tsx`).
+- **TypeScript Alignment:** Allow Expo / Metro to resolve TypeScript `.ts` and `.tsx` source files directly, eliminating bundling failure on Android and iOS emulators and physical devices.
+- **Verification:** Metro bundles 100% of modules cleanly without resolution exceptions, and the app mounts the 4-tab native stack successfully.
+
+### 16.2 Web usability and interaction polish (Feature 53)
+
+- **Zero-Flash Theme Loading:** Prevent the white background flash during initial page load by declaring default dark background color directly on `:root` and `html` in `globals.css` and removing the animated transition from `body` before hydration.
+- **Quick Add Task Details:** When clicking "+ Add Details" in `TaskForm.tsx`, expand the input form to expose Priority (Low, Medium, High), Due Date, Category, and Estimated Minutes, matching the editing capabilities of `TaskEditForm.tsx`.
+- **Clickable Task Interaction:** Decouple the task item label from the completion checkbox so clicking on a task title or card body opens the edit or detail view, while clicking the checkbox toggles completion without accidental mode changes.
+- **Navigation Popover Clearance:** Elevate `MorePopover.tsx` to `z-50`, set an opaque surface background, and eliminate text transparency collisions with sticky page headers.
+- **Search Bar Sizing:** Prevent the search input in `TaskControls.tsx` from stretching uncontrollably across the full width when flex wraps on desktop viewports.
+- **Modal Viewport Safety:** Constrain `AccountModal.tsx` and `FastCaptureModal.tsx` with `max-h-[85vh]` and `overflow-y-auto` so modal headers, close buttons, and confirmation controls remain accessible on all screen heights.
+- **Small Screen Navigation:** Ensure mobile bottom navigation triggers `MobileBottomSheet` smoothly and reliably on small viewports.
+- **Natural Document Flow Footer:** Unpin `AppFooter.tsx` from `sm:fixed sm:bottom-0` to standard document flow, keeping footer links accessible without occupying permanent viewport space or obscuring productivity tools.
+
+### 16.3 Windows desktop parity and visual design (Feature 54)
+
+- **Active Tab Visual Highlighting:** Bind sidebar navigation buttons in `MainWindow.xaml` to active tab state (`IsTasksTabActive`, `IsFollowUpsTabActive`, `IsNotesTabActive`, `IsCalendarTabActive`, etc.), applying accent background fills and border indicators when a tab is selected.
+- **Explicit Field Labels and Watermarks:** Add clear `<TextBlock>` labels (e.g., "Title", "Category", "Priority", "Due Date", "Description") and placeholder watermarks to all input controls in task, follow-up, and note creation panels.
+- **Custom Form Dropdowns (ComboBox):** Replace the raw default WPF Windows ComboBox control with a modern themed template featuring rounded borders, themed dropdown popups, and hover/focus states matching `ModernTextBox`.
+- **Application Taskbar and Window Icon:** Generate an official multi-resolution `app.ico` from `TaskFlowLogo` SVG assets, configure `<ApplicationIcon>` in `TaskFlow.csproj`, and set the `Icon` attribute in `MainWindow.xaml` so the app displays custom branding on the taskbar and titlebar.
+- **Enhanced Monthly Calendar:** Visually highlight today's date in `MainWindow.xaml` with an accent outline or badge, and display distinct visual indicators for dates containing due tasks versus follow-up commitments.
+- **Text Formatting Parity:** Provide rich-text formatting controls or synchronized formatting support for task descriptions and note bodies to match web capabilities.
+

@@ -1,8 +1,8 @@
-import type { TaskRepository } from "../storage/taskRepository.js";
-import type { FollowUpRepository } from "../storage/followUpRepository.js";
-import type { Task, CreateTaskInput } from "../types/task.js";
-import type { FollowUp, CreateFollowUpInput } from "../types/followup.js";
-import type { Note } from "../types/note.js";
+import type { TaskRepository } from "../storage/taskRepository";
+import type { FollowUpRepository } from "../storage/followUpRepository";
+import type { Task, CreateTaskInput } from "../types/task";
+import type { FollowUp, CreateFollowUpInput } from "../types/followup";
+import type { Note } from "../types/note";
 
 export interface NoteBacklinks {
   noteId: string;

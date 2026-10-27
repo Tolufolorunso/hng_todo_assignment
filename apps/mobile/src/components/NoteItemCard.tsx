@@ -4,13 +4,13 @@ import {
   Pressable,
   StyleSheet,
 } from "react-native";
-import type { Note } from "../types/note.js";
-import { useTheme } from "../services/theme.js";
-import { hapticFeedback } from "../services/haptics.js";
+import type { Note } from "../types/note";
+import { useTheme } from "../services/theme";
+import { hapticFeedback } from "../services/haptics";
 import {
   getPlatformCardStyle,
   getPlatformRipple,
-} from "../styles/platform.js";
+} from "../styles/platform";
 
 export interface NoteItemCardProps {
   note: Note;

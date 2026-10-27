@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach } from "vitest";
 import {
   InMemorySecureStorage,
   SecureStorage,
-} from "./secureStore.js";
-import { __resetMockSecureStore } from "../test/expo-secure-store-mock.js";
+} from "./secureStore";
+import { __resetMockSecureStore } from "../test/expo-secure-store-mock";
 
 describe("SecureStorage", () => {
   beforeEach(() => {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { PRIMARY_TABS } from "./Navigator.js";
+import { PRIMARY_TABS } from "./Navigator";
 
 describe("Mobile Primary Navigation Structure", () => {
   it("contains strictly four primary navigation tabs", () => {

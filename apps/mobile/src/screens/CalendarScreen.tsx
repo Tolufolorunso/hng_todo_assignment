@@ -7,13 +7,13 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from "react-native";
-import type { TaskRepository } from "../storage/taskRepository.js";
-import type { FollowUpRepository } from "../storage/followUpRepository.js";
-import type { Task } from "../types/task.js";
-import type { FollowUp } from "../types/followup.js";
-import { aggregateCalendarMonth, getScheduleForDate } from "../services/calendar.js";
-import { Badge, EmptyState } from "../components/primitives.js";
-import { useTheme } from "../services/theme.js";
+import type { TaskRepository } from "../storage/taskRepository";
+import type { FollowUpRepository } from "../storage/followUpRepository";
+import type { Task } from "../types/task";
+import type { FollowUp } from "../types/followup";
+import { aggregateCalendarMonth, getScheduleForDate } from "../services/calendar";
+import { Badge, EmptyState } from "../components/primitives";
+import { useTheme } from "../services/theme";
 
 export interface CalendarScreenProps {
   taskRepo: TaskRepository;

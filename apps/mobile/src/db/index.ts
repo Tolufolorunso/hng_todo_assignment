@@ -1,2 +1,2 @@
-export * from "./driver.js";
-export * from "./migrations.js";
+export * from "./driver";
+export * from "./migrations";

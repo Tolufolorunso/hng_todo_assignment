@@ -1,3 +1,3 @@
-export * from "./primitives.js";
-export * from "./TaskItemCard.js";
-export * from "./NoteItemCard.js";
+export * from "./primitives";
+export * from "./TaskItemCard";
+export * from "./NoteItemCard";

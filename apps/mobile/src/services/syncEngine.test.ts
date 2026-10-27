@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { InMemorySqliteDatabase } from "../db/driver.js";
-import { runMigrations } from "../db/migrations.js";
-import { SyncEngine } from "./syncEngine.js";
-import { AuthService } from "./auth.js";
-import { SyncRepository } from "../storage/syncRepository.js";
-import { TaskRepository } from "../storage/taskRepository.js";
-import { NoteRepository } from "../storage/noteRepository.js";
-import type { SyncResponse } from "../types/sync.js";
+import { InMemorySqliteDatabase } from "../db/driver";
+import { runMigrations } from "../db/migrations";
+import { SyncEngine } from "./syncEngine";
+import { AuthService } from "./auth";
+import { SyncRepository } from "../storage/syncRepository";
+import { TaskRepository } from "../storage/taskRepository";
+import { NoteRepository } from "../storage/noteRepository";
+import type { SyncResponse } from "../types/sync";
 
 describe("Mobile SyncEngine", () => {
   let db: InMemorySqliteDatabase;

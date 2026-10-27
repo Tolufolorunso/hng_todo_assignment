@@ -1,10 +1,10 @@
-import type { Task } from "../types/task.js";
-import type { Note } from "../types/note.js";
-import type { MobileBackupSnapshot, BackupImportMode, BackupImportResult } from "../types/backup.js";
-import type { TaskRepository } from "../storage/taskRepository.js";
-import type { NoteRepository } from "../storage/noteRepository.js";
-import type { SqliteDatabase } from "../db/driver.js";
-import { validateTaskInput, validateNoteInput } from "./validation.js";
+import type { Task } from "../types/task";
+import type { Note } from "../types/note";
+import type { MobileBackupSnapshot, BackupImportMode, BackupImportResult } from "../types/backup";
+import type { TaskRepository } from "../storage/taskRepository";
+import type { NoteRepository } from "../storage/noteRepository";
+import type { SqliteDatabase } from "../db/driver";
+import { validateTaskInput, validateNoteInput } from "./validation";
 
 export class BackupService {
   constructor(

@@ -5,14 +5,14 @@ import {
   Pressable,
   StyleSheet,
 } from "react-native";
-import type { Task } from "../types/task.js";
-import { Badge } from "./primitives.js";
-import { useTheme } from "../services/theme.js";
-import { hapticFeedback } from "../services/haptics.js";
+import type { Task } from "../types/task";
+import { Badge } from "./primitives";
+import { useTheme } from "../services/theme";
+import { hapticFeedback } from "../services/haptics";
 import {
   getPlatformCardStyle,
   getPlatformRipple,
-} from "../styles/platform.js";
+} from "../styles/platform";
 
 export interface TaskItemCardProps {
   task: Task;

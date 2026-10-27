@@ -7,14 +7,14 @@ import {
   StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import type { MobileScreen } from "../types/navigation.js";
-import { useTheme } from "../services/theme.js";
-import { hapticFeedback } from "../services/haptics.js";
+import type { MobileScreen } from "../types/navigation";
+import { useTheme } from "../services/theme";
+import { hapticFeedback } from "../services/haptics";
 import {
   getPlatformGroupContainerStyle,
   getPlatformRipple,
   getHairlineDividerStyle,
-} from "../styles/platform.js";
+} from "../styles/platform";
 
 export interface MoreScreenProps {
   onNavigate: (screen: MobileScreen) => void;

@@ -1,5 +1,5 @@
-import type { AuthService } from "./auth.js";
-import type { SyncEngine } from "./syncEngine.js";
+import type { AuthService } from "./auth";
+import type { SyncEngine } from "./syncEngine";
 
 export type AppLifecycleState = "active" | "background" | "inactive";
 

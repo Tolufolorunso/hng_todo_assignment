@@ -9,14 +9,14 @@ import {
   ActivityIndicator,
   Modal,
 } from "react-native";
-import type { AuthService } from "../services/auth.js";
-import type { SyncEngine } from "../services/syncEngine.js";
-import type { SyncRepository } from "../storage/syncRepository.js";
-import type { MobileAuthState, SessionInfo, AdoptionSummary } from "../types/auth.js";
-import type { MobileSyncState, ConflictRecord } from "../types/sync.js";
-import { ConflictModal } from "../components/ConflictModal.js";
-import { TouchButton } from "../components/primitives.js";
-import { useTheme } from "../services/theme.js";
+import type { AuthService } from "../services/auth";
+import type { SyncEngine } from "../services/syncEngine";
+import type { SyncRepository } from "../storage/syncRepository";
+import type { MobileAuthState, SessionInfo, AdoptionSummary } from "../types/auth";
+import type { MobileSyncState, ConflictRecord } from "../types/sync";
+import { ConflictModal } from "../components/ConflictModal";
+import { TouchButton } from "../components/primitives";
+import { useTheme } from "../services/theme";
 
 export interface AccountScreenProps {
   authService: AuthService;

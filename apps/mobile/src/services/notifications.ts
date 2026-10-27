@@ -1,5 +1,5 @@
 import * as Notifications from "expo-notifications";
-import type { FollowUp } from "../types/followup.js";
+import type { FollowUp } from "../types/followup";
 
 // Configure default notification presentation behavior
 try {

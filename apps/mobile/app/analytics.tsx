@@ -1,6 +1,6 @@
 import React from "react";
-import { useAppServices, useAppServicesState } from "../src/context/AppContext.js";
-import { AnalyticsScreen } from "../src/screens/AnalyticsScreen.js";
+import { useAppServices, useAppServicesState } from "../src/context/AppContext";
+import { AnalyticsScreen } from "../src/screens/AnalyticsScreen";
 
 export default function AnalyticsRoute(): React.JSX.Element {
   const { taskRepo, followUpRepo } = useAppServices();

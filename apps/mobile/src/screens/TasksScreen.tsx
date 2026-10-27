@@ -9,12 +9,12 @@ import {
   StyleSheet,
   Platform,
 } from "react-native";
-import type { Task, TaskCategory } from "../types/task.js";
-import type { TaskRepository } from "../storage/taskRepository.js";
-import { TaskItemCard } from "../components/TaskItemCard.js";
-import { TouchButton, EmptyState } from "../components/primitives.js";
-import { useTheme } from "../services/theme.js";
-import { hapticFeedback } from "../services/haptics.js";
+import type { Task, TaskCategory } from "../types/task";
+import type { TaskRepository } from "../storage/taskRepository";
+import { TaskItemCard } from "../components/TaskItemCard";
+import { TouchButton, EmptyState } from "../components/primitives";
+import { useTheme } from "../services/theme";
+import { hapticFeedback } from "../services/haptics";
 
 export interface TasksScreenProps {
   taskRepo: TaskRepository;

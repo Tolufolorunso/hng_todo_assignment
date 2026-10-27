@@ -1,7 +1,7 @@
-import type { Task } from "../types/task.js";
-import type { Note } from "../types/note.js";
-import type { TaskRepository } from "../storage/taskRepository.js";
-import type { NoteRepository } from "../storage/noteRepository.js";
+import type { Task } from "../types/task";
+import type { Note } from "../types/note";
+import type { TaskRepository } from "../storage/taskRepository";
+import type { NoteRepository } from "../storage/noteRepository";
 
 export interface SearchResults {
   query: string;

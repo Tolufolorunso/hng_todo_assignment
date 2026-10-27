@@ -1,4 +1,4 @@
-import type { SqliteDatabase } from "../db/driver.js";
+import type { SqliteDatabase } from "../db/driver";
 import type {
   AuthUser,
   SessionInfo,
@@ -6,14 +6,14 @@ import type {
   AccountInfo,
   MobileAuthState,
   AdoptionSummary,
-} from "../types/auth.js";
-import { SyncRepository } from "../storage/syncRepository.js";
-import { TaskRepository } from "../storage/taskRepository.js";
-import { NoteRepository } from "../storage/noteRepository.js";
-import { FollowUpRepository } from "../storage/followUpRepository.js";
-import { DailyPlanRepository } from "../storage/dailyPlanRepository.js";
-import { InboxRepository } from "../storage/inboxRepository.js";
-import { type SecureStorageDriver, defaultSecureStorage } from "./secureStore.js";
+} from "../types/auth";
+import { SyncRepository } from "../storage/syncRepository";
+import { TaskRepository } from "../storage/taskRepository";
+import { NoteRepository } from "../storage/noteRepository";
+import { FollowUpRepository } from "../storage/followUpRepository";
+import { DailyPlanRepository } from "../storage/dailyPlanRepository";
+import { InboxRepository } from "../storage/inboxRepository";
+import { type SecureStorageDriver, defaultSecureStorage } from "./secureStore";
 
 export interface AuthServiceConfig {
   baseUrl?: string;

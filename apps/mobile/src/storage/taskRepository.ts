@@ -1,7 +1,7 @@
-import type { SqliteDatabase } from "../db/driver.js";
-import type { Task, CreateTaskInput, UpdateTaskInput, TaskFilter } from "../types/task.js";
-import { validateTaskInput } from "../services/validation.js";
-import { SyncRepository, type RepositoryOptions } from "./syncRepository.js";
+import type { SqliteDatabase } from "../db/driver";
+import type { Task, CreateTaskInput, UpdateTaskInput, TaskFilter } from "../types/task";
+import { validateTaskInput } from "../services/validation";
+import { SyncRepository, type RepositoryOptions } from "./syncRepository";
 
 interface TaskRow {
   id: string;

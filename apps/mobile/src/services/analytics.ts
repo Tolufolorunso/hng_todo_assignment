@@ -1,6 +1,6 @@
-import type { Task } from "../types/task.js";
-import type { FollowUp } from "../types/followup.js";
-import type { ProductivityAnalytics, CategoryCount, PriorityCount } from "../types/analytics.js";
+import type { Task } from "../types/task";
+import type { FollowUp } from "../types/followup";
+import type { ProductivityAnalytics, CategoryCount, PriorityCount } from "../types/analytics";
 
 export function calculateProductivityAnalytics(
   tasks: Task[],

@@ -1,20 +1,20 @@
 import { describe, it, expect } from "vitest";
 import React from "react";
-import RootLayout from "../../app/_layout.js";
-import TabLayout, { TabBarIcon } from "../../app/(tabs)/_layout.js";
-import TasksTabScreen from "../../app/(tabs)/tasks.js";
-import FollowUpsTabScreen from "../../app/(tabs)/followups.js";
-import NotesTabScreen from "../../app/(tabs)/notes.js";
-import MoreTabScreen from "../../app/(tabs)/more.js";
-import TaskEditRoute from "../../app/task-edit.js";
-import NoteEditRoute from "../../app/note-edit.js";
-import PlanRoute from "../../app/plan.js";
-import InboxRoute from "../../app/inbox.js";
-import CalendarRoute from "../../app/calendar.js";
-import AnalyticsRoute from "../../app/analytics.js";
-import SearchRoute from "../../app/search.js";
-import BackupRoute from "../../app/backup.js";
-import AccountRoute from "../../app/account.js";
+import RootLayout from "../../app/_layout";
+import TabLayout, { TabBarIcon } from "../../app/(tabs)/_layout";
+import TasksTabScreen from "../../app/(tabs)/tasks";
+import FollowUpsTabScreen from "../../app/(tabs)/followups";
+import NotesTabScreen from "../../app/(tabs)/notes";
+import MoreTabScreen from "../../app/(tabs)/more";
+import TaskEditRoute from "../../app/task-edit";
+import NoteEditRoute from "../../app/note-edit";
+import PlanRoute from "../../app/plan";
+import InboxRoute from "../../app/inbox";
+import CalendarRoute from "../../app/calendar";
+import AnalyticsRoute from "../../app/analytics";
+import SearchRoute from "../../app/search";
+import BackupRoute from "../../app/backup";
+import AccountRoute from "../../app/account";
 
 describe("Expo Router File-Based Routing and Vector Icons", () => {
   describe("Root and Tab Layouts", () => {

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import type { ThemeMode, ThemeColors } from "../types/theme.js";
-import { DARK_THEME, LIGHT_THEME } from "../types/theme.js";
+import type { ThemeMode, ThemeColors } from "../types/theme";
+import { DARK_THEME, LIGHT_THEME } from "../types/theme";
 
 export interface ThemeContextValue {
   mode: ThemeMode;

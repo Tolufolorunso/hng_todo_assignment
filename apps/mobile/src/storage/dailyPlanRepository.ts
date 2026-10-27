@@ -1,11 +1,11 @@
-import type { SqliteDatabase } from "../db/driver.js";
+import type { SqliteDatabase } from "../db/driver";
 import type {
   DailyPlan,
   DailyPlanItem,
   CreateDailyPlanInput,
   UpdateDailyPlanInput,
-} from "../types/plan.js";
-import { SyncRepository, type RepositoryOptions } from "./syncRepository.js";
+} from "../types/plan";
+import { SyncRepository, type RepositoryOptions } from "./syncRepository";
 
 interface DailyPlanRow {
   id: string;

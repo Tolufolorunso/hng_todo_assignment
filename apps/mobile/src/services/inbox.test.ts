@@ -1,16 +1,16 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { InMemorySqliteDatabase } from "../db/driver.js";
-import { runMigrations } from "../db/migrations.js";
-import { TaskRepository } from "../storage/taskRepository.js";
-import { NoteRepository } from "../storage/noteRepository.js";
-import { FollowUpRepository } from "../storage/followUpRepository.js";
-import { InboxRepository } from "../storage/inboxRepository.js";
-import { InboxTriageService } from "./inbox.js";
+import { InMemorySqliteDatabase } from "../db/driver";
+import { runMigrations } from "../db/migrations";
+import { TaskRepository } from "../storage/taskRepository";
+import { NoteRepository } from "../storage/noteRepository";
+import { FollowUpRepository } from "../storage/followUpRepository";
+import { InboxRepository } from "../storage/inboxRepository";
+import { InboxTriageService } from "./inbox";
 import {
   createTaskFromNoteExcerpt,
   createFollowUpFromNoteExcerpt,
   getNoteBacklinks,
-} from "./actionableNotes.js";
+} from "./actionableNotes";
 
 describe("Inbox and Actionable Notes Services", () => {
   let db: InMemorySqliteDatabase;
