@@ -17,7 +17,7 @@ public class DatabaseMigrationTests
     }
 
     [Fact]
-    public void MigrationRunner_AppliesInitialSchemaSuccessfully()
+    public void MigrationRunner_AppliesMigrationsSuccessfully()
     {
         var factory = DatabaseConnectionFactory.CreateInMemory();
         using var connection = factory.CreateConnection();
@@ -26,21 +26,24 @@ public class DatabaseMigrationTests
         var runner = new MigrationRunner(factory);
         runner.RunMigrations(connection);
 
-        // Verify __migrations table has 001_InitialSchema
+        // Verify __migrations table has both 001_InitialSchema and 002_DifferentiatedFeatures
         using var cmd = connection.CreateCommand();
         cmd.CommandText = "SELECT COUNT(*) FROM __migrations WHERE name = '001_InitialSchema';";
-        long count = (long)(cmd.ExecuteScalar() ?? 0);
-        Assert.Equal(1, count);
+        long m1Count = (long)(cmd.ExecuteScalar() ?? 0);
+        Assert.Equal(1, m1Count);
 
-        // Verify tasks table exists
-        cmd.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='tasks';";
-        long taskTableCount = (long)(cmd.ExecuteScalar() ?? 0);
-        Assert.Equal(1, taskTableCount);
+        cmd.CommandText = "SELECT COUNT(*) FROM __migrations WHERE name = '002_DifferentiatedFeatures';";
+        long m2Count = (long)(cmd.ExecuteScalar() ?? 0);
+        Assert.Equal(1, m2Count);
 
-        // Verify notes table exists
-        cmd.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='notes';";
-        long noteTableCount = (long)(cmd.ExecuteScalar() ?? 0);
-        Assert.Equal(1, noteTableCount);
+        // Verify all core and differentiated tables exist
+        var requiredTables = new[] { "tasks", "notes", "followups", "followup_occurrences", "daily_plans", "inbox_captures", "task_orders" };
+        foreach (var table in requiredTables)
+        {
+            cmd.CommandText = $"SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='{table}';";
+            long tableCount = (long)(cmd.ExecuteScalar() ?? 0);
+            Assert.True(tableCount == 1, $"Table {table} should exist");
+        }
     }
 
     [Fact]
@@ -60,6 +63,6 @@ public class DatabaseMigrationTests
         using var cmd = connection.CreateCommand();
         cmd.CommandText = "SELECT COUNT(*) FROM __migrations;";
         long count = (long)(cmd.ExecuteScalar() ?? 0);
-        Assert.Equal(1, count);
+        Assert.Equal(2, count);
     }
 }

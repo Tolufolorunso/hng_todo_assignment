@@ -2,24 +2,36 @@ using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
 using TaskFlow.Common;
 using TaskFlow.Models;
 using TaskFlow.Repositories;
+using TaskFlow.Services;
 
 namespace TaskFlow.ViewModels;
 
 public class NotesViewModel : ObservableObject
 {
     private readonly INoteRepository _noteRepository;
+    private readonly ActionableNotesService? _actionableNotesService;
+
     private NoteItem? _selectedNote;
     private string _searchQuery = string.Empty;
     private bool _isLoading;
     private string? _errorMessage;
     private bool _isCreatePanelVisible;
+    private bool _isReaderMode;
 
     private string _newNoteTitle = string.Empty;
     private string _newNoteBody = string.Empty;
+
+    // Actionable notes fields
+    private string _actionableExcerpt = string.Empty;
+    private string _actionableTaskTitle = string.Empty;
+    private string _actionablePersonName = string.Empty;
+    private string _actionableCommitment = string.Empty;
+    private string? _actionableSuccessMessage;
 
     public ObservableCollection<NoteItem> Notes { get; } = new();
 
@@ -31,6 +43,10 @@ public class NotesViewModel : ObservableObject
             if (SetProperty(ref _selectedNote, value))
             {
                 OnPropertyChanged(nameof(HasSelectedNote));
+                OnPropertyChanged(nameof(WordCount));
+                OnPropertyChanged(nameof(ReadingTimeMinutes));
+                ActionableExcerpt = string.Empty;
+                ActionableSuccessMessage = null;
             }
         }
     }
@@ -75,6 +91,26 @@ public class NotesViewModel : ObservableObject
         set => SetProperty(ref _isCreatePanelVisible, value);
     }
 
+    public bool IsReaderMode
+    {
+        get => _isReaderMode;
+        set => SetProperty(ref _isReaderMode, value);
+    }
+
+    public int WordCount => string.IsNullOrWhiteSpace(SelectedNote?.Body)
+        ? 0
+        : SelectedNote.Body.Split(new[] { ' ', '\r', '\n', '\t' }, StringSplitOptions.RemoveEmptyEntries).Length;
+
+    public string ReadingTimeMinutes
+    {
+        get
+        {
+            int words = WordCount;
+            int mins = Math.Max(1, (int)Math.Ceiling(words / 200.0));
+            return $"{mins} min read";
+        }
+    }
+
     public string NewNoteTitle
     {
         get => _newNoteTitle;
@@ -87,16 +123,51 @@ public class NotesViewModel : ObservableObject
         set => SetProperty(ref _newNoteBody, value);
     }
 
+    public string ActionableExcerpt
+    {
+        get => _actionableExcerpt;
+        set => SetProperty(ref _actionableExcerpt, value);
+    }
+
+    public string ActionableTaskTitle
+    {
+        get => _actionableTaskTitle;
+        set => SetProperty(ref _actionableTaskTitle, value);
+    }
+
+    public string ActionablePersonName
+    {
+        get => _actionablePersonName;
+        set => SetProperty(ref _actionablePersonName, value);
+    }
+
+    public string ActionableCommitment
+    {
+        get => _actionableCommitment;
+        set => SetProperty(ref _actionableCommitment, value);
+    }
+
+    public string? ActionableSuccessMessage
+    {
+        get => _actionableSuccessMessage;
+        set => SetProperty(ref _actionableSuccessMessage, value);
+    }
+
     public ICommand LoadNotesCommand { get; }
     public ICommand OpenCreatePanelCommand { get; }
     public ICommand CloseCreatePanelCommand { get; }
     public ICommand CreateNoteCommand { get; }
     public ICommand DeleteNoteCommand { get; }
     public ICommand SaveSelectedNoteCommand { get; }
+    public ICommand ToggleReaderModeCommand { get; }
+    public ICommand CopyNoteBodyCommand { get; }
+    public ICommand CreateTaskFromExcerptCommand { get; }
+    public ICommand CreateFollowUpFromExcerptCommand { get; }
 
-    public NotesViewModel(INoteRepository noteRepository)
+    public NotesViewModel(INoteRepository noteRepository, ActionableNotesService? actionableNotesService = null)
     {
         _noteRepository = noteRepository;
+        _actionableNotesService = actionableNotesService;
 
         LoadNotesCommand = new RelayCommand(async () => await LoadNotesAsync());
         OpenCreatePanelCommand = new RelayCommand(() => IsCreatePanelVisible = true);
@@ -104,6 +175,59 @@ public class NotesViewModel : ObservableObject
         CreateNoteCommand = new RelayCommand(async () => await CreateNoteAsync());
         DeleteNoteCommand = new RelayCommand(async (param) => await DeleteNoteAsync(param as NoteItem ?? SelectedNote));
         SaveSelectedNoteCommand = new RelayCommand(async () => await SaveSelectedNoteAsync());
+        ToggleReaderModeCommand = new RelayCommand(() => IsReaderMode = !IsReaderMode);
+        CopyNoteBodyCommand = new RelayCommand(() =>
+        {
+            if (SelectedNote != null && !string.IsNullOrEmpty(SelectedNote.Body))
+            {
+                try
+                {
+                    Clipboard.SetText(SelectedNote.Body);
+                    ActionableSuccessMessage = "Note copied to clipboard!";
+                }
+                catch
+                {
+                    // Ignore clipboard errors in headless/tests
+                }
+            }
+        });
+
+        CreateTaskFromExcerptCommand = new RelayCommand(async () =>
+        {
+            if (_actionableNotesService == null || SelectedNote == null) return;
+            string excerpt = !string.IsNullOrWhiteSpace(ActionableExcerpt) ? ActionableExcerpt : SelectedNote.Body;
+            if (string.IsNullOrWhiteSpace(excerpt)) return;
+
+            await _actionableNotesService.CreateTaskFromNoteAsync(
+                SelectedNote.Id,
+                excerpt,
+                taskTitle: string.IsNullOrWhiteSpace(ActionableTaskTitle) ? null : ActionableTaskTitle);
+
+            ActionableSuccessMessage = "Task created from note excerpt!";
+            ActionableExcerpt = string.Empty;
+            ActionableTaskTitle = string.Empty;
+        });
+
+        CreateFollowUpFromExcerptCommand = new RelayCommand(async () =>
+        {
+            if (_actionableNotesService == null || SelectedNote == null) return;
+            string excerpt = !string.IsNullOrWhiteSpace(ActionableExcerpt) ? ActionableExcerpt : SelectedNote.Body;
+            if (string.IsNullOrWhiteSpace(excerpt)) return;
+
+            string person = !string.IsNullOrWhiteSpace(ActionablePersonName) ? ActionablePersonName : "Note Contact";
+            string commitment = !string.IsNullOrWhiteSpace(ActionableCommitment) ? ActionableCommitment : excerpt;
+
+            await _actionableNotesService.CreateFollowUpFromNoteAsync(
+                SelectedNote.Id,
+                excerpt,
+                personName: person,
+                commitment: commitment);
+
+            ActionableSuccessMessage = "Follow-up commitment created from note excerpt!";
+            ActionableExcerpt = string.Empty;
+            ActionablePersonName = string.Empty;
+            ActionableCommitment = string.Empty;
+        });
     }
 
     public async Task LoadNotesAsync()

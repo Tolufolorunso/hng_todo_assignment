@@ -22,13 +22,37 @@ public partial class App : Application
 
         var taskRepo = new TaskRepository(factory);
         var noteRepo = new NoteRepository(factory);
+        var followUpRepo = new FollowUpRepository(factory);
+        var dailyPlanRepo = new DailyPlanRepository(factory);
+        var inboxRepo = new InboxRepository(factory);
+        var taskOrderRepo = new TaskOrderRepository(factory);
+
+        var launcherService = new LauncherService();
+        var triageService = new InboxTriageService(inboxRepo, taskRepo, noteRepo, followUpRepo);
+        var actionableNotesService = new ActionableNotesService(taskRepo, followUpRepo, noteRepo);
         var backupService = new BackupService(factory, taskRepo, noteRepo);
 
         var tasksVm = new TasksViewModel(taskRepo);
-        var notesVm = new NotesViewModel(noteRepo);
+        var notesVm = new NotesViewModel(noteRepo, actionableNotesService);
         var backupVm = new BackupViewModel(backupService);
+        var followUpsVm = new FollowUpsViewModel(followUpRepo, launcherService);
+        var planMyDayVm = new PlanMyDayViewModel(dailyPlanRepo, taskRepo, followUpRepo);
+        var inboxVm = new InboxViewModel(inboxRepo, triageService);
+        var calendarVm = new CalendarViewModel(taskRepo, followUpRepo);
+        var analyticsVm = new AnalyticsViewModel(taskRepo, noteRepo, followUpRepo, inboxRepo);
+        var themeVm = new ThemeViewModel();
 
-        var mainVm = new MainViewModel(tasksVm, notesVm, backupVm);
+        var mainVm = new MainViewModel(
+            tasksVm,
+            notesVm,
+            backupVm,
+            followUpsVm,
+            planMyDayVm,
+            inboxVm,
+            calendarVm,
+            analyticsVm,
+            themeVm);
+
         var mainWindow = new MainWindow(mainVm);
         mainWindow.Show();
     }

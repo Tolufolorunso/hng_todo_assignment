@@ -142,8 +142,22 @@ public class ViewModelTests : IDisposable
         var tasksVm = new TasksViewModel(_taskRepository);
         var notesVm = new NotesViewModel(_noteRepository);
         var backupVm = new BackupViewModel(_backupService);
+        var followUpRepo = new FollowUpRepository(_factory);
+        var dailyPlanRepo = new DailyPlanRepository(_factory);
+        var inboxRepo = new InboxRepository(_factory);
+        var launcher = new LauncherService();
+        var triageService = new InboxTriageService(inboxRepo, _taskRepository, _noteRepository, followUpRepo);
 
-        var mainVm = new MainViewModel(tasksVm, notesVm, backupVm);
+        var followUpsVm = new FollowUpsViewModel(followUpRepo, launcher);
+        var planMyDayVm = new PlanMyDayViewModel(dailyPlanRepo, _taskRepository, followUpRepo);
+        var inboxVm = new InboxViewModel(inboxRepo, triageService);
+        var calendarVm = new CalendarViewModel(_taskRepository, followUpRepo);
+        var analyticsVm = new AnalyticsViewModel(_taskRepository, _noteRepository, followUpRepo, inboxRepo);
+        var themeVm = new ThemeViewModel();
+
+        var mainVm = new MainViewModel(
+            tasksVm, notesVm, backupVm,
+            followUpsVm, planMyDayVm, inboxVm, calendarVm, analyticsVm, themeVm);
         await mainVm.InitializeAsync();
 
         Assert.Equal("Tasks", mainVm.ActiveTab);

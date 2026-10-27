@@ -225,7 +225,7 @@ The Blueprint overlay, `AGENTS.md`, and onboarding setup are already present.
   application with MVVM, Windows-owned SQLite migrations, task and note CRUD,
   search, backup import and export, keyboard navigation, and offline restart
   behavior.
-- [ ] 49. **WPF product and differentiated feature parity** - independently
+- [x] 49. **WPF product and differentiated feature parity** - independently
   implement priorities, due dates, categories, ordering, calendar, analytics,
   rich-text editing, note reading, themes, Plan My Day, actionable notes,
   Follow Up recurrence, Windows closed-app notifications, communication
