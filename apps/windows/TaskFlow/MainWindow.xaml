@@ -531,25 +531,39 @@
             <Grid Grid.Column="1" Background="{DynamicResource BgPrimary}">
 
                 <!-- ==================== 1. TASKS VIEW ==================== -->
-                <views:TasksView DataContext="{Binding TasksVM}" Visibility="{Binding IsTasksTabActive, Converter={StaticResource BoolToVis}}" />
+                <Grid Visibility="{Binding IsTasksTabActive, Converter={StaticResource BoolToVis}}">
+                    <views:TasksView DataContext="{Binding TasksVM}" />
+                </Grid>
 
                 <!-- ==================== 2. FOLLOW UPS VIEW ==================== -->
-                <views:FollowUpsView DataContext="{Binding FollowUpsVM}" Visibility="{Binding IsFollowUpsTabActive, Converter={StaticResource BoolToVis}}" />
+                <Grid Visibility="{Binding IsFollowUpsTabActive, Converter={StaticResource BoolToVis}}">
+                    <views:FollowUpsView DataContext="{Binding FollowUpsVM}" />
+                </Grid>
 
                 <!-- ==================== 3. PLAN MY DAY VIEW ==================== -->
-                <views:PlanMyDayView DataContext="{Binding PlanMyDayVM}" Visibility="{Binding IsPlanMyDayTabActive, Converter={StaticResource BoolToVis}}" />
+                <Grid Visibility="{Binding IsPlanMyDayTabActive, Converter={StaticResource BoolToVis}}">
+                    <views:PlanMyDayView DataContext="{Binding PlanMyDayVM}" />
+                </Grid>
 
                 <!-- ==================== 4. NOTES VIEW (WITH NOTE READER & ACTIONABLE CONVERSION) ==================== -->
-                <views:NotesView DataContext="{Binding NotesVM}" Visibility="{Binding IsNotesTabActive, Converter={StaticResource BoolToVis}}" />
+                <Grid Visibility="{Binding IsNotesTabActive, Converter={StaticResource BoolToVis}}">
+                    <views:NotesView DataContext="{Binding NotesVM}" />
+                </Grid>
 
                 <!-- ==================== 5. FAST CAPTURE INBOX VIEW ==================== -->
-                <views:InboxView DataContext="{Binding InboxVM}" Visibility="{Binding IsInboxTabActive, Converter={StaticResource BoolToVis}}" />
+                <Grid Visibility="{Binding IsInboxTabActive, Converter={StaticResource BoolToVis}}">
+                    <views:InboxView DataContext="{Binding InboxVM}" />
+                </Grid>
 
                 <!-- ==================== 6. CALENDAR VIEW ==================== -->
-                <views:CalendarView DataContext="{Binding CalendarVM}" Visibility="{Binding IsCalendarTabActive, Converter={StaticResource BoolToVis}}" />
+                <Grid Visibility="{Binding IsCalendarTabActive, Converter={StaticResource BoolToVis}}">
+                    <views:CalendarView DataContext="{Binding CalendarVM}" />
+                </Grid>
 
                 <!-- ==================== 7. ANALYTICS VIEW ==================== -->
-                <views:AnalyticsView DataContext="{Binding AnalyticsVM}" Visibility="{Binding IsAnalyticsTabActive, Converter={StaticResource BoolToVis}}" />
+                <Grid Visibility="{Binding IsAnalyticsTabActive, Converter={StaticResource BoolToVis}}">
+                    <views:AnalyticsView DataContext="{Binding AnalyticsVM}" />
+                </Grid>
 
                 <!-- ==================== 8. BACKUP VIEW ==================== -->
                 <ScrollViewer Visibility="{Binding IsBackupTabActive, Converter={StaticResource BoolToVis}}" Margin="24" VerticalScrollBarVisibility="Auto">

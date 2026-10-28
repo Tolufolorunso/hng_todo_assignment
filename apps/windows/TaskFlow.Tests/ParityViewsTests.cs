@@ -281,4 +281,71 @@ public class ParityViewsTests : IDisposable
         var tasks = await _taskRepository.ListAsync();
         Assert.Contains(tasks, t => t.Title.Contains("Read this article"));
     }
+
+    [Fact]
+    public void MainViewModel_TabNavigation_ActivatesAllTabsExclusively()
+    {
+        var tasksVm = new TasksViewModel(_taskRepository);
+        var notesVm = new NotesViewModel(_noteRepository);
+        var backupVm = new BackupViewModel(new BackupService(_factory, _taskRepository, _noteRepository));
+        var followUpsVm = new FollowUpsViewModel(_followUpRepository, _launcherService);
+        var planMyDayVm = new PlanMyDayViewModel(_dailyPlanRepository, _taskRepository, _followUpRepository);
+        var inboxVm = new InboxViewModel(_inboxRepository, _inboxTriageService, _launcherService);
+        var calendarVm = new CalendarViewModel(_taskRepository, _followUpRepository);
+        var analyticsVm = new AnalyticsViewModel(_taskRepository, _noteRepository, _followUpRepository, _inboxRepository);
+
+        var mainVm = new MainViewModel(
+            tasksVm, notesVm, backupVm,
+            followUpsVm, planMyDayVm, inboxVm, calendarVm, analyticsVm);
+
+        // Default: Tasks is active
+        Assert.True(mainVm.IsTasksTabActive);
+        Assert.False(mainVm.IsFollowUpsTabActive);
+        Assert.False(mainVm.IsPlanMyDayTabActive);
+        Assert.False(mainVm.IsNotesTabActive);
+        Assert.False(mainVm.IsInboxTabActive);
+        Assert.False(mainVm.IsCalendarTabActive);
+        Assert.False(mainVm.IsAnalyticsTabActive);
+
+        // Follow Ups
+        mainVm.NavigateToFollowUpsCommand.Execute(null);
+        Assert.False(mainVm.IsTasksTabActive);
+        Assert.True(mainVm.IsFollowUpsTabActive);
+        Assert.False(mainVm.IsAnalyticsTabActive);
+
+        // Plan My Day
+        mainVm.NavigateToPlanMyDayCommand.Execute(null);
+        Assert.False(mainVm.IsFollowUpsTabActive);
+        Assert.True(mainVm.IsPlanMyDayTabActive);
+        Assert.False(mainVm.IsAnalyticsTabActive);
+
+        // Notes
+        mainVm.NavigateToNotesCommand.Execute(null);
+        Assert.False(mainVm.IsPlanMyDayTabActive);
+        Assert.True(mainVm.IsNotesTabActive);
+        Assert.False(mainVm.IsAnalyticsTabActive);
+
+        // Inbox
+        mainVm.NavigateToInboxCommand.Execute(null);
+        Assert.False(mainVm.IsNotesTabActive);
+        Assert.True(mainVm.IsInboxTabActive);
+        Assert.False(mainVm.IsAnalyticsTabActive);
+
+        // Calendar
+        mainVm.NavigateToCalendarCommand.Execute(null);
+        Assert.False(mainVm.IsInboxTabActive);
+        Assert.True(mainVm.IsCalendarTabActive);
+        Assert.False(mainVm.IsAnalyticsTabActive);
+
+        // Analytics
+        mainVm.NavigateToAnalyticsCommand.Execute(null);
+        Assert.False(mainVm.IsCalendarTabActive);
+        Assert.True(mainVm.IsAnalyticsTabActive);
+        Assert.False(mainVm.IsTasksTabActive);
+
+        // Back to Tasks
+        mainVm.NavigateToTasksCommand.Execute(null);
+        Assert.True(mainVm.IsTasksTabActive);
+        Assert.False(mainVm.IsAnalyticsTabActive);
+    }
 }
