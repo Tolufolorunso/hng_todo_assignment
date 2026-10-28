@@ -45,7 +45,7 @@ public partial class App : Application
         var backupService = new BackupService(factory, taskRepo, noteRepo);
 
         var tasksVm = new TasksViewModel(taskRepo);
-        var notesVm = new NotesViewModel(noteRepo, actionableNotesService);
+        var notesVm = new NotesViewModel(noteRepo, actionableNotesService, taskRepo, followUpRepo);
         var backupVm = new BackupViewModel(backupService);
         var followUpsVm = new FollowUpsViewModel(followUpRepo, launcherService);
         var planMyDayVm = new PlanMyDayViewModel(dailyPlanRepo, taskRepo, followUpRepo);

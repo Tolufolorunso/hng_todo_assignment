@@ -1,5 +1,12 @@
+using System;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using TaskFlow.Common;
+using TaskFlow.ViewModels;
 
 namespace TaskFlow.Views;
 
@@ -10,28 +17,48 @@ public partial class NotesView : UserControl
         InitializeComponent();
     }
 
-    private void OnFormatTextClick(object sender, RoutedEventArgs e)
+    private void OnNoteCardMouseDown(object sender, MouseButtonEventArgs e)
     {
-        if (sender is not FrameworkElement element) return;
-        string action = element.Tag?.ToString() ?? string.Empty;
-        string targetName = (element as Button)?.CommandParameter?.ToString()
-            ?? element.Tag?.ToString()
-            ?? string.Empty;
-
-        if (string.IsNullOrEmpty(action) || string.IsNullOrEmpty(targetName)) return;
-
-        if (FindName(targetName) is TextBox targetTextBox)
+        // Ignore clicks originating from interactive elements like buttons
+        var current = e.OriginalSource as DependencyObject;
+        while (current != null && current != sender)
         {
-            var (newText, newStart, newLength) = Common.TextFormattingHelper.ApplyFormat(
-                targetTextBox.Text,
-                targetTextBox.SelectionStart,
-                targetTextBox.SelectionLength,
-                action);
+            if (current is ButtonBase)
+            {
+                return;
+            }
+            current = VisualTreeHelper.GetParent(current);
+        }
 
-            targetTextBox.Text = newText;
-            targetTextBox.Focus();
-            targetTextBox.Select(newStart, newLength);
+        if (sender is FrameworkElement fe && fe.DataContext is NoteItemViewModel noteVm && DataContext is NotesViewModel vm)
+        {
+            vm.SelectedNoteViewModel = noteVm;
+        }
+    }
+
+    private void OnPrintClick(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var printDialog = new PrintDialog();
+            if (printDialog.ShowDialog() == true)
+            {
+                if (DataContext is NotesViewModel vm && vm.SelectedNote != null)
+                {
+                    var doc = HtmlFlowDocumentEngine.HtmlToFlowDocument(vm.SelectedNote.Body);
+                    doc.PagePadding = new Thickness(48);
+                    var paginator = ((IDocumentPaginatorSource)doc).DocumentPaginator;
+                    printDialog.PrintDocument(paginator, vm.SelectedNote.Title);
+                    vm.ActionableSuccessMessage = "Document sent to printer.";
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            if (DataContext is NotesViewModel vm)
+            {
+                vm.ErrorMessage = $"Print failed: {ex.Message}";
+            }
         }
     }
 }
-

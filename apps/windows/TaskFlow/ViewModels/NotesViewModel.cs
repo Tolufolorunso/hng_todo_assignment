@@ -15,8 +15,10 @@ public class NotesViewModel : ObservableObject
 {
     private readonly INoteRepository _noteRepository;
     private readonly ActionableNotesService? _actionableNotesService;
+    private readonly ITaskRepository? _taskRepository;
+    private readonly IFollowUpRepository? _followUpRepository;
 
-    private NoteItem? _selectedNote;
+    private NoteItemViewModel? _selectedNoteViewModel;
     private string _searchQuery = string.Empty;
     private bool _isLoading;
     private string? _errorMessage;
@@ -33,25 +35,54 @@ public class NotesViewModel : ObservableObject
     private string _actionableCommitment = string.Empty;
     private string? _actionableSuccessMessage;
 
-    public ObservableCollection<NoteItem> Notes { get; } = new();
+    public ObservableCollection<NoteItemViewModel> Notes { get; } = new();
+    public ObservableCollection<TaskItemViewModel> LinkedTasks { get; } = new();
+    public ObservableCollection<FollowUpItem> LinkedFollowUps { get; } = new();
 
-    public NoteItem? SelectedNote
+    public NoteItemViewModel? SelectedNoteViewModel
     {
-        get => _selectedNote;
+        get => _selectedNoteViewModel;
         set
         {
-            if (SetProperty(ref _selectedNote, value))
+            if (SetProperty(ref _selectedNoteViewModel, value))
             {
+                OnPropertyChanged(nameof(SelectedNote));
                 OnPropertyChanged(nameof(HasSelectedNote));
                 OnPropertyChanged(nameof(WordCount));
                 OnPropertyChanged(nameof(ReadingTimeMinutes));
+                OnPropertyChanged(nameof(FormattedReadingStats));
+                OnPropertyChanged(nameof(FormattedUpdatedAt));
                 ActionableExcerpt = string.Empty;
                 ActionableSuccessMessage = null;
+                _ = LoadLinkedActionsAsync();
             }
         }
     }
 
-    public bool HasSelectedNote => SelectedNote != null;
+    public NoteItem? SelectedNote
+    {
+        get => _selectedNoteViewModel?.Model;
+        set
+        {
+            if (value == null)
+            {
+                SelectedNoteViewModel = null;
+            }
+            else
+            {
+                var existing = Notes.FirstOrDefault(n => n.Id == value.Id);
+                SelectedNoteViewModel = existing ?? new NoteItemViewModel(value);
+            }
+        }
+    }
+
+    public bool HasSelectedNote => SelectedNoteViewModel != null;
+
+    public bool HasLinkedActions => LinkedTasks.Count > 0 || LinkedFollowUps.Count > 0;
+    public bool HasLinkedTasks => LinkedTasks.Count > 0;
+    public bool HasLinkedFollowUps => LinkedFollowUps.Count > 0;
+
+    public string NotesCountLabel => Notes.Count == 1 ? "1 note" : $"{Notes.Count} notes";
 
     public string SearchQuery
     {
@@ -94,22 +125,34 @@ public class NotesViewModel : ObservableObject
     public bool IsReaderMode
     {
         get => _isReaderMode;
-        set => SetProperty(ref _isReaderMode, value);
+        set
+        {
+            if (SetProperty(ref _isReaderMode, value))
+            {
+                OnPropertyChanged(nameof(IsEditorMode));
+                OnPropertyChanged(nameof(ReaderToggleLabel));
+            }
+        }
     }
 
-    public int WordCount => string.IsNullOrWhiteSpace(SelectedNote?.Body)
-        ? 0
-        : SelectedNote.Body.Split(new[] { ' ', '\r', '\n', '\t' }, StringSplitOptions.RemoveEmptyEntries).Length;
+    public bool IsEditorMode => !IsReaderMode;
+
+    public string ReaderToggleLabel => IsReaderMode ? "Edit Note" : "Read Document";
+
+    public int WordCount => SelectedNoteViewModel?.WordCount ?? 0;
 
     public string ReadingTimeMinutes
     {
         get
         {
-            int words = WordCount;
-            int mins = Math.Max(1, (int)Math.Ceiling(words / 200.0));
+            int mins = SelectedNoteViewModel?.ReadingTimeMinutes ?? 1;
             return $"{mins} min read";
         }
     }
+
+    public string FormattedReadingStats => SelectedNoteViewModel?.FormattedReadingStats ?? "0 words";
+
+    public string FormattedUpdatedAt => SelectedNoteViewModel?.FormattedUpdatedAt ?? string.Empty;
 
     public string NewNoteTitle
     {
@@ -150,8 +193,16 @@ public class NotesViewModel : ObservableObject
     public string? ActionableSuccessMessage
     {
         get => _actionableSuccessMessage;
-        set => SetProperty(ref _actionableSuccessMessage, value);
+        set
+        {
+            if (SetProperty(ref _actionableSuccessMessage, value))
+            {
+                OnPropertyChanged(nameof(HasActionableSuccessMessage));
+            }
+        }
     }
+
+    public bool HasActionableSuccessMessage => !string.IsNullOrWhiteSpace(ActionableSuccessMessage);
 
     public ICommand LoadNotesCommand { get; }
     public ICommand OpenCreatePanelCommand { get; }
@@ -160,42 +211,98 @@ public class NotesViewModel : ObservableObject
     public ICommand DeleteNoteCommand { get; }
     public ICommand SaveSelectedNoteCommand { get; }
     public ICommand ToggleReaderModeCommand { get; }
+    public ICommand OpenReaderModeCommand { get; }
+    public ICommand OpenEditorModeCommand { get; }
     public ICommand CopyNoteBodyCommand { get; }
+    public ICommand PrintNoteCommand { get; }
     public ICommand CreateTaskFromExcerptCommand { get; }
     public ICommand CreateFollowUpFromExcerptCommand { get; }
+    public ICommand ToggleLinkedTaskCommand { get; }
+    public ICommand ClearSearchCommand { get; }
 
-    public NotesViewModel(INoteRepository noteRepository, ActionableNotesService? actionableNotesService = null)
+    public NotesViewModel(
+        INoteRepository noteRepository,
+        ActionableNotesService? actionableNotesService = null,
+        ITaskRepository? taskRepository = null,
+        IFollowUpRepository? followUpRepository = null)
     {
         _noteRepository = noteRepository;
         _actionableNotesService = actionableNotesService;
+        _taskRepository = taskRepository;
+        _followUpRepository = followUpRepository;
 
         LoadNotesCommand = new RelayCommand(async () => await LoadNotesAsync());
-        OpenCreatePanelCommand = new RelayCommand(() => IsCreatePanelVisible = true);
+        OpenCreatePanelCommand = new RelayCommand(() =>
+        {
+            IsReaderMode = false;
+            IsCreatePanelVisible = true;
+        });
         CloseCreatePanelCommand = new RelayCommand(() => IsCreatePanelVisible = false);
         CreateNoteCommand = new RelayCommand(async () => await CreateNoteAsync());
-        DeleteNoteCommand = new RelayCommand(async (param) => await DeleteNoteAsync(param as NoteItem ?? SelectedNote));
+        DeleteNoteCommand = new RelayCommand(async (param) =>
+        {
+            NoteItem? target = param switch
+            {
+                NoteItemViewModel vm => vm.Model,
+                NoteItem item => item,
+                _ => SelectedNote
+            };
+            await DeleteNoteAsync(target);
+        });
         SaveSelectedNoteCommand = new RelayCommand(async () => await SaveSelectedNoteAsync());
         ToggleReaderModeCommand = new RelayCommand(() => IsReaderMode = !IsReaderMode);
+        OpenReaderModeCommand = new RelayCommand((param) =>
+        {
+            if (param is NoteItemViewModel vm)
+            {
+                SelectedNoteViewModel = vm;
+            }
+            IsReaderMode = true;
+            IsCreatePanelVisible = false;
+        });
+        OpenEditorModeCommand = new RelayCommand((param) =>
+        {
+            if (param is NoteItemViewModel vm)
+            {
+                SelectedNoteViewModel = vm;
+            }
+            IsReaderMode = false;
+            IsCreatePanelVisible = false;
+        });
+
         CopyNoteBodyCommand = new RelayCommand(() =>
         {
-            if (SelectedNote != null && !string.IsNullOrEmpty(SelectedNote.Body))
+            if (SelectedNote != null)
             {
                 try
                 {
-                    Clipboard.SetText(SelectedNote.Body);
+                    string plain = HtmlMetricsHelper.StripHtmlToText(SelectedNote.Body);
+                    string fullText = string.IsNullOrWhiteSpace(plain)
+                        ? SelectedNote.Title
+                        : $"{SelectedNote.Title}\n\n{plain}";
+
+                    Clipboard.SetText(fullText);
                     ActionableSuccessMessage = "Note copied to clipboard!";
                 }
                 catch
                 {
-                    // Ignore clipboard errors in headless/tests
+                    // Ignore clipboard exceptions in non-interactive/headless environments
                 }
             }
+        });
+
+        PrintNoteCommand = new RelayCommand(() =>
+        {
+            ActionableSuccessMessage = "Print requested.";
         });
 
         CreateTaskFromExcerptCommand = new RelayCommand(async () =>
         {
             if (_actionableNotesService == null || SelectedNote == null) return;
-            string excerpt = !string.IsNullOrWhiteSpace(ActionableExcerpt) ? ActionableExcerpt : SelectedNote.Body;
+            string excerpt = !string.IsNullOrWhiteSpace(ActionableExcerpt)
+                ? ActionableExcerpt
+                : HtmlMetricsHelper.StripHtmlToText(SelectedNote.Body);
+
             if (string.IsNullOrWhiteSpace(excerpt)) return;
 
             await _actionableNotesService.CreateTaskFromNoteAsync(
@@ -206,12 +313,16 @@ public class NotesViewModel : ObservableObject
             ActionableSuccessMessage = "Task created from note excerpt!";
             ActionableExcerpt = string.Empty;
             ActionableTaskTitle = string.Empty;
+            await LoadLinkedActionsAsync();
         });
 
         CreateFollowUpFromExcerptCommand = new RelayCommand(async () =>
         {
             if (_actionableNotesService == null || SelectedNote == null) return;
-            string excerpt = !string.IsNullOrWhiteSpace(ActionableExcerpt) ? ActionableExcerpt : SelectedNote.Body;
+            string excerpt = !string.IsNullOrWhiteSpace(ActionableExcerpt)
+                ? ActionableExcerpt
+                : HtmlMetricsHelper.StripHtmlToText(SelectedNote.Body);
+
             if (string.IsNullOrWhiteSpace(excerpt)) return;
 
             string person = !string.IsNullOrWhiteSpace(ActionablePersonName) ? ActionablePersonName : "Note Contact";
@@ -227,7 +338,43 @@ public class NotesViewModel : ObservableObject
             ActionableExcerpt = string.Empty;
             ActionablePersonName = string.Empty;
             ActionableCommitment = string.Empty;
+            await LoadLinkedActionsAsync();
         });
+
+        ToggleLinkedTaskCommand = new RelayCommand(async (param) =>
+        {
+            if (_taskRepository == null) return;
+            string? taskId = param switch
+            {
+                TaskItemViewModel tvm => tvm.Id,
+                TaskItem item => item.Id,
+                string id => id,
+                _ => null
+            };
+
+            if (taskId != null)
+            {
+                try
+                {
+                    var updated = await _taskRepository.ToggleCompleteAsync(taskId);
+                    var existing = LinkedTasks.FirstOrDefault(t => t.Id == taskId);
+                    if (existing != null)
+                    {
+                        int idx = LinkedTasks.IndexOf(existing);
+                        if (idx >= 0)
+                        {
+                            LinkedTasks[idx] = new TaskItemViewModel(updated);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ErrorMessage = $"Failed to update linked task: {ex.Message}";
+                }
+            }
+        });
+
+        ClearSearchCommand = new RelayCommand(() => SearchQuery = string.Empty);
     }
 
     public async Task LoadNotesAsync()
@@ -242,16 +389,17 @@ public class NotesViewModel : ObservableObject
             Notes.Clear();
             foreach (var item in items)
             {
-                Notes.Add(item);
+                Notes.Add(new NoteItemViewModel(item));
             }
+            OnPropertyChanged(nameof(NotesCountLabel));
 
-            if (SelectedNote != null && !Notes.Any(n => n.Id == SelectedNote.Id))
+            if (SelectedNoteViewModel != null && !Notes.Any(n => n.Id == SelectedNoteViewModel.Id))
             {
-                SelectedNote = Notes.FirstOrDefault();
+                SelectedNoteViewModel = Notes.FirstOrDefault();
             }
-            else if (SelectedNote == null && Notes.Count > 0)
+            else if (SelectedNoteViewModel == null && Notes.Count > 0)
             {
-                SelectedNote = Notes[0];
+                SelectedNoteViewModel = Notes[0];
             }
         }
         catch (Exception ex)
@@ -262,6 +410,61 @@ public class NotesViewModel : ObservableObject
         {
             IsLoading = false;
         }
+    }
+
+    public async Task LoadLinkedActionsAsync()
+    {
+        if (SelectedNote == null)
+        {
+            LinkedTasks.Clear();
+            LinkedFollowUps.Clear();
+            OnPropertyChanged(nameof(HasLinkedActions));
+            OnPropertyChanged(nameof(HasLinkedTasks));
+            OnPropertyChanged(nameof(HasLinkedFollowUps));
+            return;
+        }
+
+        string noteId = SelectedNote.Id;
+
+        if (_taskRepository != null)
+        {
+            try
+            {
+                var tasks = await _taskRepository.ListAsync();
+                var matchedTasks = tasks.Where(t => t.SourceNoteId == noteId).ToList();
+                LinkedTasks.Clear();
+                foreach (var t in matchedTasks)
+                {
+                    LinkedTasks.Add(new TaskItemViewModel(t));
+                }
+            }
+            catch
+            {
+                // Ignore background backlink query failures
+            }
+        }
+
+        if (_followUpRepository != null)
+        {
+            try
+            {
+                var followUps = await _followUpRepository.ListAsync();
+                var matchedFollowUps = followUps.Where(f => f.SourceNoteId == noteId).ToList();
+                LinkedFollowUps.Clear();
+                foreach (var f in matchedFollowUps)
+                {
+                    LinkedFollowUps.Add(f);
+                }
+            }
+            catch
+            {
+                // Ignore background backlink query failures
+            }
+        }
+
+        OnPropertyChanged(nameof(HasLinkedActions));
+        OnPropertyChanged(nameof(HasLinkedTasks));
+        OnPropertyChanged(nameof(HasLinkedFollowUps));
     }
 
     public async Task CreateNoteAsync()
@@ -281,8 +484,10 @@ public class NotesViewModel : ObservableObject
             };
 
             var created = await _noteRepository.CreateAsync(note);
-            Notes.Insert(0, created);
-            SelectedNote = created;
+            var createdVm = new NoteItemViewModel(created);
+            Notes.Insert(0, createdVm);
+            SelectedNoteViewModel = createdVm;
+            OnPropertyChanged(nameof(NotesCountLabel));
 
             NewNoteTitle = string.Empty;
             NewNoteBody = string.Empty;
@@ -297,7 +502,7 @@ public class NotesViewModel : ObservableObject
 
     public async Task SaveSelectedNoteAsync()
     {
-        if (SelectedNote == null)
+        if (SelectedNote == null || SelectedNoteViewModel == null)
         {
             return;
         }
@@ -311,11 +516,12 @@ public class NotesViewModel : ObservableObject
         try
         {
             var updated = await _noteRepository.UpdateAsync(SelectedNote);
-            int index = Notes.IndexOf(SelectedNote);
+            var updatedVm = new NoteItemViewModel(updated);
+            int index = Notes.IndexOf(SelectedNoteViewModel);
             if (index >= 0)
             {
-                Notes[index] = updated;
-                SelectedNote = updated;
+                Notes[index] = updatedVm;
+                SelectedNoteViewModel = updatedVm;
             }
             ErrorMessage = null;
         }
@@ -323,6 +529,11 @@ public class NotesViewModel : ObservableObject
         {
             ErrorMessage = $"Failed to update note: {ex.Message}";
         }
+    }
+
+    public async Task DeleteNoteAsync(NoteItemViewModel? noteVm)
+    {
+        await DeleteNoteAsync(noteVm?.Model);
     }
 
     public async Task DeleteNoteAsync(NoteItem? note)
@@ -337,10 +548,15 @@ public class NotesViewModel : ObservableObject
             bool deleted = await _noteRepository.DeleteAsync(note.Id);
             if (deleted)
             {
-                Notes.Remove(note);
-                if (SelectedNote?.Id == note.Id)
+                var existingVm = Notes.FirstOrDefault(n => n.Id == note.Id);
+                if (existingVm != null)
                 {
-                    SelectedNote = Notes.FirstOrDefault();
+                    Notes.Remove(existingVm);
+                    OnPropertyChanged(nameof(NotesCountLabel));
+                    if (SelectedNoteViewModel?.Id == note.Id)
+                    {
+                        SelectedNoteViewModel = Notes.FirstOrDefault();
+                    }
                 }
             }
         }
