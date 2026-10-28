@@ -59,6 +59,52 @@ public class PlanMyDayViewModel : ObservableObject
         set => SetProperty(ref _remainingMinutes, value);
     }
 
+    public int CapacityPercent => AvailableMinutes > 0
+        ? (int)Math.Round((double)TotalEstimatedMinutes / AvailableMinutes * 100)
+        : 0;
+
+    public bool IsOverCapacity => TotalEstimatedMinutes > AvailableMinutes;
+    public bool IsFullyPlanned => CapacityPercent >= 90 && !IsOverCapacity;
+
+    public string CapacityStatusMessage
+    {
+        get
+        {
+            if (IsOverCapacity)
+            {
+                int over = TotalEstimatedMinutes - AvailableMinutes;
+                return $"{over}m over capacity";
+            }
+            if (IsFullyPlanned)
+            {
+                return "Fully planned (90%+ capacity)";
+            }
+            return $"{CapacityPercent}% capacity planned ({RemainingMinutes}m available)";
+        }
+    }
+
+    public string CapacityProgressColor
+    {
+        get
+        {
+            if (IsOverCapacity) return "#EF4444"; // rose
+            if (IsFullyPlanned) return "#F59E0B"; // amber
+            return "#10B981"; // emerald / green
+        }
+    }
+
+    public string FormattedPlannedTime => FormatHoursMins(TotalEstimatedMinutes);
+    public string FormattedAvailableTime => FormatHoursMins(AvailableMinutes);
+
+    public static string FormatHoursMins(int mins)
+    {
+        int h = mins / 60;
+        int m = mins % 60;
+        if (h == 0) return $"{m}m";
+        if (m == 0) return $"{h}h";
+        return $"{h}h {m}m";
+    }
+
     public bool IsPlanAccepted
     {
         get => _isPlanAccepted;
@@ -104,10 +150,16 @@ public class PlanMyDayViewModel : ObservableObject
         MoveToOverflowCommand = new RelayCommand<PlanItemReference>(MoveToOverflow);
         MoveToRecommendedCommand = new RelayCommand<PlanItemReference>(MoveToRecommended);
         ToggleItemCompletedCommand = new RelayCommand<PlanItemReference>(async item => await ToggleItemCompletedAsync(item));
-        SetPresetCapacityCommand = new RelayCommand<int>(mins =>
+        SetPresetCapacityCommand = new RelayCommand<object>(param =>
         {
-            AvailableMinutes = mins;
+            if (param is int mins) AvailableMinutes = mins;
+            else if (param is string str && int.TryParse(str, out var parsed)) AvailableMinutes = parsed;
         });
+
+        RecommendedItems.CollectionChanged += (s, e) => RecalculateCapacity();
+        OverflowItems.CollectionChanged += (s, e) => RecalculateCapacity();
+
+        RecalculateCapacity();
     }
 
     public async Task InitializeAsync()
@@ -153,8 +205,7 @@ public class PlanMyDayViewModel : ObservableObject
             OverflowItems.Add(item);
         }
 
-        TotalEstimatedMinutes = result.TotalEstimatedMinutes;
-        RemainingMinutes = result.RemainingMinutes;
+        RecalculateCapacity();
         StatusMessage = $"Generated plan: {RecommendedItems.Count} items ({TotalEstimatedMinutes}m / {AvailableMinutes}m)";
     }
 
@@ -230,5 +281,12 @@ public class PlanMyDayViewModel : ObservableObject
     {
         TotalEstimatedMinutes = RecommendedItems.Sum(i => i.EstimatedMinutes);
         RemainingMinutes = Math.Max(0, AvailableMinutes - TotalEstimatedMinutes);
+        OnPropertyChanged(nameof(CapacityPercent));
+        OnPropertyChanged(nameof(IsOverCapacity));
+        OnPropertyChanged(nameof(IsFullyPlanned));
+        OnPropertyChanged(nameof(CapacityStatusMessage));
+        OnPropertyChanged(nameof(CapacityProgressColor));
+        OnPropertyChanged(nameof(FormattedPlannedTime));
+        OnPropertyChanged(nameof(FormattedAvailableTime));
     }
 }

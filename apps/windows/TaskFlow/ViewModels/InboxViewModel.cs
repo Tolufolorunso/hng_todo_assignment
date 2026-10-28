@@ -1,6 +1,8 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using TaskFlow.Common;
@@ -14,6 +16,7 @@ public class InboxViewModel : ObservableObject
 {
     private readonly IInboxRepository _inboxRepo;
     private readonly InboxTriageService _triageService;
+    private readonly ILauncherService? _launcher;
 
     private string _fastCaptureText = string.Empty;
     private string _sharedUrl = string.Empty;
@@ -102,6 +105,8 @@ public class InboxViewModel : ObservableObject
     }
 
     public int PendingCount => Captures.Count(c => string.Equals(c.State, "pending", StringComparison.OrdinalIgnoreCase));
+    public int ProcessedCount => Captures.Count(c => string.Equals(c.State, "processed", StringComparison.OrdinalIgnoreCase));
+    public int TotalCount => Captures.Count;
 
     public ICommand CaptureCommand { get; }
     public ICommand TriageToTaskCommand { get; }
@@ -110,11 +115,14 @@ public class InboxViewModel : ObservableObject
     public ICommand DiscardCommand { get; }
     public ICommand DeleteCommand { get; }
     public ICommand LoadCommand { get; }
+    public ICommand SetFilterStateCommand { get; }
+    public ICommand LaunchUrlCommand { get; }
 
-    public InboxViewModel(IInboxRepository inboxRepo, InboxTriageService triageService)
+    public InboxViewModel(IInboxRepository inboxRepo, InboxTriageService triageService, ILauncherService? launcher = null)
     {
         _inboxRepo = inboxRepo;
         _triageService = triageService;
+        _launcher = launcher;
 
         CaptureCommand = new RelayCommand(async () => await CaptureAsync());
         TriageToTaskCommand = new RelayCommand<InboxCaptureItem>(async item => await TriageToTaskAsync(item));
@@ -123,6 +131,23 @@ public class InboxViewModel : ObservableObject
         DiscardCommand = new RelayCommand<InboxCaptureItem>(async item => await DiscardAsync(item));
         DeleteCommand = new RelayCommand<InboxCaptureItem>(async item => await DeleteAsync(item));
         LoadCommand = new RelayCommand(async () => await LoadAsync());
+        SetFilterStateCommand = new RelayCommand<string>(state => SelectedState = state ?? "all");
+        LaunchUrlCommand = new RelayCommand<string>(url =>
+        {
+            if (string.IsNullOrWhiteSpace(url)) return;
+            if (_launcher != null)
+            {
+                _launcher.LaunchUrl(url);
+            }
+            else
+            {
+                try
+                {
+                    Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+                }
+                catch { }
+            }
+        });
     }
 
     public async Task LoadAsync()
@@ -134,7 +159,7 @@ public class InboxViewModel : ObservableObject
             Captures.Add(item);
         }
         ApplyFilter();
-        OnPropertyChanged(nameof(PendingCount));
+        NotifyCounts();
     }
 
     public void ApplyFilter()
@@ -168,9 +193,21 @@ public class InboxViewModel : ObservableObject
             return;
         }
 
+        string raw = FastCaptureText.Trim();
+        string? url = string.IsNullOrWhiteSpace(SharedUrl) ? null : SharedUrl.Trim();
+
+        if (url == null && (raw.Contains("http://") || raw.Contains("https://")))
+        {
+            var match = Regex.Match(raw, @"https?://[^\s]+");
+            if (match.Success)
+            {
+                url = match.Value;
+            }
+        }
+
         var item = await _inboxRepo.CreateAsync(
-            FastCaptureText.Trim(),
-            string.IsNullOrWhiteSpace(SharedUrl) ? null : SharedUrl.Trim(),
+            raw,
+            url,
             string.IsNullOrWhiteSpace(SourceAppLabel) ? null : SourceAppLabel.Trim());
 
         Captures.Insert(0, item);
@@ -179,7 +216,7 @@ public class InboxViewModel : ObservableObject
         SourceAppLabel = string.Empty;
 
         ApplyFilter();
-        OnPropertyChanged(nameof(PendingCount));
+        NotifyCounts();
         SelectedCapture = item;
     }
 
@@ -195,7 +232,7 @@ public class InboxViewModel : ObservableObject
             Captures[index] = result.Capture;
         }
         ApplyFilter();
-        OnPropertyChanged(nameof(PendingCount));
+        NotifyCounts();
     }
 
     public async Task TriageToNoteAsync(InboxCaptureItem? item)
@@ -210,7 +247,7 @@ public class InboxViewModel : ObservableObject
             Captures[index] = result.Capture;
         }
         ApplyFilter();
-        OnPropertyChanged(nameof(PendingCount));
+        NotifyCounts();
     }
 
     public async Task TriageToFollowUpAsync(InboxCaptureItem? item)
@@ -226,7 +263,7 @@ public class InboxViewModel : ObservableObject
             Captures[index] = result.Capture;
         }
         ApplyFilter();
-        OnPropertyChanged(nameof(PendingCount));
+        NotifyCounts();
     }
 
     public async Task DiscardAsync(InboxCaptureItem? item)
@@ -241,7 +278,7 @@ public class InboxViewModel : ObservableObject
             Captures[index] = discarded;
         }
         ApplyFilter();
-        OnPropertyChanged(nameof(PendingCount));
+        NotifyCounts();
     }
 
     public async Task DeleteAsync(InboxCaptureItem? item)
@@ -256,6 +293,13 @@ public class InboxViewModel : ObservableObject
             SelectedCapture = null;
         }
         ApplyFilter();
+        NotifyCounts();
+    }
+
+    private void NotifyCounts()
+    {
         OnPropertyChanged(nameof(PendingCount));
+        OnPropertyChanged(nameof(ProcessedCount));
+        OnPropertyChanged(nameof(TotalCount));
     }
 }

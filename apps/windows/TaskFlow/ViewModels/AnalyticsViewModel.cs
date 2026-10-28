@@ -37,6 +37,7 @@ public class AnalyticsViewModel : ObservableObject
     private int _pendingCaptures;
     private int _processedCaptures;
     private int _discardedCaptures;
+    private string _lastRefreshedAt = DateTime.Now.ToString("HH:mm:ss", CultureInfo.InvariantCulture);
 
     public int TotalTasks { get => _totalTasks; private set => SetProperty(ref _totalTasks, value); }
     public int CompletedTasks { get => _completedTasks; private set => SetProperty(ref _completedTasks, value); }
@@ -64,6 +65,28 @@ public class AnalyticsViewModel : ObservableObject
     public double HighPriorityPercent => TotalTasks > 0 ? (double)HighPriorityTasks / TotalTasks * 100 : 0;
     public double MediumPriorityPercent => TotalTasks > 0 ? (double)MediumPriorityTasks / TotalTasks * 100 : 0;
     public double LowPriorityPercent => TotalTasks > 0 ? (double)LowPriorityTasks / TotalTasks * 100 : 0;
+
+    public double WorkCategoryPercent => TotalTasks > 0 ? (double)WorkCategoryTasks / TotalTasks * 100 : 0;
+    public double PersonalCategoryPercent => TotalTasks > 0 ? (double)PersonalCategoryTasks / TotalTasks * 100 : 0;
+
+    public string ProductivityRating
+    {
+        get
+        {
+            if (TotalTasks == 0) return "Fresh Start";
+            double rate = (double)CompletedTasks / TotalTasks * 100;
+            if (rate >= 80) return "Peak Focus";
+            if (rate >= 50) return "On Track";
+            if (rate >= 20) return "Steady";
+            return "Needs Momentum";
+        }
+    }
+
+    public string LastRefreshedAt
+    {
+        get => _lastRefreshedAt;
+        private set => SetProperty(ref _lastRefreshedAt, value);
+    }
 
     public ICommand RefreshCommand { get; }
 
@@ -122,8 +145,13 @@ public class AnalyticsViewModel : ObservableObject
         ProcessedCaptures = captures.Count(c => string.Equals(c.State, "processed", StringComparison.OrdinalIgnoreCase));
         DiscardedCaptures = captures.Count(c => string.Equals(c.State, "discarded", StringComparison.OrdinalIgnoreCase));
 
+        LastRefreshedAt = DateTime.Now.ToString("HH:mm:ss", CultureInfo.InvariantCulture);
+
         OnPropertyChanged(nameof(HighPriorityPercent));
         OnPropertyChanged(nameof(MediumPriorityPercent));
         OnPropertyChanged(nameof(LowPriorityPercent));
+        OnPropertyChanged(nameof(WorkCategoryPercent));
+        OnPropertyChanged(nameof(PersonalCategoryPercent));
+        OnPropertyChanged(nameof(ProductivityRating));
     }
 }

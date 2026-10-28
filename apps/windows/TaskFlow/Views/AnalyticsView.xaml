@@ -14,13 +14,24 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <!-- Header -->
+            <!-- Header with Title, Rating Badge, and Refresh -->
             <Grid Grid.Row="0" Margin="0,0,0,20">
-                <TextBlock Text="Productivity Analytics &amp; Velocity" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
-                <Button Content="Refresh" Style="{StaticResource SecondaryButton}" Command="{Binding RefreshCommand}" HorizontalAlignment="Right" AutomationProperties.Name="Refresh analytics" />
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Productivity Analytics &amp; Velocity" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,12,0" />
+                    <!-- Productivity Rating Badge -->
+                    <Border Background="#0F2F24" BorderBrush="{DynamicResource AccentGreen}" BorderThickness="1" CornerRadius="12" Padding="10,3" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding ProductivityRating}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AccentGreen}" />
+                    </Border>
+                </StackPanel>
+
+                <!-- Refresh Button and Timestamp -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding LastRefreshedAt, StringFormat='Updated: {0}'}" FontSize="11" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                    <Button Content="↻ Refresh" Style="{StaticResource SecondaryButton}" Command="{Binding RefreshCommand}" AutomationProperties.Name="Refresh analytics" />
+                </StackPanel>
             </Grid>
 
-            <!-- KPI Cards Grid -->
+            <!-- 4-Card KPI Grid -->
             <Grid Grid.Row="1" Margin="0,0,0,20">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -32,36 +43,44 @@
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
+                <!-- KPI 1: Completion Rate -->
                 <Border Grid.Column="0" Style="{StaticResource MetricCard}">
                     <StackPanel>
-                        <TextBlock Text="Completion Rate" FontSize="12" Foreground="{DynamicResource TextSecondary}" />
-                        <TextBlock Text="{Binding CompletionRate}" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource AccentGreen}" Margin="0,4,0,0" />
+                        <TextBlock Text="COMPLETION RATE" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" />
+                        <TextBlock Text="{Binding CompletionRate}" FontSize="28" FontWeight="Bold" Foreground="{DynamicResource AccentGreen}" Margin="0,6,0,2" />
+                        <TextBlock Text="{Binding CompletedTasks, StringFormat='{}{0} tasks completed'}" FontSize="12" Foreground="{DynamicResource TextSecondary}" />
                     </StackPanel>
                 </Border>
 
+                <!-- KPI 2: Total Tasks -->
                 <Border Grid.Column="2" Style="{StaticResource MetricCard}">
                     <StackPanel>
-                        <TextBlock Text="Total Tasks" FontSize="12" Foreground="{DynamicResource TextSecondary}" />
-                        <TextBlock Text="{Binding TotalTasks}" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="0,4,0,0" />
+                        <TextBlock Text="TOTAL TASKS" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" />
+                        <TextBlock Text="{Binding TotalTasks}" FontSize="28" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="0,6,0,2" />
+                        <TextBlock Text="{Binding OpenTasks, StringFormat='{}{0} in progress'}" FontSize="12" Foreground="{DynamicResource AccentBlue}" />
                     </StackPanel>
                 </Border>
 
+                <!-- KPI 3: Overdue Tasks -->
                 <Border Grid.Column="4" Style="{StaticResource MetricCard}">
                     <StackPanel>
-                        <TextBlock Text="Overdue Tasks" FontSize="12" Foreground="{DynamicResource TextSecondary}" />
-                        <TextBlock Text="{Binding OverdueTasks}" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource AccentRose}" Margin="0,4,0,0" />
+                        <TextBlock Text="OVERDUE TASKS" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" />
+                        <TextBlock Text="{Binding OverdueTasks}" FontSize="28" FontWeight="Bold" Foreground="{DynamicResource AccentRose}" Margin="0,6,0,2" />
+                        <TextBlock Text="Needs immediate focus" FontSize="12" Foreground="{DynamicResource TextSecondary}" />
                     </StackPanel>
                 </Border>
 
+                <!-- KPI 4: Open Follow-Ups -->
                 <Border Grid.Column="6" Style="{StaticResource MetricCard}">
                     <StackPanel>
-                        <TextBlock Text="Open Follow-Ups" FontSize="12" Foreground="{DynamicResource TextSecondary}" />
-                        <TextBlock Text="{Binding OpenFollowUps}" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource AccentAmber}" Margin="0,4,0,0" />
+                        <TextBlock Text="OPEN FOLLOW-UPS" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" />
+                        <TextBlock Text="{Binding OpenFollowUps}" FontSize="28" FontWeight="Bold" Foreground="{DynamicResource AccentAmber}" Margin="0,6,0,2" />
+                        <TextBlock Text="{Binding OverdueFollowUps, StringFormat='{}{0} overdue commitments'}" FontSize="12" Foreground="{DynamicResource TextSecondary}" />
                     </StackPanel>
                 </Border>
             </Grid>
 
-            <!-- Breakdown Cards -->
+            <!-- Detailed Breakdowns -->
             <Grid Grid.Row="2">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -69,31 +88,125 @@
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <Border Grid.Column="0" Style="{StaticResource ModernCard}" Padding="20">
+                <!-- Left Column: Priority & Category Distributions -->
+                <StackPanel Grid.Column="0">
+                    <!-- Priority Distribution Card -->
+                    <Border Style="{StaticResource ModernCard}" Padding="20" Margin="0,0,0,16">
+                        <StackPanel>
+                            <TextBlock Text="Task Priority Distribution" Style="{StaticResource CardTitleText}" Margin="0,0,0,14" />
+
+                            <!-- High Priority -->
+                            <Grid Margin="0,0,0,4">
+                                <TextBlock Text="High Priority" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AccentRose}" />
+                                <TextBlock Text="{Binding HighPriorityTasks, StringFormat='{}{0} tasks'}" FontSize="12" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Right" />
+                            </Grid>
+                            <ProgressBar Value="{Binding HighPriorityPercent, Mode=OneWay}" Maximum="100" Height="8" Foreground="{DynamicResource AccentRose}" Background="{DynamicResource BgSurfaceElevated}" BorderThickness="0" Margin="0,0,0,12" />
+
+                            <!-- Medium Priority -->
+                            <Grid Margin="0,0,0,4">
+                                <TextBlock Text="Medium Priority" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AccentAmber}" />
+                                <TextBlock Text="{Binding MediumPriorityTasks, StringFormat='{}{0} tasks'}" FontSize="12" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Right" />
+                            </Grid>
+                            <ProgressBar Value="{Binding MediumPriorityPercent, Mode=OneWay}" Maximum="100" Height="8" Foreground="{DynamicResource AccentAmber}" Background="{DynamicResource BgSurfaceElevated}" BorderThickness="0" Margin="0,0,0,12" />
+
+                            <!-- Low Priority -->
+                            <Grid Margin="0,0,0,4">
+                                <TextBlock Text="Low Priority" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AccentBlue}" />
+                                <TextBlock Text="{Binding LowPriorityTasks, StringFormat='{}{0} tasks'}" FontSize="12" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Right" />
+                            </Grid>
+                            <ProgressBar Value="{Binding LowPriorityPercent, Mode=OneWay}" Maximum="100" Height="8" Foreground="{DynamicResource AccentBlue}" Background="{DynamicResource BgSurfaceElevated}" BorderThickness="0" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Category Breakdown Card -->
+                    <Border Style="{StaticResource ModernCard}" Padding="20">
+                        <StackPanel>
+                            <TextBlock Text="Category Allocation" Style="{StaticResource CardTitleText}" Margin="0,0,0,14" />
+
+                            <!-- Work Category -->
+                            <Grid Margin="0,0,0,4">
+                                <TextBlock Text="Work" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource CategoryWorkBrush}" />
+                                <TextBlock Text="{Binding WorkCategoryTasks, StringFormat='{}{0} tasks'}" FontSize="12" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Right" />
+                            </Grid>
+                            <ProgressBar Value="{Binding WorkCategoryPercent, Mode=OneWay}" Maximum="100" Height="8" Foreground="{DynamicResource CategoryWorkBrush}" Background="{DynamicResource BgSurfaceElevated}" BorderThickness="0" Margin="0,0,0,12" />
+
+                            <!-- Personal Category -->
+                            <Grid Margin="0,0,0,4">
+                                <TextBlock Text="Personal" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource CategoryPersonalBrush}" />
+                                <TextBlock Text="{Binding PersonalCategoryTasks, StringFormat='{}{0} tasks'}" FontSize="12" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Right" />
+                            </Grid>
+                            <ProgressBar Value="{Binding PersonalCategoryPercent, Mode=OneWay}" Maximum="100" Height="8" Foreground="{DynamicResource CategoryPersonalBrush}" Background="{DynamicResource BgSurfaceElevated}" BorderThickness="0" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- Right Column: Workspace Entity Volume Breakdown -->
+                <Border Grid.Column="2" Style="{StaticResource ModernCard}" Padding="20" VerticalAlignment="Top">
                     <StackPanel>
-                        <TextBlock Text="Task Priority Distribution" Style="{StaticResource CardTitleText}" Margin="0,0,0,14" />
-                        <TextBlock Text="{Binding HighPriorityTasks, StringFormat='High: {0}'}" FontSize="12" Foreground="{DynamicResource AccentRose}" Margin="0,0,0,4" />
-                        <ProgressBar Value="{Binding HighPriorityPercent, Mode=OneWay}" Maximum="100" Height="8" Foreground="{DynamicResource AccentRose}" Margin="0,0,0,12" />
+                        <TextBlock Text="Workspace Entity Volume Breakdown" Style="{StaticResource CardTitleText}" Margin="0,0,0,16" />
 
-                        <TextBlock Text="{Binding MediumPriorityTasks, StringFormat='Medium: {0}'}" FontSize="12" Foreground="{DynamicResource AccentAmber}" Margin="0,0,0,4" />
-                        <ProgressBar Value="{Binding MediumPriorityPercent, Mode=OneWay}" Maximum="100" Height="8" Foreground="{DynamicResource AccentAmber}" Margin="0,0,0,12" />
+                        <!-- Tasks Item -->
+                        <Border Background="{DynamicResource BgSurfaceElevated}" CornerRadius="6" Padding="14,10" Margin="0,0,0,10">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Tasks" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
+                                    <TextBlock Text="{Binding CompletedTasks, StringFormat='{}{0} completed'}" FontSize="11" Foreground="{DynamicResource TextMuted}" Margin="0,2,0,0" />
+                                </StackPanel>
+                                <TextBlock Grid.Column="1" Text="{Binding TotalTasks}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource AccentBlue}" VerticalAlignment="Center" />
+                            </Grid>
+                        </Border>
 
-                        <TextBlock Text="{Binding LowPriorityTasks, StringFormat='Low: {0}'}" FontSize="12" Foreground="{DynamicResource AccentBlue}" Margin="0,0,0,4" />
-                        <ProgressBar Value="{Binding LowPriorityPercent, Mode=OneWay}" Maximum="100" Height="8" Foreground="{DynamicResource AccentBlue}" />
-                    </StackPanel>
-                </Border>
+                        <!-- Actionable Notes Item -->
+                        <Border Background="{DynamicResource BgSurfaceElevated}" CornerRadius="6" Padding="14,10" Margin="0,0,0,10">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Actionable Notes" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
+                                    <TextBlock Text="Rich documents with backlinks" FontSize="11" Foreground="{DynamicResource TextMuted}" Margin="0,2,0,0" />
+                                </StackPanel>
+                                <TextBlock Grid.Column="1" Text="{Binding TotalNotes}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource CategoryPersonalBrush}" VerticalAlignment="Center" />
+                            </Grid>
+                        </Border>
 
-                <Border Grid.Column="2" Style="{StaticResource ModernCard}" Padding="20">
-                    <StackPanel>
-                        <TextBlock Text="Entity Volume Breakdown" Style="{StaticResource CardTitleText}" Margin="0,0,0,14" />
-                        <TextBlock Text="{Binding TotalTasks, StringFormat='Total Tasks: {0}'}" FontSize="12" Foreground="{DynamicResource TextSecondary}" Margin="0,2" />
-                        <TextBlock Text="{Binding TotalNotes, StringFormat='Actionable Notes: {0}'}" FontSize="12" Foreground="{DynamicResource TextSecondary}" Margin="0,2" />
-                        <TextBlock Text="{Binding TotalFollowUps, StringFormat='Follow-Up Commitments: {0}'}" FontSize="12" Foreground="{DynamicResource TextSecondary}" Margin="0,2" />
-                        <TextBlock Text="{Binding TotalCaptures, StringFormat='Fast Captures: {0}'}" FontSize="12" Foreground="{DynamicResource TextSecondary}" Margin="0,2" />
+                        <!-- Follow-Up Commitments Item -->
+                        <Border Background="{DynamicResource BgSurfaceElevated}" CornerRadius="6" Padding="14,10" Margin="0,0,0,10">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Follow-Up Commitments" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
+                                    <TextBlock Text="{Binding CompletedFollowUps, StringFormat='{}{0} completed'}" FontSize="11" Foreground="{DynamicResource TextMuted}" Margin="0,2,0,0" />
+                                </StackPanel>
+                                <TextBlock Grid.Column="1" Text="{Binding TotalFollowUps}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource AccentAmber}" VerticalAlignment="Center" />
+                            </Grid>
+                        </Border>
+
+                        <!-- Fast Captures Item -->
+                        <Border Background="{DynamicResource BgSurfaceElevated}" CornerRadius="6" Padding="14,10">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Fast Capture Inbox" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
+                                    <TextBlock Text="{Binding PendingCaptures, StringFormat='{}{0} pending triage'}" FontSize="11" Foreground="{DynamicResource TextMuted}" Margin="0,2,0,0" />
+                                </StackPanel>
+                                <TextBlock Grid.Column="1" Text="{Binding TotalCaptures}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource AccentGreen}" VerticalAlignment="Center" />
+                            </Grid>
+                        </Border>
                     </StackPanel>
                 </Border>
             </Grid>
         </Grid>
     </ScrollViewer>
 </UserControl>
-

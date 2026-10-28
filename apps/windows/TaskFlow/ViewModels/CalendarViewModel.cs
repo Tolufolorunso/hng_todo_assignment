@@ -50,7 +50,7 @@ public class CalendarViewModel : ObservableObject
         }
     }
 
-    public string SelectedDateDisplay => SelectedDate?.ToString("D", CultureInfo.InvariantCulture) ?? "Select a date";
+    public string SelectedDateDisplay => SelectedDate?.ToString("dddd, MMMM d, yyyy", CultureInfo.InvariantCulture) ?? "Select a date";
     public bool HasSelectedDayItems => SelectedDayItems.Count > 0;
 
     public CalendarDayItem? SelectedDay
@@ -64,6 +64,7 @@ public class CalendarViewModel : ObservableObject
     public ICommand TodayCommand { get; }
     public ICommand SelectDateCommand { get; }
     public ICommand LoadCommand { get; }
+    public ICommand ToggleItemCompletedCommand { get; }
 
     public CalendarViewModel(ITaskRepository taskRepo, IFollowUpRepository followUpRepo)
     {
@@ -98,12 +99,31 @@ public class CalendarViewModel : ObservableObject
             }
             SelectedDay = day;
             SelectedDate = day.Date;
+
             SelectedDayItems.Clear();
             foreach (var item in day.Items)
             {
                 SelectedDayItems.Add(item);
             }
             OnPropertyChanged(nameof(HasSelectedDayItems));
+        });
+
+        ToggleItemCompletedCommand = new RelayCommand<PlanItemReference>(async item =>
+        {
+            if (item == null) return;
+            item.IsCompleted = !item.IsCompleted;
+            if (string.Equals(item.Type, "task", StringComparison.OrdinalIgnoreCase))
+            {
+                await _taskRepo.ToggleCompleteAsync(item.Id);
+            }
+            else if (string.Equals(item.Type, "followup", StringComparison.OrdinalIgnoreCase))
+            {
+                if (item.IsCompleted)
+                {
+                    await _followUpRepo.CompleteOccurrenceAsync(item.Id);
+                }
+            }
+            await RefreshCalendarAsync();
         });
 
         LoadCommand = new RelayCommand(async () => await RefreshCalendarAsync());
@@ -116,7 +136,6 @@ public class CalendarViewModel : ObservableObject
 
         var today = DateTime.UtcNow.Date;
         var firstDayOfMonth = new DateTime(CurrentMonth.Year, CurrentMonth.Month, 1);
-        int daysInMonth = DateTime.DaysInMonth(CurrentMonth.Year, CurrentMonth.Month);
 
         // Day of week offset (Sunday = 0)
         int startOffset = (int)firstDayOfMonth.DayOfWeek;

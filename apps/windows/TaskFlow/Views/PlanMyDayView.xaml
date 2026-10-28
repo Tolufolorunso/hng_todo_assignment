@@ -9,57 +9,118 @@
     <Grid Margin="24">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <!-- Capacity Control Bar -->
-        <Border Grid.Row="0" Style="{StaticResource ModernCard}" Padding="18" Margin="0,0,0,16">
+        <!-- Capacity Budgeting Overview Card -->
+        <Border Grid.Row="0" Style="{StaticResource ModernCard}" Padding="20" Margin="0,0,0,16">
             <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <StackPanel Grid.Column="0">
-                    <TextBlock Text="Plan My Day Capacity Budgeting" Style="{StaticResource CardTitleText}" />
-                    <TextBlock Text="{Binding StatusMessage}" FontSize="12" Foreground="{DynamicResource TextSecondary}" Margin="0,4,0,10" />
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
 
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="Target Available Minutes:" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondary}" Margin="0,0,10,0" />
-                        <Button Content="1h (60m)" Style="{StaticResource SecondaryButton}" Padding="8,4" FontSize="11" Margin="0,0,4,0" Command="{Binding SetPresetCapacityCommand}" CommandParameter="60" />
-                        <Button Content="2h (120m)" Style="{StaticResource SecondaryButton}" Padding="8,4" FontSize="11" Margin="0,0,4,0" Command="{Binding SetPresetCapacityCommand}" CommandParameter="120" />
-                        <Button Content="4h (240m)" Style="{StaticResource SecondaryButton}" Padding="8,4" FontSize="11" Margin="0,0,4,0" Command="{Binding SetPresetCapacityCommand}" CommandParameter="240" />
-                        <Button Content="8h (480m)" Style="{StaticResource SecondaryButton}" Padding="8,4" FontSize="11" Command="{Binding SetPresetCapacityCommand}" CommandParameter="480" />
+                <!-- Top Row: Title, Values, Badges, and Main Actions -->
+                <Grid Grid.Row="0" Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left: Time stats and capacity badge -->
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="CAPACITY OVERVIEW" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" Margin="0,0,0,4" />
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding FormattedPlannedTime}" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,8,0" />
+                            <TextBlock Text="{Binding FormattedAvailableTime, StringFormat='of {0} available'}" FontSize="13" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center" Margin="0,0,14,0" />
+
+                            <!-- Status Badge -->
+                            <Border Background="{DynamicResource BgSurfaceElevated}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="12" Padding="10,3" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding CapacityStatusMessage}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AccentBlue}" />
+                            </Border>
+
+                            <!-- Accepted Plan Pill -->
+                            <Border Visibility="{Binding IsPlanAccepted, Converter={StaticResource BoolToVis}}" Background="#0F2F24" BorderBrush="{DynamicResource AccentGreen}" BorderThickness="1" CornerRadius="12" Padding="8,3" Margin="8,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="✓ Plan Accepted" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AccentGreen}" />
+                            </Border>
+                        </StackPanel>
                     </StackPanel>
-                </StackPanel>
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button Content="Regenerate Plan" Style="{StaticResource SecondaryButton}" Command="{Binding GeneratePlanCommand}" Margin="0,0,8,0" AutomationProperties.Name="Regenerate plan" />
-                    <Button Content="Accept Plan" Style="{StaticResource SuccessButton}" Command="{Binding AcceptPlanCommand}" AutomationProperties.Name="Accept plan for today" />
-                </StackPanel>
+
+                    <!-- Right: Plan Action Buttons -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Content="Regenerate Plan" Style="{StaticResource SecondaryButton}" Command="{Binding GeneratePlanCommand}" Margin="0,0,8,0" AutomationProperties.Name="Regenerate plan" />
+                        <Button Content="Accept Plan" Style="{StaticResource SuccessButton}" Command="{Binding AcceptPlanCommand}" AutomationProperties.Name="Accept plan for today" />
+                    </StackPanel>
+                </Grid>
+
+                <!-- Row 1: Capacity Progress Bar -->
+                <Grid Grid.Row="1" Margin="0,0,0,14">
+                    <ProgressBar Value="{Binding CapacityPercent, Mode=OneWay}"
+                                 Maximum="100"
+                                 Height="10"
+                                 Foreground="{DynamicResource AccentBlue}"
+                                 Background="{DynamicResource BgSurfaceElevated}"
+                                 BorderThickness="0"
+                                 AutomationProperties.Name="Plan capacity utilization percentage" />
+                </Grid>
+
+                <!-- Row 2: Target Duration Presets & Custom Input -->
+                <Grid Grid.Row="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="Set Daily Time:" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                        <Button Content="1h (60m)" Style="{StaticResource SecondaryButton}" Padding="10,4" FontSize="11" Margin="0,0,6,0" Command="{Binding SetPresetCapacityCommand}" CommandParameter="60" AutomationProperties.Name="Set 1 hour capacity" />
+                        <Button Content="2h (120m)" Style="{StaticResource SecondaryButton}" Padding="10,4" FontSize="11" Margin="0,0,6,0" Command="{Binding SetPresetCapacityCommand}" CommandParameter="120" AutomationProperties.Name="Set 2 hours capacity" />
+                        <Button Content="4h (240m)" Style="{StaticResource SecondaryButton}" Padding="10,4" FontSize="11" Margin="0,0,6,0" Command="{Binding SetPresetCapacityCommand}" CommandParameter="240" AutomationProperties.Name="Set 4 hours capacity" />
+                        <Button Content="8h (480m)" Style="{StaticResource SecondaryButton}" Padding="10,4" FontSize="11" Command="{Binding SetPresetCapacityCommand}" CommandParameter="480" AutomationProperties.Name="Set 8 hours capacity" />
+                    </StackPanel>
+
+                    <!-- Custom Minutes Input -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="Custom Minutes:" FontSize="12" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Margin="0,0,6,0" />
+                        <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding AvailableMinutes, UpdateSourceTrigger=PropertyChanged}" Width="70" Height="30" TextAlignment="Center" AutomationProperties.Name="Custom available minutes" />
+                    </StackPanel>
+                </Grid>
             </Grid>
         </Border>
 
-        <!-- Recommended & Overflow Grid -->
-        <Grid Grid.Row="2">
+        <!-- Recommended Schedule & Overflow Backlog -->
+        <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="20" />
-                <ColumnDefinition Width="340" />
+                <ColumnDefinition Width="360" />
             </Grid.ColumnDefinitions>
 
-            <!-- Recommended Schedule -->
-            <Border Grid.Column="0" Style="{StaticResource ModernCard}" Padding="16">
+            <!-- Recommended Schedule Column -->
+            <Border Grid.Column="0" Style="{StaticResource ModernCard}" Padding="18">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <TextBlock Grid.Row="0" Text="Recommended Plan Schedule" Style="{StaticResource CardTitleText}" Margin="0,0,0,10" />
+
+                    <!-- Header -->
+                    <Grid Grid.Row="0" Margin="0,0,0,12">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="Recommended Day Schedule" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,8,0" />
+                            <Border Background="{DynamicResource BgSurfaceElevated}" CornerRadius="10" Padding="8,2">
+                                <TextBlock Text="{Binding RecommendedItems.Count, StringFormat='{}{0} items'}" FontSize="11" Foreground="{DynamicResource AccentBlue}" FontWeight="SemiBold" />
+                            </Border>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Items List -->
                     <ListBox Grid.Row="1" ItemsSource="{Binding RecommendedItems}" Background="Transparent" BorderThickness="0" AutomationProperties.Name="Recommended day plan items">
                         <ListBox.ItemContainerStyle>
                             <Style TargetType="ListBoxItem">
                                 <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                                <Setter Property="Padding" Value="0,0,0,6" />
+                                <Setter Property="Padding" Value="0,0,0,8" />
                                 <Setter Property="Background" Value="Transparent" />
                                 <Setter Property="Template">
                                     <Setter.Value>
@@ -72,7 +133,7 @@
                         </ListBox.ItemContainerStyle>
                         <ListBox.ItemTemplate>
                             <DataTemplate>
-                                <Border Background="{DynamicResource BgSurfaceElevated}" CornerRadius="6" Padding="10,8">
+                                <Border Background="{DynamicResource BgSurfaceElevated}" CornerRadius="6" Padding="12,10">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto" />
@@ -80,15 +141,61 @@
                                             <ColumnDefinition Width="Auto" />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
-                                        <CheckBox Grid.Column="0" IsChecked="{Binding IsCompleted, Mode=OneWay}" Command="{Binding DataContext.ToggleItemCompletedCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" VerticalAlignment="Center" Margin="0,0,10,0" AutomationProperties.Name="Toggle plan item completed" />
+
+                                        <!-- Completion Checkbox -->
+                                        <CheckBox Grid.Column="0"
+                                                  IsChecked="{Binding IsCompleted, Mode=OneWay}"
+                                                  Command="{Binding DataContext.ToggleItemCompletedCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                  CommandParameter="{Binding}"
+                                                  VerticalAlignment="Center"
+                                                  Margin="0,0,12,0"
+                                                  AutomationProperties.Name="Toggle plan item completed" />
+
+                                        <!-- Details -->
                                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding Title}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
-                                            <TextBlock Text="{Binding Explanation}" FontSize="11" Foreground="{DynamicResource AccentAmber}" Margin="0,2,0,0" />
+                                            <!-- Entity Type and Reason Badges -->
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                                <!-- Type Pill -->
+                                                <Border Background="#102A45" BorderBrush="{DynamicResource AccentBlue}" BorderThickness="1" CornerRadius="4" Padding="6,1" Margin="0,0,6,0">
+                                                    <TextBlock Text="{Binding TypeLabel}" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource AccentBlue}" />
+                                                </Border>
+
+                                                <!-- Explanation Reason Badge -->
+                                                <Border Visibility="{Binding HasExplanation, Converter={StaticResource BoolToVis}}" Background="#38260F" BorderBrush="{DynamicResource AccentAmber}" BorderThickness="1" CornerRadius="4" Padding="6,1">
+                                                    <TextBlock Text="{Binding Explanation}" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource AccentAmber}" />
+                                                </Border>
+                                            </StackPanel>
+
+                                            <!-- Item Title -->
+                                            <TextBlock Text="{Binding Title}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsCompleted}" Value="True">
+                                                                <Setter Property="TextDecorations" Value="Strikethrough" />
+                                                                <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
                                         </StackPanel>
-                                        <Border Grid.Column="2" Background="{DynamicResource BgSurface}" CornerRadius="4" Padding="6,2" VerticalAlignment="Center" Margin="8,0">
-                                            <TextBlock Text="{Binding EstimatedMinutes, StringFormat='{}{0}m'}" FontSize="11" Foreground="{DynamicResource TextSecondary}" />
+
+                                        <!-- Estimated Duration Badge -->
+                                        <Border Grid.Column="2" Background="{DynamicResource BgSurface}" CornerRadius="4" Padding="8,3" VerticalAlignment="Center" Margin="10,0">
+                                            <TextBlock Text="{Binding FormattedEstimate}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" />
                                         </Border>
-                                        <Button Grid.Column="3" Content="Move" Style="{StaticResource SecondaryButton}" Padding="6,2" FontSize="10" Command="{Binding DataContext.MoveToOverflowCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" VerticalAlignment="Center" AutomationProperties.Name="Move item to overflow" />
+
+                                        <!-- Move to Overflow Action -->
+                                        <Button Grid.Column="3"
+                                                Content="Overflow →"
+                                                Style="{StaticResource SecondaryButton}"
+                                                Padding="8,3"
+                                                FontSize="11"
+                                                Command="{Binding DataContext.MoveToOverflowCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}"
+                                                VerticalAlignment="Center"
+                                                AutomationProperties.Name="Move item to overflow" />
                                     </Grid>
                                 </Border>
                             </DataTemplate>
@@ -97,19 +204,31 @@
                 </Grid>
             </Border>
 
-            <!-- Overflow Backlog -->
-            <Border Grid.Column="2" Style="{StaticResource ModernCard}" Padding="16">
+            <!-- Overflow Backlog Column -->
+            <Border Grid.Column="2" Style="{StaticResource ModernCard}" Padding="18">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <TextBlock Grid.Row="0" Text="Overflow (Exceeding Capacity)" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,10" />
-                    <ListBox Grid.Row="1" ItemsSource="{Binding OverflowItems}" Background="Transparent" BorderThickness="0" AutomationProperties.Name="Overflow items">
+
+                    <!-- Header -->
+                    <StackPanel Grid.Row="0" Margin="0,0,0,12">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="Overflow Backlog" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,8,0" />
+                            <Border Background="{DynamicResource BgSurfaceElevated}" CornerRadius="10" Padding="8,2">
+                                <TextBlock Text="{Binding OverflowItems.Count, StringFormat='{}{0}'}" FontSize="11" Foreground="{DynamicResource TextSecondary}" />
+                            </Border>
+                        </StackPanel>
+                        <TextBlock Text="Items postponed when capacity is exceeded:" FontSize="11" Foreground="{DynamicResource TextMuted}" Margin="0,4,0,0" />
+                    </StackPanel>
+
+                    <!-- Overflow Items List -->
+                    <ListBox Grid.Row="1" ItemsSource="{Binding OverflowItems}" Background="Transparent" BorderThickness="0" AutomationProperties.Name="Overflow backlog items">
                         <ListBox.ItemContainerStyle>
                             <Style TargetType="ListBoxItem">
                                 <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                                <Setter Property="Padding" Value="0,0,0,6" />
+                                <Setter Property="Padding" Value="0,0,0,8" />
                                 <Setter Property="Background" Value="Transparent" />
                                 <Setter Property="Template">
                                     <Setter.Value>
@@ -122,17 +241,32 @@
                         </ListBox.ItemContainerStyle>
                         <ListBox.ItemTemplate>
                             <DataTemplate>
-                                <Border Background="{DynamicResource BgSurfaceElevated}" CornerRadius="6" Padding="10,8">
+                                <Border Background="{DynamicResource BgSurfaceElevated}" CornerRadius="6" Padding="12,10">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
-                                        <StackPanel Grid.Column="0">
-                                            <TextBlock Text="{Binding Title}" FontSize="12" Foreground="{DynamicResource TextPrimary}" />
-                                            <TextBlock Text="{Binding EstimatedMinutes, StringFormat='{}{0}m'}" FontSize="11" Foreground="{DynamicResource TextMuted}" />
+
+                                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding TypeLabel}" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" Margin="0,0,0,2" />
+                                            <TextBlock Text="{Binding Title}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" MaxWidth="180" TextTrimming="CharacterEllipsis" />
                                         </StackPanel>
-                                        <Button Grid.Column="1" Content="+ Include" Style="{StaticResource SecondaryButton}" Padding="6,2" FontSize="10" Command="{Binding DataContext.MoveToRecommendedCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" VerticalAlignment="Center" AutomationProperties.Name="Include overflow item in plan" />
+
+                                        <Border Grid.Column="1" Background="{DynamicResource BgSurface}" CornerRadius="4" Padding="6,2" VerticalAlignment="Center" Margin="6,0">
+                                            <TextBlock Text="{Binding FormattedEstimate}" FontSize="11" Foreground="{DynamicResource TextSecondary}" />
+                                        </Border>
+
+                                        <Button Grid.Column="2"
+                                                Content="+ Add"
+                                                Style="{StaticResource SecondaryButton}"
+                                                Padding="8,3"
+                                                FontSize="11"
+                                                Command="{Binding DataContext.MoveToRecommendedCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}"
+                                                VerticalAlignment="Center"
+                                                AutomationProperties.Name="Add overflow item to plan" />
                                     </Grid>
                                 </Border>
                             </DataTemplate>
@@ -143,4 +277,3 @@
         </Grid>
     </Grid>
 </UserControl>
-
