@@ -50,3 +50,7 @@ obj/
 *.user
 *.suo
 
+
+apps/mobile/android/
+apps/mobile/ios/
+websample/
