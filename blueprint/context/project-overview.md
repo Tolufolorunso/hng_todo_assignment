@@ -1,12 +1,14 @@
 # TaskFlow - Project Overview
 
-<!-- blueprint:source-hash ad7d5ad057323c44ae114f6da71f982c58b9f0f0a5e9063cf2acddeaaeb1d237 -->
+<!-- blueprint:source-hash 8f46a9bf0d3da8786bb10da319bc9de505d398ffdf18e679f115e31fd024bad0 -->
 
 > A differentiated local-first personal productivity suite for web, Android/iOS, and Windows, with optional synchronization and proactive Follow Up reminders.
 
 ## Problem
 
-TaskFlow helps people capture work, plan a realistic day, remember commitments, and turn notes into action. The cross-platform foundation, API, synchronization engine, mobile app, and web reliability hardening are complete through Feature 56. Milestone Q addresses design, formatting, and usability gaps in the WPF Windows desktop application (`apps/windows`) to achieve visual and interaction parity with the Web application (card layouts, Tailwind color tokens, badges, typography, modal dialogs, and a full Word-style WYSIWYG editor with `taskflow-html-v1` serialization), while preserving the native Windows header and sidebar navigation shell.
+TaskFlow helps people capture work, plan a realistic day, remember commitments, and turn notes into action. The cross-platform foundation, API, synchronization engine, mobile app, web reliability, and initial Windows modular view refactoring are complete through Feature 61.
+
+Milestone R stabilizes the Windows desktop client (`apps/windows`) by resolving confirmed navigation, control, and layout regressions from Milestone Q and aligning the core desktop screens to the exact visual standards of the Next.js web application captured in `websample/` and user reference screenshots. This includes fixing sidebar active tab highlight triggers, restoring inoperable WYSIWYG commands (Bold, Italic, Underline, Lists, Alignments, Undo/Redo), enforcing consistent 12px vertical card margins across ListBox items, containing layout overflow in the Analytics dashboard, and achieving full 2-column web parity for Tasks, Follow Ups, and Calendar views.
 
 ## Users
 
@@ -15,7 +17,7 @@ TaskFlow helps people capture work, plan a realistic day, remember commitments, 
 - **Student or knowledge worker:** turns a large backlog into an achievable day.
 - **Customer-facing individual:** remembers customer or personal commitments without a full CRM.
 - **Mobile user:** needs touch-friendly capture, reminders, and native actions.
-- **Windows user:** needs an installed, keyboard-friendly desktop app with Web-grade aesthetics.
+- **Windows user:** needs an installed, keyboard-friendly desktop app with Web-grade aesthetics and reliable text formatting.
 - **Not served:** teams, collaborative editors, enterprise administrators, or users requiring E2EE sync.
 
 ## Usage model
@@ -33,9 +35,9 @@ TaskFlow helps people capture work, plan a realistic day, remember commitments, 
 
 ## Features
 
-Features 1 through 56 are shipped; Milestone Q (Features 57 through 61) is next.
+Features 1 through 61 are shipped; Milestone R (Features 62 through 63) is next.
 
-### Shipped features (Milestones A - P)
+### Shipped features (Milestones A - Q)
 
 1. **Task data layer:** IndexedDB storage with validation.
 2. **Task list:** create, view, complete workflows.
@@ -93,14 +95,16 @@ Features 1 through 56 are shipped; Milestone Q (Features 57 through 61) is next.
 54. **Windows desktop parity, navigation highlighting, and visual design:** active sidebar, icons, calendar pins.
 55. **Web responsive overlays, navigation, and interaction hardening:** body-level portals, dialog bounds, mobile sheet.
 56. **Web account adoption, workspace isolation, and synchronization correctness:** post-OTP adoption, sync outbox.
+57. **Windows design system, color tokens, and modular view architecture:** shared theme dictionaries adopting Web Tailwind tokens, and modular UserControls preserving shell.
+58. **Windows WYSIWYG rich-text editor and HTML conversion engine:** `WysiwygEditorControl` wrapping `RichTextBox` with ribbon toolbar and `taskflow-html-v1` conversion.
+59. **Windows Tasks view parity and task modal dialog:** Web-matching task cards and focused Task Modal dialog.
+60. **Windows Notes view parity, rich editor, and document reader:** modern note cards, Document Reader view, and WYSIWYG note editing.
+61. **Windows Follow Ups, Plan My Day, Calendar, Analytics, and Inbox parity:** contact initials avatar cards, branded launchers, recurrence badges, capacity budgeting meter, month grid with agenda, analytics metric cards.
 
-### Milestone Q: Windows design parity and rich formatting overhaul (active roadmap)
+### Milestone R: Windows UI stabilization and usability recovery (active roadmap)
 
-57. **Windows design system, color tokens, and modular view architecture:** shared theme dictionaries (`ModernTheme.xaml`, `ModernCards.xaml`, `ModernBadges.xaml`) adopting Web Tailwind tokens, and modular UserControls (`TasksView`, `FollowUpsView`, `NotesView`, `PlanMyDayView`, `CalendarView`, `AnalyticsView`, `InboxView`) preserving header/sidebar shell.
-58. **Windows WYSIWYG rich-text editor and HTML conversion engine:** `WysiwygEditorControl` wrapping `RichTextBox` with full Word-style ribbon toolbar, bidirectional `taskflow-html-v1` conversion, and read-only formatted text renderer.
-59. **Windows Tasks view parity and task modal dialog:** Web-matching task cards (checkbox, strikethrough, rich description preview with Show More/Less, category/priority/due badges, note backlinks) and focused Task Modal dialog.
-60. **Windows Notes view parity, rich editor, and document reader:** modern note cards, dedicated Document Reader view with clean typography and actionable text extraction, and full WYSIWYG note editing.
-61. **Windows Follow Ups, Plan My Day, Calendar, Analytics, and Inbox parity:** contact initials avatar cards, branded launchers, recurrence badges; Plan My Day capacity meter and reason tags; calendar month grid with day agenda; analytics metric cards and distribution bars; inbox capture triage.
+62. **Windows Shell Navigation, Layout Containment, and WYSIWYG Command Stabilization:** repair sidebar active tab highlight triggers, route `WysiwygEditorControl` ribbon commands with proper target and focus handling for bold/italic/underline/lists/alignments/history, enforce consistent 12px vertical card margins across ListBox items, and encapsulate view containers with bounded scrolling to prevent layout bleed and overlap.
+63. **Windows Web Parity Overhaul for Tasks, Follow Ups, and Calendar Views:** rebuild Tasks into the Web 2-column Workspace layout with collapsible Quick Add details, search/filter rows, and Today/Metrics sidebar; reconstruct Follow Ups header, filter tabs, action toolbar cards, and modal dialog to match `websample/followup page.png` and `create followup.png`; and restructure Calendar into the Web 2-column layout matching `websample/calender.png` with Monday-first grid and Today schedule drawer.
 
 ## Architecture boundaries
 
@@ -219,7 +223,7 @@ None planned. Personal productivity and portfolio product. Infrastructure costs 
 
 - **Web:** dark-default responsive app. Navigation uses at most four primary destinations (Tasks, Follow Ups, Notes, More), with anchored desktop popover, mobile bottom sheet, and global command palette. Body-level overlay portal handles modals safely.
 - **Mobile:** strict 4-tab bottom navigation (Tasks, Follow Ups, Notes, More). File-based Expo Router, platform-native aesthetics, tactile feedback via expo-haptics, virtualized FlatList rendering, safe areas, local notifications.
-- **Windows:** native desktop shell with preserved header and sidebar navigation, modernized content canvas matching Web Tailwind design system (`#0B0F19` background, `#151C2C` cards, `#232E42` borders), card layouts with colored category/priority pills, full Word-style WYSIWYG ribbon, modal dialogs for tasks, dual Notes workflow with dedicated Document Reader, avatar cards with launchers, capacity budgeting meter, and high-DPI / keyboard accessibility.
+- **Windows:** native desktop shell with preserved header and sidebar navigation, modernized content canvas matching Web Tailwind design system (`#0B0F19` background, `#151C2C` cards, `#232E42` borders), card layouts with colored category/priority pills, full Word-style WYSIWYG ribbon, modal dialogs for tasks, dual Notes workflow with dedicated Document Reader, avatar cards with launchers, capacity budgeting meter, and high-DPI / keyboard accessibility. Canonical visual authorities for implementation are in `websample/`.
 - **Plan My Day:** shows capacity, reasons, editable selection/order before acceptance; never silently modifies backlog.
 - **Follow Up:** shows who, what, when, and how; keeps due items visible without permission; separate completion, skip, snooze, reschedule, launch.
 - **Fast capture:** opens quickly, saves locally with minimal input, confirms success, preserves original text.

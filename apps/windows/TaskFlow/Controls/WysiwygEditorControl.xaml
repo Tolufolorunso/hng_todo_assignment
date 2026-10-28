@@ -10,6 +10,7 @@
 
         <!-- Ribbon Toolbar Button Style -->
         <Style x:Key="RibbonToolButton" TargetType="Button">
+            <Setter Property="Focusable" Value="False" />
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
             <Setter Property="BorderThickness" Value="0" />
@@ -59,10 +60,10 @@
             <Border x:Name="ToolbarBorder" Grid.Row="0" Background="{DynamicResource BgSurfaceElevated}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="0,0,0,1" Padding="6,4">
                 <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
                     <!-- History Group -->
-                    <Button Style="{StaticResource RibbonToolButton}" Command="ApplicationCommands.Undo" ToolTip="Undo (Ctrl+Z)" AutomationProperties.Name="Undo">
+                    <Button Style="{StaticResource RibbonToolButton}" Focusable="False" CommandTarget="{Binding ElementName=EditorBox}" Command="ApplicationCommands.Undo" ToolTip="Undo (Ctrl+Z)" AutomationProperties.Name="Undo">
                         <TextBlock Text="↶" FontSize="14" FontWeight="Bold" />
                     </Button>
-                    <Button Style="{StaticResource RibbonToolButton}" Command="ApplicationCommands.Redo" ToolTip="Redo (Ctrl+Y)" AutomationProperties.Name="Redo">
+                    <Button Style="{StaticResource RibbonToolButton}" Focusable="False" CommandTarget="{Binding ElementName=EditorBox}" Command="ApplicationCommands.Redo" ToolTip="Redo (Ctrl+Y)" AutomationProperties.Name="Redo">
                         <TextBlock Text="↷" FontSize="14" FontWeight="Bold" />
                     </Button>
 
@@ -79,13 +80,13 @@
                     <Separator Style="{StaticResource RibbonSeparator}" />
 
                     <!-- Inline Formatting -->
-                    <Button Style="{StaticResource RibbonToolButton}" Command="EditingCommands.ToggleBold" FontWeight="Bold" ToolTip="Bold (Ctrl+B)" AutomationProperties.Name="Bold text">
+                    <Button Style="{StaticResource RibbonToolButton}" Focusable="False" CommandTarget="{Binding ElementName=EditorBox}" Command="EditingCommands.ToggleBold" FontWeight="Bold" ToolTip="Bold (Ctrl+B)" AutomationProperties.Name="Bold text">
                         <TextBlock Text="B" FontWeight="Bold" />
                     </Button>
-                    <Button Style="{StaticResource RibbonToolButton}" Command="EditingCommands.ToggleItalic" FontStyle="Italic" ToolTip="Italic (Ctrl+I)" AutomationProperties.Name="Italic text">
+                    <Button Style="{StaticResource RibbonToolButton}" Focusable="False" CommandTarget="{Binding ElementName=EditorBox}" Command="EditingCommands.ToggleItalic" FontStyle="Italic" ToolTip="Italic (Ctrl+I)" AutomationProperties.Name="Italic text">
                         <TextBlock Text="I" FontStyle="Italic" />
                     </Button>
-                    <Button Style="{StaticResource RibbonToolButton}" Command="EditingCommands.ToggleUnderline" ToolTip="Underline (Ctrl+U)" AutomationProperties.Name="Underline text">
+                    <Button Style="{StaticResource RibbonToolButton}" Focusable="False" CommandTarget="{Binding ElementName=EditorBox}" Command="EditingCommands.ToggleUnderline" ToolTip="Underline (Ctrl+U)" AutomationProperties.Name="Underline text">
                         <TextBlock Text="U" TextDecorations="Underline" />
                     </Button>
                     <Button Style="{StaticResource RibbonToolButton}" Click="OnToggleStrikethroughClick" ToolTip="Strikethrough" AutomationProperties.Name="Strikethrough text">
@@ -101,10 +102,10 @@
                     <Separator Style="{StaticResource RibbonSeparator}" />
 
                     <!-- Lists & Quote -->
-                    <Button Style="{StaticResource RibbonToolButton}" Command="EditingCommands.ToggleBullets" ToolTip="Bullet list" AutomationProperties.Name="Bullet list">
+                    <Button Style="{StaticResource RibbonToolButton}" Focusable="False" CommandTarget="{Binding ElementName=EditorBox}" Command="EditingCommands.ToggleBullets" ToolTip="Bullet list" AutomationProperties.Name="Bullet list">
                         <TextBlock Text="• List" />
                     </Button>
-                    <Button Style="{StaticResource RibbonToolButton}" Command="EditingCommands.ToggleNumbering" ToolTip="Numbered list" AutomationProperties.Name="Numbered list">
+                    <Button Style="{StaticResource RibbonToolButton}" Focusable="False" CommandTarget="{Binding ElementName=EditorBox}" Command="EditingCommands.ToggleNumbering" ToolTip="Numbered list" AutomationProperties.Name="Numbered list">
                         <TextBlock Text="1. List" />
                     </Button>
                     <Button Style="{StaticResource RibbonToolButton}" Click="OnToggleBlockquoteClick" ToolTip="Quote block" AutomationProperties.Name="Quote block">
@@ -114,16 +115,16 @@
                     <Separator Style="{StaticResource RibbonSeparator}" />
 
                     <!-- Alignment -->
-                    <Button Style="{StaticResource RibbonToolButton}" Command="EditingCommands.AlignLeft" ToolTip="Align left" AutomationProperties.Name="Align left">
+                    <Button Style="{StaticResource RibbonToolButton}" Focusable="False" CommandTarget="{Binding ElementName=EditorBox}" Command="EditingCommands.AlignLeft" ToolTip="Align left" AutomationProperties.Name="Align left">
                         <TextBlock Text="≡L" />
                     </Button>
-                    <Button Style="{StaticResource RibbonToolButton}" Command="EditingCommands.AlignCenter" ToolTip="Align center" AutomationProperties.Name="Align center">
+                    <Button Style="{StaticResource RibbonToolButton}" Focusable="False" CommandTarget="{Binding ElementName=EditorBox}" Command="EditingCommands.AlignCenter" ToolTip="Align center" AutomationProperties.Name="Align center">
                         <TextBlock Text="≡C" />
                     </Button>
-                    <Button Style="{StaticResource RibbonToolButton}" Command="EditingCommands.AlignRight" ToolTip="Align right" AutomationProperties.Name="Align right">
+                    <Button Style="{StaticResource RibbonToolButton}" Focusable="False" CommandTarget="{Binding ElementName=EditorBox}" Command="EditingCommands.AlignRight" ToolTip="Align right" AutomationProperties.Name="Align right">
                         <TextBlock Text="≡R" />
                     </Button>
-                    <Button Style="{StaticResource RibbonToolButton}" Command="EditingCommands.AlignJustify" ToolTip="Justify" AutomationProperties.Name="Justify">
+                    <Button Style="{StaticResource RibbonToolButton}" Focusable="False" CommandTarget="{Binding ElementName=EditorBox}" Command="EditingCommands.AlignJustify" ToolTip="Justify" AutomationProperties.Name="Justify">
                         <TextBlock Text="≡J" />
                     </Button>
 

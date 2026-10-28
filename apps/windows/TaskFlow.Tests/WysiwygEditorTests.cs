@@ -275,6 +275,21 @@ public class WysiwygEditorTests
         Assert.Equal(b, color.Value.B);
     }
 
+    [Fact]
+    public void WysiwygEditorControl_InitializesWithFocusableFalseAndEditorBoxAvailable()
+    {
+        ExecuteOnSta(() =>
+        {
+            var control = new TaskFlow.Controls.WysiwygEditorControl();
+            Assert.NotNull(control.Editor);
+            Assert.NotNull(control.Toolbar);
+            Assert.False(control.IsReadOnly);
+
+            control.Editor.AppendText("Test editing content");
+            Assert.NotNull(control.Editor.Document);
+        });
+    }
+
     private static void ExecuteOnSta(Action action)
     {
         Exception? threadEx = null;

@@ -5,8 +5,9 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:TaskFlow.ViewModels"
              d:DataContext="{d:DesignInstance vm:AnalyticsViewModel}"
-             mc:Ignorable="d">
-    <ScrollViewer Margin="24" VerticalScrollBarVisibility="Auto">
+             mc:Ignorable="d"
+             ClipToBounds="True">
+    <ScrollViewer Margin="24" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />

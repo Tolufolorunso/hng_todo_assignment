@@ -167,7 +167,7 @@
                     </ListBox.ItemContainerStyle>
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <Border Background="{DynamicResource BgSurfaceElevated}" CornerRadius="6" Padding="12,8">
+                            <Border Background="{DynamicResource BgSurfaceElevated}" CornerRadius="6" Padding="12,8" Margin="0,0,0,12">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" />

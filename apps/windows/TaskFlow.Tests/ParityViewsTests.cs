@@ -347,5 +347,16 @@ public class ParityViewsTests : IDisposable
         mainVm.NavigateToTasksCommand.Execute(null);
         Assert.True(mainVm.IsTasksTabActive);
         Assert.False(mainVm.IsAnalyticsTabActive);
+
+
+        // Backup
+        mainVm.NavigateToBackupCommand.Execute(null);
+        Assert.True(mainVm.IsBackupTabActive);
+        Assert.False(mainVm.IsTasksTabActive);
+
+        // Account
+        mainVm.NavigateToAccountCommand.Execute(null);
+        Assert.True(mainVm.IsAccountTabActive);
+        Assert.False(mainVm.IsBackupTabActive);
     }
 }

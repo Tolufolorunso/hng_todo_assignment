@@ -157,7 +157,7 @@
             </ListBox.ItemContainerStyle>
             <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <Border Style="{StaticResource ModernCard}" Padding="16,14">
+                    <Border Style="{StaticResource ModernCard}" Padding="16,14" Margin="0,0,0,12">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />

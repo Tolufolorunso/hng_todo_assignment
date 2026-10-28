@@ -6,6 +6,7 @@
         xmlns:local="clr-namespace:TaskFlow"
         xmlns:vm="clr-namespace:TaskFlow.ViewModels"
         xmlns:views="clr-namespace:TaskFlow.Views"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
         mc:Ignorable="d"
         Title="TaskFlow Desktop"
         Icon="Assets/app.ico"
@@ -94,7 +95,10 @@
                                 <Setter TargetName="btnBorder" Property="Background" Value="{DynamicResource BgSurfaceElevated}" />
                                 <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
                             </Trigger>
-                            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" Value="True">
+                            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}">
+                                <DataTrigger.Value>
+                                    <sys:Boolean>True</sys:Boolean>
+                                </DataTrigger.Value>
                                 <Setter TargetName="btnBorder" Property="Background" Value="{DynamicResource BgSurfaceElevated}" />
                                 <Setter TargetName="btnBorder" Property="BorderBrush" Value="{DynamicResource AccentBlue}" />
                                 <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
@@ -528,40 +532,40 @@
             </Border>
 
             <!-- WORK CONTENT CONTAINER -->
-            <Grid Grid.Column="1" Background="{DynamicResource BgPrimary}">
+            <Grid Grid.Column="1" Background="{DynamicResource BgPrimary}" ClipToBounds="True">
 
                 <!-- ==================== 1. TASKS VIEW ==================== -->
-                <Grid Visibility="{Binding IsTasksTabActive, Converter={StaticResource BoolToVis}}">
+                <Grid Visibility="{Binding IsTasksTabActive, Converter={StaticResource BoolToVis}}" ClipToBounds="True">
                     <views:TasksView DataContext="{Binding TasksVM}" />
                 </Grid>
 
                 <!-- ==================== 2. FOLLOW UPS VIEW ==================== -->
-                <Grid Visibility="{Binding IsFollowUpsTabActive, Converter={StaticResource BoolToVis}}">
+                <Grid Visibility="{Binding IsFollowUpsTabActive, Converter={StaticResource BoolToVis}}" ClipToBounds="True">
                     <views:FollowUpsView DataContext="{Binding FollowUpsVM}" />
                 </Grid>
 
                 <!-- ==================== 3. PLAN MY DAY VIEW ==================== -->
-                <Grid Visibility="{Binding IsPlanMyDayTabActive, Converter={StaticResource BoolToVis}}">
+                <Grid Visibility="{Binding IsPlanMyDayTabActive, Converter={StaticResource BoolToVis}}" ClipToBounds="True">
                     <views:PlanMyDayView DataContext="{Binding PlanMyDayVM}" />
                 </Grid>
 
                 <!-- ==================== 4. NOTES VIEW (WITH NOTE READER & ACTIONABLE CONVERSION) ==================== -->
-                <Grid Visibility="{Binding IsNotesTabActive, Converter={StaticResource BoolToVis}}">
+                <Grid Visibility="{Binding IsNotesTabActive, Converter={StaticResource BoolToVis}}" ClipToBounds="True">
                     <views:NotesView DataContext="{Binding NotesVM}" />
                 </Grid>
 
                 <!-- ==================== 5. FAST CAPTURE INBOX VIEW ==================== -->
-                <Grid Visibility="{Binding IsInboxTabActive, Converter={StaticResource BoolToVis}}">
+                <Grid Visibility="{Binding IsInboxTabActive, Converter={StaticResource BoolToVis}}" ClipToBounds="True">
                     <views:InboxView DataContext="{Binding InboxVM}" />
                 </Grid>
 
                 <!-- ==================== 6. CALENDAR VIEW ==================== -->
-                <Grid Visibility="{Binding IsCalendarTabActive, Converter={StaticResource BoolToVis}}">
+                <Grid Visibility="{Binding IsCalendarTabActive, Converter={StaticResource BoolToVis}}" ClipToBounds="True">
                     <views:CalendarView DataContext="{Binding CalendarVM}" />
                 </Grid>
 
                 <!-- ==================== 7. ANALYTICS VIEW ==================== -->
-                <Grid Visibility="{Binding IsAnalyticsTabActive, Converter={StaticResource BoolToVis}}">
+                <Grid Visibility="{Binding IsAnalyticsTabActive, Converter={StaticResource BoolToVis}}" ClipToBounds="True">
                     <views:AnalyticsView DataContext="{Binding AnalyticsVM}" />
                 </Grid>
 

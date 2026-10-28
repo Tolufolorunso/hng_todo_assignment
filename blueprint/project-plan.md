@@ -1976,3 +1976,64 @@ In addition, the Windows text formatting engine will be upgraded from primitive 
 ### 18.6 Scope boundary
 
 Milestone Q applies exclusively to `apps/windows`. It does not modify `apps/web`, `apps/mobile`, the public API contract, or PostgreSQL database schemas. All rich-text content created in Windows will round-trip cleanly with the existing Web and Cloud `taskflow-html-v1` format.
+
+
+## 19. Milestone R: Windows UI Stabilization and Usability Recovery
+
+Milestone R stabilizes the Windows desktop client (`apps/windows`) by resolving confirmed layout, navigation, and control regressions from Milestone Q and aligning the core desktop screens to the visual standards of the Next.js web application captured in `websample/` and user reference screenshots.
+
+All work in this milestone is strictly bounded to two features.
+
+### 19.1 Visual Authority Reference Mapping
+
+During implementation, all UI layouts, spacing, colors, and controls must strictly follow the reference images:
+
+- `websample/task page with add detail option opened.png` and `websample/task page.png`: Authoritative layout for the Tasks / Workspace screen (2-column layout, Quick Add bar with collapsible WYSIWYG details, filter pills, and Today sidebar).
+- `websample/followup page.png` and `websample/create followup.png`: Authoritative layout for Follow Ups (header "+ New Follow Up" button, left status filter pills, right search bar, card action toolbars, and centered modal dialog).
+- `websample/calender.png`: Authoritative layout for Calendar & Schedule (2-column layout: Monday-to-Sunday month grid with purple today indicator on left; Today agenda with inline quick-add and unscheduled tasks drawer on right).
+
+### 19.2 Windows Shell Navigation, Layout Containment, and WYSIWYG Command Stabilization (Feature 62)
+
+- **Sidebar Active Tab Indicators:**
+  - Resolve the WPF `SidebarButton` DataTrigger defect where evaluating `FrameworkElement.Tag` (type `object`) against string `"True"` fails runtime equality.
+  - Bind triggers directly to typed booleans (`IsTasksTabActive`, `IsFollowUpsTabActive`, etc.) so the blue accent left border, elevated surface background (`#1E273A`), and bold text visibly highlight on the active tab.
+- **WYSIWYG Ribbon Command Routing:**
+  - Set `Focusable="False"` and `CommandTarget="{Binding ElementName=EditorBox}"` on all command buttons in `WysiwygEditorControl.xaml`.
+  - Restore functionality for Bold (`EditingCommands.ToggleBold`), Italic (`EditingCommands.ToggleItalic`), Underline (`EditingCommands.ToggleUnderline`), Bullet lists (`EditingCommands.ToggleBullets`), Numbered lists (`EditingCommands.ToggleNumbering`), Alignments (Left, Center, Right, Justify), and Undo/Redo (`ApplicationCommands.Undo`/`Redo`) without buttons stealing keyboard focus from the `RichTextBox`.
+- **List Item Card Spacing:**
+  - Eliminate cramped, touching cards across `TasksView`, `FollowUpsView`, `NotesView`, and `InboxView`.
+  - Apply consistent `Margin="0,0,0,12"` to item card borders so all list items have clear visual breathing room matching the web client.
+- **View Containment and Scroll Isolation:**
+  - Wrap top-level view canvases in bounded `ScrollViewer` containers with explicit row/column constraints in `MainWindow.xaml`.
+  - Prevent the Analytics & Velocity view and other subviews from bleeding or overflowing across the main window content area.
+
+### 19.3 Windows Web Parity Overhaul for Tasks, Follow Ups, and Calendar Views (Feature 63)
+
+- **Tasks / Workspace Parity (`task page.png`, `task page with add detail option opened.png`):**
+  - Implement a 2-column layout (approx 68% / 32%):
+    - Left column:
+      - Header: "Workspace" with subtitle "Track daily tasks, deadlines, and priorities with browser-local privacy." and "+ Plan My Day" action button.
+      - Quick Add Task card: single-line title input with "+ Add" button, category pill tags, and "+ Add Details" / "Hide Details" toggle revealing Priority selector, Due Date picker, Estimate input, and full `WysiwygEditorControl`.
+      - Search and Filter row: Search input, [All] [Active] [Completed] status pills, [Sort: Custom] combobox, and horizontal Category pills row ([All], [Work], [Personal], [Urgent], [Study], [Ideas]).
+      - Task Card list: Custom checkbox, strikethrough completed title, rich HTML description preview with "Show more" expansion, category/priority pills, overdue badge, reordering controls, and edit/delete icons.
+    - Right column:
+      - "TODAY" overview card: Day name, date, remaining task count, and completion progress bar.
+      - 2x2 Metric KPI cards: Active, Completed, Total Tasks, Overdue.
+      - Categories Distribution card: Tagged count breakdown by category.
+      - Quick Productivity Tip card.
+- **Follow Ups Parity (`followup page.png`, `create followup.png`):**
+  - Header: "Follow Ups" with subtitle and top-right accent "+ New Follow Up" button.
+  - Filter bar: Left-aligned status filter pills ([All (N)], [Due & Overdue], [Upcoming (N)], [Completed (N)]) and right-aligned Search box.
+  - Cards: Checkbox, bold contact name, commitment title and details, clock icon with due date, launcher buttons (`[Email]`, `[WhatsApp]`, `[Call]`), and top-right action icon toolbar (history, calendar, clock, edit, delete).
+  - Modal: "New Follow Up" dialog with required field indicators, launcher inputs, and recurring commitment toggle.
+- **Calendar & Schedule Parity (`calender.png`):**
+  - Header: "Calendar & Schedule" with subtitle and "+ Manage Tasks" button.
+  - 2-column layout:
+    - Left column: Month navigation bar ("October 2026", `[Today]` button, `<` `>` arrows) and 7-column grid (MON, TUE, WED, THU, FRI, SAT, SUN) with purple today border/badge and colored event chips.
+    - Right column: "TODAY" card with date, `[Plan My Day]` button, inline `[Add task for this day...] [Add]` form, "TASKS FOR THIS DAY" agenda, and "UNSCHEDULED TASKS" drawer.
+- **Notes View Polish:**
+  - Align card margins, typography, and search toolbar with `NoteList.tsx` web standards.
+
+### 19.4 Scope Boundary
+
+Milestone R modifications are strictly restricted to `apps/windows/TaskFlow`. There are no modifications to `apps/web`, `apps/mobile`, public API contracts, or database schemas.
