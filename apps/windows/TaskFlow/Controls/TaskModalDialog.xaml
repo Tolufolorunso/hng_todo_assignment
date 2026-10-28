@@ -1,0 +1,244 @@
+<UserControl x:Class="TaskFlow.Controls.TaskModalDialog"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:controls="clr-namespace:TaskFlow.Controls"
+             mc:Ignorable="d"
+             d:DesignHeight="600" d:DesignWidth="700">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    </UserControl.Resources>
+
+    <!-- Modal Backdrop Overlay -->
+    <Grid Background="#99000000"
+          Visibility="{Binding IsModalOpen, Converter={StaticResource BoolToVis}}"
+          MouseDown="OnBackdropMouseDown">
+        <Border Style="{DynamicResource ModernCard}"
+                Background="{DynamicResource BgSurfaceElevated}"
+                BorderBrush="{DynamicResource BorderSubtle}"
+                BorderThickness="1"
+                CornerRadius="10"
+                Width="680"
+                MaxHeight="650"
+                VerticalAlignment="Center"
+                HorizontalAlignment="Center"
+                Padding="24"
+                MouseDown="OnDialogCardMouseDown">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- Header -->
+                <Grid Grid.Row="0" Margin="0,0,0,16">
+                    <TextBlock Text="{Binding ModalHeading}"
+                               FontSize="18"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource TextPrimary}"
+                               HorizontalAlignment="Left"
+                               VerticalAlignment="Center" />
+                    <Button Content="✕"
+                            Style="{StaticResource SecondaryButton}"
+                            Padding="8,4"
+                            FontSize="12"
+                            Command="{Binding CloseModalCommand}"
+                            HorizontalAlignment="Right"
+                            AutomationProperties.Name="Close task modal" />
+                </Grid>
+
+                <!-- Validation Error Banner -->
+                <Border Grid.Row="1"
+                        Visibility="{Binding HasModalError, Converter={StaticResource BoolToVis}}"
+                        Background="#3B0D0D"
+                        BorderBrush="{DynamicResource AccentRose}"
+                        BorderThickness="1"
+                        CornerRadius="6"
+                        Padding="12,8"
+                        Margin="0,0,0,14">
+                    <TextBlock Text="{Binding ModalErrorMessage}"
+                               Foreground="#FEE2E2"
+                               FontSize="12"
+                               FontWeight="Medium"
+                               TextWrapping="Wrap" />
+                </Border>
+
+                <!-- Form Fields -->
+                <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Margin="0,0,0,20">
+                    <StackPanel>
+                        <!-- Title Field -->
+                        <StackPanel Margin="0,0,0,14">
+                            <Grid Margin="0,0,0,4">
+                                <TextBlock Text="Title *"
+                                           FontSize="12"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextSecondary}"
+                                           HorizontalAlignment="Left" />
+                                <TextBlock Text="{Binding TitleCharCounter}"
+                                           FontSize="11"
+                                           Foreground="{DynamicResource TextMuted}"
+                                           HorizontalAlignment="Right" />
+                            </Grid>
+                            <Grid>
+                                <TextBox x:Name="TaskTitleInput"
+                                         Style="{StaticResource ModernTextBox}"
+                                         Text="{Binding ModalTitle, UpdateSourceTrigger=PropertyChanged}"
+                                         MaxLength="200"
+                                         AutomationProperties.Name="Task title input" />
+                                <TextBlock Text="What needs to be done?"
+                                           Foreground="{DynamicResource TextMuted}"
+                                           VerticalAlignment="Center"
+                                           Margin="10,0,0,0"
+                                           IsHitTestVisible="False">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Text, ElementName=TaskTitleInput}" Value="">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Grid>
+                        </StackPanel>
+
+                        <!-- Description Field with WYSIWYG Editor -->
+                        <StackPanel Margin="0,0,0,16">
+                            <TextBlock Text="Description"
+                                       FontSize="12"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextSecondary}"
+                                       Margin="0,0,0,4" />
+                            <controls:WysiwygEditorControl x:Name="TaskDescriptionEditor"
+                                                           HtmlText="{Binding ModalDescription, Mode=TwoWay}"
+                                                           MinEditorHeight="140"
+                                                           Placeholder="Add extra details, checklist notes, or instructions..." />
+                        </StackPanel>
+
+                        <!-- Metadata Row (Category, Priority, Due Date, Effort) -->
+                        <Grid Margin="0,0,0,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Category -->
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Category"
+                                           FontSize="12"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextSecondary}"
+                                           Margin="0,0,0,4" />
+                                <ComboBox ItemsSource="{Binding ModalCategories}"
+                                          SelectedItem="{Binding ModalCategory}"
+                                          Height="34"
+                                          AutomationProperties.Name="Task category selector" />
+                            </StackPanel>
+
+                            <!-- Priority -->
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Priority"
+                                           FontSize="12"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextSecondary}"
+                                           Margin="0,0,0,4" />
+                                <ComboBox ItemsSource="{Binding ModalPriorities}"
+                                          SelectedItem="{Binding ModalPriority}"
+                                          Height="34"
+                                          AutomationProperties.Name="Task priority selector" />
+                            </StackPanel>
+
+                            <!-- Due Date -->
+                            <StackPanel Grid.Column="4">
+                                <TextBlock Text="Due Date"
+                                           FontSize="12"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextSecondary}"
+                                           Margin="0,0,0,4" />
+                                <Grid>
+                                    <TextBox x:Name="TaskDueDateInput"
+                                             Style="{StaticResource ModernTextBox}"
+                                             Text="{Binding ModalDueDate, UpdateSourceTrigger=PropertyChanged}"
+                                             AutomationProperties.Name="Task due date input" />
+                                    <TextBlock Text="YYYY-MM-DD"
+                                               Foreground="{DynamicResource TextMuted}"
+                                               VerticalAlignment="Center"
+                                               Margin="10,0,0,0"
+                                               IsHitTestVisible="False">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Text, ElementName=TaskDueDateInput}" Value="">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </Grid>
+                            </StackPanel>
+
+                            <!-- Effort Estimate (Minutes) -->
+                            <StackPanel Grid.Column="6">
+                                <TextBlock Text="Effort (mins)"
+                                           FontSize="12"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextSecondary}"
+                                           Margin="0,0,0,4" />
+                                <Grid>
+                                    <TextBox x:Name="TaskEffortInput"
+                                             Style="{StaticResource ModernTextBox}"
+                                             Text="{Binding ModalEstimatedMinutesText, UpdateSourceTrigger=PropertyChanged}"
+                                             AutomationProperties.Name="Task estimated minutes input" />
+                                    <TextBlock Text="e.g. 30"
+                                               Foreground="{DynamicResource TextMuted}"
+                                               VerticalAlignment="Center"
+                                               Margin="10,0,0,0"
+                                               IsHitTestVisible="False">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Text, ElementName=TaskEffortInput}" Value="">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </Grid>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- Footer Buttons -->
+                <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="Cancel"
+                            Style="{StaticResource SecondaryButton}"
+                            Command="{Binding CloseModalCommand}"
+                            Margin="0,0,10,0"
+                            Padding="16,8"
+                            AutomationProperties.Name="Cancel task modal" />
+                    <Button Content="Save Task"
+                            Style="{StaticResource ModernButton}"
+                            Command="{Binding SaveModalCommand}"
+                            Padding="20,8"
+                            AutomationProperties.Name="Save task modal" />
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>
+

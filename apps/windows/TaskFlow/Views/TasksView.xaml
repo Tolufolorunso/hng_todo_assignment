@@ -4,190 +4,379 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:TaskFlow.ViewModels"
+             xmlns:controls="clr-namespace:TaskFlow.Controls"
              d:DataContext="{d:DesignInstance vm:TasksViewModel}"
              mc:Ignorable="d">
-    <Grid Margin="24">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    </UserControl.Resources>
 
-        <!-- Filter Bar -->
-        <Grid Grid.Row="0" Margin="0,0,0,16">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
+    <Grid>
+        <!-- Main Tasks Content -->
+        <Grid Margin="24">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
 
-            <StackPanel Grid.Column="0" Orientation="Horizontal">
-                <Button Content="All" Style="{StaticResource SecondaryButton}" Command="{Binding SetStatusFilterCommand}" CommandParameter="all" Margin="0,0,6,0" AutomationProperties.Name="Filter all tasks" />
-                <Button Content="Active" Style="{StaticResource SecondaryButton}" Command="{Binding SetStatusFilterCommand}" CommandParameter="active" Margin="0,0,6,0" AutomationProperties.Name="Filter active tasks" />
-                <Button Content="Completed" Style="{StaticResource SecondaryButton}" Command="{Binding SetStatusFilterCommand}" CommandParameter="completed" Margin="0,0,16,0" AutomationProperties.Name="Filter completed tasks" />
+            <!-- Filter Bar -->
+            <Grid Grid.Row="0" Margin="0,0,0,16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
 
-                <TextBlock Text="Category:" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondary}" Margin="0,0,8,0" />
-                <ComboBox ItemsSource="{Binding Categories}" SelectedItem="{Binding CategoryFilter}" Width="120" Height="32" AutomationProperties.Name="Filter task category" />
-            </StackPanel>
+                <!-- Status & Category Filters -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Content="All" Style="{DynamicResource SecondaryButton}" Command="{Binding SetStatusFilterCommand}" CommandParameter="all" Margin="0,0,6,0" Padding="12,6" AutomationProperties.Name="Filter all tasks" />
+                    <Button Content="Active" Style="{DynamicResource SecondaryButton}" Command="{Binding SetStatusFilterCommand}" CommandParameter="active" Margin="0,0,6,0" Padding="12,6" AutomationProperties.Name="Filter active tasks" />
+                    <Button Content="Completed" Style="{DynamicResource SecondaryButton}" Command="{Binding SetStatusFilterCommand}" CommandParameter="completed" Margin="0,0,16,0" Padding="12,6" AutomationProperties.Name="Filter completed tasks" />
 
-            <Button Grid.Column="2" Content="+ Add Task" Style="{StaticResource ModernButton}" Command="{Binding OpenCreatePanelCommand}" AutomationProperties.Name="Open Add Task panel" />
+                    <TextBlock Text="Category:" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondary}" FontSize="12" Margin="0,0,8,0" />
+                    <ComboBox ItemsSource="{Binding Categories}" SelectedItem="{Binding CategoryFilter}" Width="130" Height="32" AutomationProperties.Name="Filter task category" />
+                </StackPanel>
+
+                <!-- Add Task Button -->
+                <Button Grid.Column="2"
+                        Content="+ Add Task"
+                        Style="{DynamicResource ModernButton}"
+                        Command="{Binding OpenCreateModalCommand}"
+                        Padding="16,7"
+                        AutomationProperties.Name="Open Add Task dialog" />
+            </Grid>
+
+            <!-- Tasks List / Empty State -->
+            <Grid Grid.Row="1">
+                <!-- Empty State -->
+                <Border Padding="36"
+                        VerticalAlignment="Center"
+                        HorizontalAlignment="Center"
+                        Width="400">
+                    <Border.Style>
+                        <Style TargetType="Border" BasedOn="{StaticResource ModernCard}">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Tasks.Count}" Value="0">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <StackPanel HorizontalAlignment="Center">
+                        <TextBlock Text="📋" FontSize="36" HorizontalAlignment="Center" Margin="0,0,0,12" />
+                        <TextBlock Text="No tasks found" Style="{DynamicResource CardTitleText}" HorizontalAlignment="Center" Margin="0,0,0,6" />
+                        <TextBlock Text="Create a task with the button above, or change your status and category filters." Style="{DynamicResource CardSubtitleText}" TextAlignment="Center" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Tasks ListBox -->
+                <ListBox ItemsSource="{Binding Tasks}"
+                         SelectedItem="{Binding SelectedTask}"
+                         Background="Transparent"
+                         BorderThickness="0"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         AutomationProperties.Name="Tasks list">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            <Setter Property="Padding" Value="0,0,0,10" />
+                            <Setter Property="Background" Value="Transparent" />
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListBoxItem">
+                                        <ContentPresenter />
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate DataType="{x:Type vm:TaskItemViewModel}">
+                            <Border Style="{DynamicResource ModernCard}"
+                                    Padding="16,14"
+                                    Cursor="Hand"
+                                    MouseDown="OnTaskCardMouseDown"
+                                    AutomationProperties.Name="{Binding Title}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Drag Grip Dots -->
+                                    <TextBlock Grid.Column="0"
+                                               Text="⋮⋮"
+                                               FontSize="14"
+                                               Foreground="{DynamicResource TextMuted}"
+                                               VerticalAlignment="Top"
+                                               Margin="0,2,10,0"
+                                               Opacity="0.4"
+                                               ToolTip="Task item" />
+
+                                    <!-- Custom CheckBox -->
+                                    <CheckBox Grid.Column="1"
+                                              IsChecked="{Binding Completed, Mode=OneWay}"
+                                              Command="{Binding DataContext.ToggleCompleteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                              CommandParameter="{Binding}"
+                                              VerticalAlignment="Top"
+                                              Margin="0,2,14,0"
+                                              AutomationProperties.Name="Toggle task completion" />
+
+                                    <!-- Content Area -->
+                                    <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                        <!-- Title -->
+                                        <TextBlock Text="{Binding Title}"
+                                                   FontSize="14"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextPrimary}">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Completed}" Value="True">
+                                                            <Setter Property="TextDecorations" Value="Strikethrough" />
+                                                            <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+
+                                        <!-- Rich Formatted Description with Show More / Show Less -->
+                                        <Grid Margin="0,4,0,2">
+                                            <Grid.Style>
+                                                <Style TargetType="Grid">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding HasDescription}" Value="True">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Grid.Style>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+                                            <Border x:Name="descContainer" Grid.Row="0" ClipToBounds="True">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Style.Triggers>
+                                                            <MultiDataTrigger>
+                                                                <MultiDataTrigger.Conditions>
+                                                                    <Condition Binding="{Binding IsLongDescription}" Value="True" />
+                                                                    <Condition Binding="{Binding IsExpanded}" Value="False" />
+                                                                </MultiDataTrigger.Conditions>
+                                                                <Setter Property="MaxHeight" Value="68" />
+                                                            </MultiDataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <controls:FormattedTextRendererControl HtmlText="{Binding Description}" />
+                                            </Border>
+                                            <Button Grid.Row="1"
+                                                    Content="{Binding ShowMoreText}"
+                                                    Click="OnToggleShowMoreClick"
+                                                    HorizontalAlignment="Left"
+                                                    Margin="0,3,0,0"
+                                                    Background="Transparent"
+                                                    Foreground="{DynamicResource AccentBlue}"
+                                                    BorderThickness="0"
+                                                    Padding="0"
+                                                    Cursor="Hand"
+                                                    FontSize="11"
+                                                    FontWeight="SemiBold"
+                                                    AutomationProperties.Name="Toggle description expansion">
+                                                <Button.Style>
+                                                    <Style TargetType="Button">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsLongDescription}" Value="True">
+                                                                <Setter Property="Visibility" Value="Visible" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Button.Style>
+                                            </Button>
+                                        </Grid>
+
+                                        <!-- Badges Row -->
+                                        <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                            <!-- Priority Pill -->
+                                            <Border x:Name="priorityBadge" Style="{DynamicResource PriorityMediumBadge}" Margin="0,0,6,0">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Ellipse x:Name="priorityDot" Width="6" Height="6" Margin="0,0,5,0" Fill="{DynamicResource PriorityMediumBrush}" VerticalAlignment="Center" />
+                                                    <TextBlock x:Name="priorityText" Text="{Binding PriorityLabel}" Style="{DynamicResource PillBadgeText}" Foreground="{DynamicResource PriorityMediumBrush}" />
+                                                </StackPanel>
+                                            </Border>
+
+                                            <!-- Category Pill -->
+                                            <Border x:Name="categoryBadge" Margin="0,0,6,0">
+                                                <Border.Style>
+                                                    <Style TargetType="Border" BasedOn="{StaticResource CategoryWorkBadge}">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding HasCategory}" Value="True">
+                                                                <Setter Property="Visibility" Value="Visible" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Ellipse x:Name="categoryDot" Width="6" Height="6" Margin="0,0,5,0" Fill="{DynamicResource CategoryWorkBrush}" VerticalAlignment="Center" />
+                                                    <TextBlock x:Name="categoryText" Text="{Binding CategoryLabel}" Style="{DynamicResource PillBadgeText}" Foreground="{DynamicResource CategoryWorkBrush}" />
+                                                </StackPanel>
+                                            </Border>
+
+                                            <!-- Due Date / Overdue Badge -->
+                                            <Border x:Name="dueDateBadge" Margin="0,0,6,0">
+                                                <Border.Style>
+                                                    <Style TargetType="Border" BasedOn="{StaticResource DueDateBadge}">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding FormattedDueDate}" Value="">
+                                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock x:Name="dueIcon" Text="📅" FontSize="10" Margin="0,0,4,0" VerticalAlignment="Center" />
+                                                    <TextBlock x:Name="dueText" Text="{Binding FormattedDueDate}" Style="{DynamicResource PillBadgeText}" Foreground="{DynamicResource TextSecondary}" />
+                                                </StackPanel>
+                                            </Border>
+
+                                            <!-- Effort Estimate Badge -->
+                                            <Border Margin="0,0,6,0">
+                                                <Border.Style>
+                                                    <Style TargetType="Border" BasedOn="{StaticResource PillBadge}">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding HasEstimatedMinutes}" Value="True">
+                                                                <Setter Property="Visibility" Value="Visible" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <TextBlock Text="{Binding FormattedEstimatedMinutes}" Style="{DynamicResource PillBadgeText}" />
+                                            </Border>
+
+                                            <!-- Source Note Backlink Badge -->
+                                            <Border Margin="0,0,6,0">
+                                                <Border.Style>
+                                                    <Style TargetType="Border" BasedOn="{StaticResource CategoryWorkBadge}">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding HasSourceNote}" Value="True">
+                                                                <Setter Property="Visibility" Value="Visible" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="📄" FontSize="10" Margin="0,0,4,0" VerticalAlignment="Center" />
+                                                    <TextBlock Text="From note" Style="{DynamicResource PillBadgeText}" Foreground="{DynamicResource CategoryWorkBrush}" />
+                                                </StackPanel>
+                                            </Border>
+                                        </StackPanel>
+
+                                        <!-- Quoted Source Excerpt -->
+                                        <Border Margin="0,4,0,0" BorderThickness="2,0,0,0" BorderBrush="{DynamicResource AccentBlue}" Padding="6,2,0,2">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding HasSourceExcerpt}" Value="True">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <TextBlock Text="{Binding SourceExcerpt, StringFormat='“{0}”'}" FontSize="11" FontStyle="Italic" Foreground="{DynamicResource TextMuted}" TextTrimming="CharacterEllipsis" />
+                                        </Border>
+                                    </StackPanel>
+
+                                    <!-- Action Buttons -->
+                                    <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,0,0">
+                                        <Button Content="Edit"
+                                                Style="{DynamicResource SecondaryButton}"
+                                                Padding="10,5"
+                                                FontSize="11"
+                                                Command="{Binding DataContext.OpenEditModalCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}"
+                                                Margin="0,0,6,0"
+                                                AutomationProperties.Name="Edit task" />
+                                        <Button Content="✕"
+                                                Style="{DynamicResource DangerButton}"
+                                                Padding="8,5"
+                                                FontSize="11"
+                                                Command="{Binding DataContext.DeleteTaskCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}"
+                                                AutomationProperties.Name="Delete task" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <!-- DataTemplate Triggers for Badges -->
+                            <DataTemplate.Triggers>
+                                <!-- Priority Triggers -->
+                                <DataTrigger Binding="{Binding Priority}" Value="high">
+                                    <Setter TargetName="priorityBadge" Property="Style" Value="{DynamicResource PriorityHighBadge}" />
+                                    <Setter TargetName="priorityDot" Property="Fill" Value="{DynamicResource PriorityHighBrush}" />
+                                    <Setter TargetName="priorityText" Property="Foreground" Value="{DynamicResource PriorityHighBrush}" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Priority}" Value="urgent">
+                                    <Setter TargetName="priorityBadge" Property="Style" Value="{DynamicResource PriorityHighBadge}" />
+                                    <Setter TargetName="priorityDot" Property="Fill" Value="{DynamicResource PriorityHighBrush}" />
+                                    <Setter TargetName="priorityText" Property="Foreground" Value="{DynamicResource PriorityHighBrush}" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Priority}" Value="low">
+                                    <Setter TargetName="priorityBadge" Property="Style" Value="{DynamicResource PriorityLowBadge}" />
+                                    <Setter TargetName="priorityDot" Property="Fill" Value="{DynamicResource PriorityLowBrush}" />
+                                    <Setter TargetName="priorityText" Property="Foreground" Value="{DynamicResource PriorityLowBrush}" />
+                                </DataTrigger>
+
+                                <!-- Category Triggers -->
+                                <DataTrigger Binding="{Binding Category}" Value="personal">
+                                    <Setter TargetName="categoryBadge" Property="Style" Value="{DynamicResource CategoryPersonalBadge}" />
+                                    <Setter TargetName="categoryDot" Property="Fill" Value="{DynamicResource CategoryPersonalBrush}" />
+                                    <Setter TargetName="categoryText" Property="Foreground" Value="{DynamicResource CategoryPersonalBrush}" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Category}" Value="urgent">
+                                    <Setter TargetName="categoryBadge" Property="Style" Value="{DynamicResource CategoryUrgentBadge}" />
+                                    <Setter TargetName="categoryDot" Property="Fill" Value="{DynamicResource CategoryUrgentBrush}" />
+                                    <Setter TargetName="categoryText" Property="Foreground" Value="{DynamicResource CategoryUrgentBrush}" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Category}" Value="study">
+                                    <Setter TargetName="categoryBadge" Property="Style" Value="{DynamicResource CategoryStudyBadge}" />
+                                    <Setter TargetName="categoryDot" Property="Fill" Value="{DynamicResource CategoryStudyBrush}" />
+                                    <Setter TargetName="categoryText" Property="Foreground" Value="{DynamicResource CategoryStudyBrush}" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Category}" Value="ideas">
+                                    <Setter TargetName="categoryBadge" Property="Style" Value="{DynamicResource CategoryIdeasBadge}" />
+                                    <Setter TargetName="categoryDot" Property="Fill" Value="{DynamicResource CategoryIdeasBrush}" />
+                                    <Setter TargetName="categoryText" Property="Foreground" Value="{DynamicResource CategoryIdeasBrush}" />
+                                </DataTrigger>
+
+                                <!-- Overdue Triggers -->
+                                <DataTrigger Binding="{Binding IsOverdue}" Value="True">
+                                    <Setter TargetName="dueDateBadge" Property="Style" Value="{DynamicResource OverdueBadge}" />
+                                    <Setter TargetName="dueIcon" Property="Text" Value="⚠️" />
+                                    <Setter TargetName="dueText" Property="Foreground" Value="{DynamicResource AccentRose}" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding FormattedDueDate}" Value="">
+                                    <Setter TargetName="dueDateBadge" Property="Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                            </DataTemplate.Triggers>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Grid>
         </Grid>
 
-        <!-- Create Task Form -->
-        <Border Grid.Row="1" Visibility="{Binding IsCreatePanelVisible, Converter={StaticResource BoolToVis}}" Style="{StaticResource ModernCard}" Margin="0,0,0,16" Padding="16">
-            <StackPanel>
-                <TextBlock Text="New Task" Style="{StaticResource CardTitleText}" Margin="0,0,0,12" />
-                <Grid Margin="0,0,0,12">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="140" />
-                        <ColumnDefinition Width="140" />
-                        <ColumnDefinition Width="140" />
-                    </Grid.ColumnDefinitions>
-                    <!-- Title Field -->
-                    <StackPanel Grid.Column="0" Margin="0,0,10,0">
-                        <TextBlock Text="Title *" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4" />
-                        <Grid>
-                            <TextBox x:Name="NewTaskTitleInput" Style="{StaticResource ModernTextBox}" Text="{Binding NewTaskTitle, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="New task title" />
-                            <TextBlock Text="What needs to be done?" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Margin="10,0,0,0" IsHitTestVisible="False">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding Text, ElementName=NewTaskTitleInput}" Value="">
-                                                <Setter Property="Visibility" Value="Visible" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                        </Grid>
-                    </StackPanel>
-                    <!-- Category Field -->
-                    <StackPanel Grid.Column="1" Margin="0,0,10,0">
-                        <TextBlock Text="Category" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4" />
-                        <ComboBox ItemsSource="{Binding Categories}" SelectedItem="{Binding NewTaskCategory}" Height="34" AutomationProperties.Name="New task category" />
-                    </StackPanel>
-                    <!-- Priority Field -->
-                    <StackPanel Grid.Column="2" Margin="0,0,10,0">
-                        <TextBlock Text="Priority" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4" />
-                        <ComboBox ItemsSource="{Binding Priorities}" SelectedItem="{Binding NewTaskPriority}" Height="34" AutomationProperties.Name="New task priority" />
-                    </StackPanel>
-                    <!-- Due Date Field -->
-                    <StackPanel Grid.Column="3">
-                        <TextBlock Text="Due Date" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4" />
-                        <Grid>
-                            <TextBox x:Name="NewTaskDueDateInput" Style="{StaticResource ModernTextBox}" Text="{Binding NewTaskDueDate, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="New task due date" />
-                            <TextBlock Text="YYYY-MM-DD" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Margin="10,0,0,0" IsHitTestVisible="False">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding Text, ElementName=NewTaskDueDateInput}" Value="">
-                                                <Setter Property="Visibility" Value="Visible" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                        </Grid>
-                    </StackPanel>
-                </Grid>
-                <!-- Description Field with Formatting Toolbar -->
-                <StackPanel Margin="0,0,0,12">
-                    <Grid Margin="0,0,0,4">
-                        <TextBlock Text="Description" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Left" VerticalAlignment="Center" />
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                            <Button Content="B" Tag="bold" CommandParameter="NewTaskDescriptionInput" Click="OnFormatTextClick" Style="{StaticResource FormatButton}" FontWeight="Bold" ToolTip="Bold" />
-                            <Button Content="I" Tag="italic" CommandParameter="NewTaskDescriptionInput" Click="OnFormatTextClick" Style="{StaticResource FormatButton}" FontStyle="Italic" ToolTip="Italic" />
-                            <Button Content="S" Tag="strikethrough" CommandParameter="NewTaskDescriptionInput" Click="OnFormatTextClick" Style="{StaticResource FormatButton}" ToolTip="Strikethrough" />
-                            <Button Content="H1" Tag="h1" CommandParameter="NewTaskDescriptionInput" Click="OnFormatTextClick" Style="{StaticResource FormatButton}" ToolTip="Heading 1" />
-                            <Button Content="H2" Tag="h2" CommandParameter="NewTaskDescriptionInput" Click="OnFormatTextClick" Style="{StaticResource FormatButton}" ToolTip="Heading 2" />
-                            <Button Content="List" Tag="bullet" CommandParameter="NewTaskDescriptionInput" Click="OnFormatTextClick" Style="{StaticResource FormatButton}" ToolTip="Bullet list" />
-                            <Button Content="1. List" Tag="numbered" CommandParameter="NewTaskDescriptionInput" Click="OnFormatTextClick" Style="{StaticResource FormatButton}" ToolTip="Numbered list" />
-                            <Button Content="Quote" Tag="quote" CommandParameter="NewTaskDescriptionInput" Click="OnFormatTextClick" Style="{StaticResource FormatButton}" ToolTip="Quote" />
-                            <Button Content="Code" Tag="code" CommandParameter="NewTaskDescriptionInput" Click="OnFormatTextClick" Style="{StaticResource FormatButton}" ToolTip="Code" />
-                        </StackPanel>
-                    </Grid>
-                    <Grid>
-                        <TextBox x:Name="NewTaskDescriptionInput" Style="{StaticResource ModernTextBox}" Text="{Binding NewTaskDescription, UpdateSourceTrigger=PropertyChanged}" Height="64" AcceptsReturn="True" TextWrapping="Wrap" AutomationProperties.Name="New task description" />
-                        <TextBlock Text="Add extra details, checklist notes, or instructions" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Top" Margin="10,8,0,0" IsHitTestVisible="False">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Visibility" Value="Collapsed" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding Text, ElementName=NewTaskDescriptionInput}" Value="">
-                                            <Setter Property="Visibility" Value="Visible" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-                    </Grid>
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button Content="Cancel" Style="{StaticResource SecondaryButton}" Command="{Binding CloseCreatePanelCommand}" Margin="0,0,8,0" AutomationProperties.Name="Cancel new task" />
-                    <Button Content="Save Task" Style="{StaticResource ModernButton}" Command="{Binding CreateTaskCommand}" AutomationProperties.Name="Save new task" />
-                </StackPanel>
-            </StackPanel>
-        </Border>
-
-        <!-- Tasks List -->
-        <ListBox Grid.Row="2" ItemsSource="{Binding Tasks}" SelectedItem="{Binding SelectedTask}" Background="Transparent" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" AutomationProperties.Name="Tasks list">
-            <ListBox.ItemContainerStyle>
-                <Style TargetType="ListBoxItem">
-                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                    <Setter Property="Padding" Value="0,0,0,8" />
-                    <Setter Property="Background" Value="Transparent" />
-                    <Setter Property="Template">
-                        <Setter.Value>
-                            <ControlTemplate TargetType="ListBoxItem">
-                                <ContentPresenter />
-                            </ControlTemplate>
-                        </Setter.Value>
-                    </Setter>
-                </Style>
-            </ListBox.ItemContainerStyle>
-            <ListBox.ItemTemplate>
-                <DataTemplate>
-                    <Border Style="{StaticResource ModernCard}" Padding="14,10">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <CheckBox Grid.Column="0" IsChecked="{Binding Completed, Mode=OneWay}" Command="{Binding DataContext.ToggleCompleteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" VerticalAlignment="Center" Margin="0,0,14,0" AutomationProperties.Name="Toggle task completion" />
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Text="{Binding Title}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}">
-                                    <TextBlock.Style>
-                                        <Style TargetType="TextBlock">
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding Completed}" Value="True">
-                                                    <Setter Property="TextDecorations" Value="Strikethrough" />
-                                                    <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </TextBlock.Style>
-                                </TextBlock>
-                                <TextBlock Text="{Binding Description}" FontSize="12" Foreground="{DynamicResource TextSecondary}" Margin="0,3,0,0" />
-                            </StackPanel>
-                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0">
-                                <Border Style="{StaticResource PillBadge}" Margin="0,0,6,0">
-                                    <TextBlock Text="{Binding Category}" Style="{StaticResource PillBadgeText}" />
-                                </Border>
-                                <Border Style="{StaticResource PillBadge}" Margin="0,0,6,0">
-                                    <TextBlock Text="{Binding Priority}" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource AccentAmber}" />
-                                </Border>
-                            </StackPanel>
-                            <Button Grid.Column="3" Content="X" Style="{StaticResource DangerButton}" Padding="8,4" FontSize="11" Command="{Binding DataContext.DeleteTaskCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" VerticalAlignment="Center" AutomationProperties.Name="Delete task" />
-                        </Grid>
-                    </Border>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
+        <!-- Focused Task Modal Dialog Overlay -->
+        <controls:TaskModalDialog />
     </Grid>
 </UserControl>
-

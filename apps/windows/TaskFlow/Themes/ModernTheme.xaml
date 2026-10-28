@@ -280,5 +280,76 @@
 
     <Style TargetType="ComboBox" BasedOn="{StaticResource ModernComboBox}" />
 
+    <!-- Modern CheckBox Style -->
+    <Style x:Key="ModernCheckBox" TargetType="CheckBox">
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="CheckBox">
+                    <Grid VerticalAlignment="Center">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Border x:Name="checkBorder"
+                                Grid.Column="0"
+                                Width="18"
+                                Height="18"
+                                CornerRadius="4"
+                                Background="{DynamicResource BgSurfaceElevated}"
+                                BorderBrush="{DynamicResource BorderSubtle}"
+                                BorderThickness="1.5"
+                                SnapsToDevicePixels="True"
+                                VerticalAlignment="Center"
+                                HorizontalAlignment="Center">
+                            <Path x:Name="checkMark"
+                                  Data="M 3.5 9 L 7.5 13 L 14.5 5"
+                                  Stroke="White"
+                                  StrokeThickness="2"
+                                  StrokeStartLineCap="Round"
+                                  StrokeEndLineCap="Round"
+                                  StrokeLineJoin="Round"
+                                  Visibility="Collapsed"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Center" />
+                        </Border>
+                        <ContentPresenter Grid.Column="1"
+                                          Margin="8,0,0,0"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          RecognizesAccessKey="True" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="checkBorder" Property="Background" Value="{DynamicResource AccentBlue}" />
+                            <Setter TargetName="checkBorder" Property="BorderBrush" Value="{DynamicResource AccentBlue}" />
+                            <Setter TargetName="checkMark" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="checkBorder" Property="BorderBrush" Value="{DynamicResource AccentBlue}" />
+                        </Trigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsChecked" Value="True" />
+                                <Condition Property="IsMouseOver" Value="True" />
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="checkBorder" Property="Background" Value="{DynamicResource AccentBlueHover}" />
+                            <Setter TargetName="checkBorder" Property="BorderBrush" Value="{DynamicResource AccentBlueHover}" />
+                        </MultiTrigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="checkBorder" Property="Opacity" Value="0.5" />
+                            <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="CheckBox" BasedOn="{StaticResource ModernCheckBox}" />
+
 </ResourceDictionary>
 

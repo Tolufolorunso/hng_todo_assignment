@@ -1,6 +1,7 @@
-using System;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
+using TaskFlow.ViewModels;
 
 namespace TaskFlow.Views;
 
@@ -11,28 +12,33 @@ public partial class TasksView : UserControl
         InitializeComponent();
     }
 
-    private void OnFormatTextClick(object sender, RoutedEventArgs e)
+    private void OnTaskCardMouseDown(object sender, MouseButtonEventArgs e)
     {
-        if (sender is not FrameworkElement element) return;
-        string action = element.Tag?.ToString() ?? string.Empty;
-        string targetName = (element as Button)?.CommandParameter?.ToString()
-            ?? element.Tag?.ToString()
-            ?? string.Empty;
-
-        if (string.IsNullOrEmpty(action) || string.IsNullOrEmpty(targetName)) return;
-
-        if (FindName(targetName) is TextBox targetTextBox)
+        // Ignore clicks on buttons and checkboxes
+        if (e.OriginalSource is DependencyObject dep)
         {
-            var (newText, newStart, newLength) = Common.TextFormattingHelper.ApplyFormat(
-                targetTextBox.Text,
-                targetTextBox.SelectionStart,
-                targetTextBox.SelectionLength,
-                action);
+            var parent = dep;
+            while (parent != null && parent != sender)
+            {
+                if (parent is Button || parent is CheckBox)
+                {
+                    return;
+                }
+                parent = System.Windows.Media.VisualTreeHelper.GetParent(parent);
+            }
+        }
 
-            targetTextBox.Text = newText;
-            targetTextBox.Focus();
-            targetTextBox.Select(newStart, newLength);
+        if (sender is FrameworkElement el && el.DataContext is TaskItemViewModel taskVm && DataContext is TasksViewModel vm)
+        {
+            vm.OpenEditModal(taskVm);
+        }
+    }
+
+    private void OnToggleShowMoreClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement el && el.DataContext is TaskItemViewModel taskVm)
+        {
+            taskVm.ToggleExpanded();
         }
     }
 }
-

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -13,27 +14,35 @@ namespace TaskFlow.ViewModels;
 public class TasksViewModel : ObservableObject
 {
     private readonly ITaskRepository _taskRepository;
-    private TaskItem? _selectedTask;
+    private TaskItemViewModel? _selectedTask;
     private string _statusFilter = "all";
     private string _categoryFilter = "all";
     private string _searchQuery = string.Empty;
     private bool _isLoading;
     private string? _errorMessage;
-    private bool _isCreatePanelVisible;
 
-    private string _newTaskTitle = string.Empty;
-    private string _newTaskDescription = string.Empty;
-    private string _newTaskPriority = "medium";
-    private string _newTaskCategory = "work";
-    private string? _newTaskDueDate;
+    // Modal state
+    private bool _isModalOpen;
+    private string _modalMode = "create";
+    private string? _editingTaskId;
+    private string _modalTitle = string.Empty;
+    private string _modalDescription = string.Empty;
+    private string _modalPriority = "medium";
+    private string _modalCategory = "work";
+    private string? _modalDueDate;
+    private string? _modalEstimatedMinutesText;
+    private string? _modalErrorMessage;
 
-    public ObservableCollection<TaskItem> Tasks { get; } = new();
+    public ObservableCollection<TaskItemViewModel> Tasks { get; } = new();
 
     public IReadOnlyList<string> Categories { get; } = new[] { "all", "work", "personal", "urgent", "study", "ideas" };
-    public IReadOnlyList<string> Priorities { get; } = new[] { "low", "medium", "high", "urgent" };
+    public IReadOnlyList<string> Priorities { get; } = new[] { "low", "medium", "high" };
     public IReadOnlyList<string> Statuses { get; } = new[] { "all", "active", "completed" };
 
-    public TaskItem? SelectedTask
+    public IReadOnlyList<string> ModalCategories { get; } = new[] { "work", "personal", "urgent", "study", "ideas" };
+    public IReadOnlyList<string> ModalPriorities { get; } = new[] { "low", "medium", "high" };
+
+    public TaskItemViewModel? SelectedTask
     {
         get => _selectedTask;
         set
@@ -41,9 +50,12 @@ public class TasksViewModel : ObservableObject
             if (SetProperty(ref _selectedTask, value))
             {
                 OnPropertyChanged(nameof(HasSelectedTask));
+                OnPropertyChanged(nameof(SelectedTaskModel));
             }
         }
     }
+
+    public TaskItem? SelectedTaskModel => SelectedTask?.Model;
 
     public bool HasSelectedTask => SelectedTask != null;
 
@@ -103,45 +115,143 @@ public class TasksViewModel : ObservableObject
 
     public bool HasError => !string.IsNullOrWhiteSpace(ErrorMessage);
 
+    // Modal properties
+    public bool IsModalOpen
+    {
+        get => _isModalOpen;
+        set
+        {
+            if (SetProperty(ref _isModalOpen, value))
+            {
+                OnPropertyChanged(nameof(IsCreatePanelVisible));
+            }
+        }
+    }
+
     public bool IsCreatePanelVisible
     {
-        get => _isCreatePanelVisible;
-        set => SetProperty(ref _isCreatePanelVisible, value);
+        get => IsModalOpen;
+        set => IsModalOpen = value;
     }
 
-    public string NewTaskTitle
+    public string ModalMode
     {
-        get => _newTaskTitle;
-        set => SetProperty(ref _newTaskTitle, value);
+        get => _modalMode;
+        set
+        {
+            if (SetProperty(ref _modalMode, value))
+            {
+                OnPropertyChanged(nameof(ModalHeading));
+            }
+        }
     }
 
-    public string NewTaskDescription
+    public string ModalHeading => ModalMode == "create" ? "New Task" : "Edit Task";
+
+    public string? EditingTaskId
     {
-        get => _newTaskDescription;
-        set => SetProperty(ref _newTaskDescription, value);
+        get => _editingTaskId;
+        set => SetProperty(ref _editingTaskId, value);
     }
 
-    public string NewTaskPriority
+    public string ModalTitle
     {
-        get => _newTaskPriority;
-        set => SetProperty(ref _newTaskPriority, value);
+        get => _modalTitle;
+        set
+        {
+            if (SetProperty(ref _modalTitle, value))
+            {
+                OnPropertyChanged(nameof(TitleCharCounter));
+                OnPropertyChanged(nameof(NewTaskTitle));
+            }
+        }
     }
 
-    public string NewTaskCategory
+    public string TitleCharCounter => $"{ModalTitle?.Length ?? 0}/200";
+
+    public string ModalDescription
     {
-        get => _newTaskCategory;
-        set => SetProperty(ref _newTaskCategory, value);
+        get => _modalDescription;
+        set
+        {
+            if (SetProperty(ref _modalDescription, value))
+            {
+                OnPropertyChanged(nameof(NewTaskDescription));
+            }
+        }
     }
 
-    public string? NewTaskDueDate
+    public string ModalPriority
     {
-        get => _newTaskDueDate;
-        set => SetProperty(ref _newTaskDueDate, value);
+        get => _modalPriority;
+        set
+        {
+            if (SetProperty(ref _modalPriority, value))
+            {
+                OnPropertyChanged(nameof(NewTaskPriority));
+            }
+        }
     }
 
+    public string ModalCategory
+    {
+        get => _modalCategory;
+        set
+        {
+            if (SetProperty(ref _modalCategory, value))
+            {
+                OnPropertyChanged(nameof(NewTaskCategory));
+            }
+        }
+    }
+
+    public string? ModalDueDate
+    {
+        get => _modalDueDate;
+        set
+        {
+            if (SetProperty(ref _modalDueDate, value))
+            {
+                OnPropertyChanged(nameof(NewTaskDueDate));
+            }
+        }
+    }
+
+    public string? ModalEstimatedMinutesText
+    {
+        get => _modalEstimatedMinutesText;
+        set => SetProperty(ref _modalEstimatedMinutesText, value);
+    }
+
+    public string? ModalErrorMessage
+    {
+        get => _modalErrorMessage;
+        set
+        {
+            if (SetProperty(ref _modalErrorMessage, value))
+            {
+                OnPropertyChanged(nameof(HasModalError));
+            }
+        }
+    }
+
+    public bool HasModalError => !string.IsNullOrWhiteSpace(ModalErrorMessage);
+
+    // Backwards-compatible aliases for legacy properties
+    public string NewTaskTitle { get => ModalTitle; set => ModalTitle = value; }
+    public string NewTaskDescription { get => ModalDescription; set => ModalDescription = value; }
+    public string NewTaskPriority { get => ModalPriority; set => ModalPriority = value; }
+    public string NewTaskCategory { get => ModalCategory; set => ModalCategory = value; }
+    public string? NewTaskDueDate { get => ModalDueDate; set => ModalDueDate = value; }
+
+    // Commands
     public ICommand LoadTasksCommand { get; }
+    public ICommand OpenCreateModalCommand { get; }
     public ICommand OpenCreatePanelCommand { get; }
+    public ICommand OpenEditModalCommand { get; }
+    public ICommand CloseModalCommand { get; }
     public ICommand CloseCreatePanelCommand { get; }
+    public ICommand SaveModalCommand { get; }
     public ICommand CreateTaskCommand { get; }
     public ICommand ToggleCompleteCommand { get; }
     public ICommand DeleteTaskCommand { get; }
@@ -153,11 +263,15 @@ public class TasksViewModel : ObservableObject
         _taskRepository = taskRepository;
 
         LoadTasksCommand = new RelayCommand(async () => await LoadTasksAsync());
-        OpenCreatePanelCommand = new RelayCommand(() => IsCreatePanelVisible = true);
-        CloseCreatePanelCommand = new RelayCommand(() => IsCreatePanelVisible = false);
-        CreateTaskCommand = new RelayCommand(async () => await CreateTaskAsync());
-        ToggleCompleteCommand = new RelayCommand(async (param) => await ToggleCompleteAsync(param as TaskItem ?? SelectedTask));
-        DeleteTaskCommand = new RelayCommand(async (param) => await DeleteTaskAsync(param as TaskItem ?? SelectedTask));
+        OpenCreateModalCommand = new RelayCommand(OpenCreateModal);
+        OpenCreatePanelCommand = OpenCreateModalCommand;
+        OpenEditModalCommand = new RelayCommand((param) => OpenEditModal(param));
+        CloseModalCommand = new RelayCommand(CloseModal);
+        CloseCreatePanelCommand = CloseModalCommand;
+        SaveModalCommand = new RelayCommand(async () => await SaveModalAsync());
+        CreateTaskCommand = SaveModalCommand;
+        ToggleCompleteCommand = new RelayCommand(async (param) => await ToggleCompleteAsync(param));
+        DeleteTaskCommand = new RelayCommand(async (param) => await DeleteTaskAsync(param));
         SetStatusFilterCommand = new RelayCommand((param) =>
         {
             if (param is string status)
@@ -174,6 +288,127 @@ public class TasksViewModel : ObservableObject
         });
     }
 
+    public void OpenCreateModal()
+    {
+        ModalMode = "create";
+        EditingTaskId = null;
+        ModalTitle = string.Empty;
+        ModalDescription = string.Empty;
+        ModalCategory = "work";
+        ModalPriority = "medium";
+        ModalDueDate = null;
+        ModalEstimatedMinutesText = null;
+        ModalErrorMessage = null;
+        IsModalOpen = true;
+    }
+
+    public void OpenEditModal(object? param)
+    {
+        TaskItem? task = param switch
+        {
+            TaskItemViewModel vm => vm.Model,
+            TaskItem item => item,
+            _ => SelectedTask?.Model
+        };
+
+        if (task == null) return;
+
+        ModalMode = "edit";
+        EditingTaskId = task.Id;
+        ModalTitle = task.Title;
+        ModalDescription = task.Description ?? string.Empty;
+        ModalCategory = string.IsNullOrWhiteSpace(task.Category) ? "work" : task.Category;
+        ModalPriority = string.IsNullOrWhiteSpace(task.Priority) ? "medium" : task.Priority;
+        ModalDueDate = task.DueDate;
+        ModalEstimatedMinutesText = task.EstimatedMinutes?.ToString(CultureInfo.InvariantCulture);
+        ModalErrorMessage = null;
+        IsModalOpen = true;
+    }
+
+    public void CloseModal()
+    {
+        IsModalOpen = false;
+        ModalErrorMessage = null;
+    }
+
+    public async Task SaveModalAsync()
+    {
+        if (string.IsNullOrWhiteSpace(ModalTitle))
+        {
+            ModalErrorMessage = "Task title cannot be empty.";
+            return;
+        }
+
+        int? estimatedMinutes = null;
+        if (!string.IsNullOrWhiteSpace(ModalEstimatedMinutesText))
+        {
+            if (int.TryParse(ModalEstimatedMinutesText.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out int mins) && mins >= 0)
+            {
+                estimatedMinutes = mins;
+            }
+            else
+            {
+                ModalErrorMessage = "Effort must be a valid number of minutes.";
+                return;
+            }
+        }
+
+        try
+        {
+            if (ModalMode == "create")
+            {
+                var task = new TaskItem
+                {
+                    Title = ModalTitle.Trim(),
+                    Description = ModalDescription?.Trim() ?? string.Empty,
+                    Priority = ModalPriority,
+                    Category = ModalCategory,
+                    DueDate = string.IsNullOrWhiteSpace(ModalDueDate) ? null : ModalDueDate.Trim(),
+                    EstimatedMinutes = estimatedMinutes
+                };
+
+                var created = await _taskRepository.CreateAsync(task);
+                var createdVm = new TaskItemViewModel(created);
+                Tasks.Insert(0, createdVm);
+                SelectedTask = createdVm;
+                IsModalOpen = false;
+                ErrorMessage = null;
+            }
+            else if (ModalMode == "edit" && !string.IsNullOrEmpty(EditingTaskId))
+            {
+                var existingVm = Tasks.FirstOrDefault(t => t.Id == EditingTaskId);
+                if (existingVm != null)
+                {
+                    var model = existingVm.Model;
+                    model.Title = ModalTitle.Trim();
+                    model.Description = ModalDescription?.Trim() ?? string.Empty;
+                    model.Priority = ModalPriority;
+                    model.Category = ModalCategory;
+                    model.DueDate = string.IsNullOrWhiteSpace(ModalDueDate) ? null : ModalDueDate.Trim();
+                    model.EstimatedMinutes = estimatedMinutes;
+
+                    var updated = await _taskRepository.UpdateAsync(model);
+                    int idx = Tasks.IndexOf(existingVm);
+                    var updatedVm = new TaskItemViewModel(updated);
+                    if (idx >= 0)
+                    {
+                        Tasks[idx] = updatedVm;
+                    }
+                    if (SelectedTask?.Id == updated.Id)
+                    {
+                        SelectedTask = updatedVm;
+                    }
+                }
+                IsModalOpen = false;
+                ErrorMessage = null;
+            }
+        }
+        catch (Exception ex)
+        {
+            ModalErrorMessage = $"Failed to save task: {ex.Message}";
+        }
+    }
+
     public async Task LoadTasksAsync()
     {
         IsLoading = true;
@@ -188,7 +423,7 @@ public class TasksViewModel : ObservableObject
             Tasks.Clear();
             foreach (var item in items)
             {
-                Tasks.Add(item);
+                Tasks.Add(new TaskItemViewModel(item));
             }
 
             if (SelectedTask != null && !Tasks.Any(t => t.Id == SelectedTask.Id))
@@ -212,56 +447,35 @@ public class TasksViewModel : ObservableObject
 
     public async Task CreateTaskAsync()
     {
-        if (string.IsNullOrWhiteSpace(NewTaskTitle))
-        {
-            ErrorMessage = "Task title cannot be empty.";
-            return;
-        }
-
-        try
-        {
-            var task = new TaskItem
-            {
-                Title = NewTaskTitle.Trim(),
-                Description = NewTaskDescription?.Trim() ?? string.Empty,
-                Priority = NewTaskPriority,
-                Category = NewTaskCategory,
-                DueDate = string.IsNullOrWhiteSpace(NewTaskDueDate) ? null : NewTaskDueDate.Trim()
-            };
-
-            var created = await _taskRepository.CreateAsync(task);
-            Tasks.Insert(0, created);
-            SelectedTask = created;
-
-            NewTaskTitle = string.Empty;
-            NewTaskDescription = string.Empty;
-            NewTaskDueDate = null;
-            IsCreatePanelVisible = false;
-            ErrorMessage = null;
-        }
-        catch (Exception ex)
-        {
-            ErrorMessage = $"Failed to create task: {ex.Message}";
-        }
+        await SaveModalAsync();
     }
 
-    public async Task ToggleCompleteAsync(TaskItem? task)
+    public async Task ToggleCompleteAsync(object? param)
     {
-        if (task == null)
+        TaskItem? task = param switch
         {
-            return;
-        }
+            TaskItemViewModel vm => vm.Model,
+            TaskItem item => item,
+            _ => SelectedTask?.Model
+        };
+
+        if (task == null) return;
 
         try
         {
             var updated = await _taskRepository.ToggleCompleteAsync(task.Id);
-            int index = Tasks.IndexOf(task);
-            if (index >= 0)
+            var updatedVm = new TaskItemViewModel(updated);
+            var existingVm = Tasks.FirstOrDefault(t => t.Id == task.Id);
+            if (existingVm != null)
             {
-                Tasks[index] = updated;
-                if (SelectedTask?.Id == updated.Id)
+                int index = Tasks.IndexOf(existingVm);
+                if (index >= 0)
                 {
-                    SelectedTask = updated;
+                    Tasks[index] = updatedVm;
+                    if (SelectedTask?.Id == updated.Id)
+                    {
+                        SelectedTask = updatedVm;
+                    }
                 }
             }
 
@@ -277,22 +491,30 @@ public class TasksViewModel : ObservableObject
         }
     }
 
-    public async Task DeleteTaskAsync(TaskItem? task)
+    public async Task DeleteTaskAsync(object? param)
     {
-        if (task == null)
+        TaskItem? task = param switch
         {
-            return;
-        }
+            TaskItemViewModel vm => vm.Model,
+            TaskItem item => item,
+            _ => SelectedTask?.Model
+        };
+
+        if (task == null) return;
 
         try
         {
             bool deleted = await _taskRepository.DeleteAsync(task.Id);
             if (deleted)
             {
-                Tasks.Remove(task);
-                if (SelectedTask?.Id == task.Id)
+                var existingVm = Tasks.FirstOrDefault(t => t.Id == task.Id);
+                if (existingVm != null)
                 {
-                    SelectedTask = Tasks.FirstOrDefault();
+                    Tasks.Remove(existingVm);
+                    if (SelectedTask?.Id == task.Id)
+                    {
+                        SelectedTask = Tasks.FirstOrDefault();
+                    }
                 }
             }
         }
