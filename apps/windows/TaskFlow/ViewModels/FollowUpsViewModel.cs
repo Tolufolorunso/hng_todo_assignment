@@ -18,7 +18,7 @@ public class FollowUpsViewModel : ObservableObject
     private readonly ILauncherService _launcher;
 
     private FollowUpItemViewModel? _selectedFollowUp;
-    private string _statusFilter = "open";
+    private string _statusFilter = "all";
     private string _searchText = string.Empty;
     private bool _isCreatePanelVisible;
     private bool _isEditPanelVisible;
@@ -143,9 +143,37 @@ public class FollowUpsViewModel : ObservableObject
     public int SnoozeHours { get => _snoozeHours; set => SetProperty(ref _snoozeHours, value); }
     public string RescheduleDueAt { get => _rescheduleDueAt; set => SetProperty(ref _rescheduleDueAt, value); }
 
+    public bool IsRecurring
+    {
+        get => !string.Equals(RecurrenceFrequency, "none", StringComparison.OrdinalIgnoreCase);
+        set
+        {
+            if (value)
+            {
+                if (string.Equals(RecurrenceFrequency, "none", StringComparison.OrdinalIgnoreCase))
+                {
+                    RecurrenceFrequency = "weekly";
+                }
+            }
+            else
+            {
+                RecurrenceFrequency = "none";
+            }
+            OnPropertyChanged(nameof(IsRecurring));
+        }
+    }
+
     public int OpenCount => FollowUps.Count(f => !f.IsCompleted);
     public int OverdueCount => FollowUps.Count(f => f.IsOverdue);
     public int CompletedCount => FollowUps.Count(f => f.IsCompleted);
+    public int UpcomingCount => FollowUps.Count(f => !f.IsCompleted && !f.IsOverdue);
+
+    public string AllCountText => $"All ({FollowUps.Count})";
+    public string DueOverdueCountText => "Due & Overdue";
+    public string UpcomingCountText => $"Upcoming ({UpcomingCount})";
+    public string CompletedCountText => $"Completed ({CompletedCount})";
+
+    public IReadOnlyList<string> PreferredActionOptions { get; } = new[] { "none", "email", "phone", "whatsapp" };
 
     public ICommand LoadCommand { get; }
     public ICommand SetStatusFilterCommand { get; }
@@ -251,18 +279,24 @@ public class FollowUpsViewModel : ObservableObject
     {
         var query = FollowUps.AsEnumerable();
 
-        if (string.Equals(StatusFilter, "open", StringComparison.OrdinalIgnoreCase))
-        {
-            query = query.Where(f => !f.IsCompleted);
-        }
-        else if (string.Equals(StatusFilter, "completed", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(StatusFilter, "completed", StringComparison.OrdinalIgnoreCase))
         {
             query = query.Where(f => f.IsCompleted);
         }
-        else if (string.Equals(StatusFilter, "overdue", StringComparison.OrdinalIgnoreCase))
+        else if (string.Equals(StatusFilter, "due_overdue", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(StatusFilter, "overdue", StringComparison.OrdinalIgnoreCase))
         {
-            query = query.Where(f => f.IsOverdue);
+            query = query.Where(f => !f.IsCompleted && f.IsOverdue);
         }
+        else if (string.Equals(StatusFilter, "upcoming", StringComparison.OrdinalIgnoreCase))
+        {
+            query = query.Where(f => !f.IsCompleted && !f.IsOverdue);
+        }
+        else if (string.Equals(StatusFilter, "open", StringComparison.OrdinalIgnoreCase))
+        {
+            query = query.Where(f => !f.IsCompleted);
+        }
+        // "all" shows all follow ups without filtering out status
 
         if (!string.IsNullOrWhiteSpace(SearchText))
         {
@@ -512,6 +546,11 @@ public class FollowUpsViewModel : ObservableObject
         OnPropertyChanged(nameof(OpenCount));
         OnPropertyChanged(nameof(OverdueCount));
         OnPropertyChanged(nameof(CompletedCount));
+        OnPropertyChanged(nameof(UpcomingCount));
+        OnPropertyChanged(nameof(AllCountText));
+        OnPropertyChanged(nameof(DueOverdueCountText));
+        OnPropertyChanged(nameof(UpcomingCountText));
+        OnPropertyChanged(nameof(CompletedCountText));
     }
 
     private void PopulateEditForm(FollowUpItem item)

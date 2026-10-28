@@ -33,6 +33,28 @@ public class TasksViewModel : ObservableObject
     private string? _modalEstimatedMinutesText;
     private string? _modalErrorMessage;
 
+    // Quick Add state
+    private string _quickAddTitle = string.Empty;
+    private bool _isQuickAddDetailsOpen;
+    private string _quickAddPriority = "medium";
+    private string _quickAddCategory = "work";
+    private string? _quickAddDueDate;
+    private string? _quickAddEstimatedMinutesText;
+    private string _quickAddDescription = string.Empty;
+
+    // Sidebar Metrics state
+    private int _activeCount;
+    private int _completedCount;
+    private int _totalCount;
+    private int _overdueCount;
+    private int _remainingTodayCount;
+    private int _categoryWorkCount;
+    private int _categoryPersonalCount;
+    private int _categoryUrgentCount;
+    private int _categoryStudyCount;
+    private int _categoryIdeasCount;
+    private string _sortOption = "Custom";
+
     public ObservableCollection<TaskItemViewModel> Tasks { get; } = new();
 
     public IReadOnlyList<string> Categories { get; } = new[] { "all", "work", "personal", "urgent", "study", "ideas" };
@@ -237,6 +259,149 @@ public class TasksViewModel : ObservableObject
 
     public bool HasModalError => !string.IsNullOrWhiteSpace(ModalErrorMessage);
 
+    // Quick Add Properties
+    public string QuickAddTitle
+    {
+        get => _quickAddTitle;
+        set
+        {
+            if (SetProperty(ref _quickAddTitle, value))
+            {
+                OnPropertyChanged(nameof(QuickAddCharCounter));
+            }
+        }
+    }
+
+    public string QuickAddCharCounter => $"{QuickAddTitle?.Length ?? 0}/200";
+
+    public bool IsQuickAddDetailsOpen
+    {
+        get => _isQuickAddDetailsOpen;
+        set => SetProperty(ref _isQuickAddDetailsOpen, value);
+    }
+
+    public string QuickAddPriority
+    {
+        get => _quickAddPriority;
+        set => SetProperty(ref _quickAddPriority, value);
+    }
+
+    public string QuickAddCategory
+    {
+        get => _quickAddCategory;
+        set => SetProperty(ref _quickAddCategory, value);
+    }
+
+    public string? QuickAddDueDate
+    {
+        get => _quickAddDueDate;
+        set => SetProperty(ref _quickAddDueDate, value);
+    }
+
+    public string? QuickAddEstimatedMinutesText
+    {
+        get => _quickAddEstimatedMinutesText;
+        set => SetProperty(ref _quickAddEstimatedMinutesText, value);
+    }
+
+    public string QuickAddDescription
+    {
+        get => _quickAddDescription;
+        set => SetProperty(ref _quickAddDescription, value);
+    }
+
+    // Sidebar Metrics Properties
+    public string TodayDisplay => DateTime.Now.ToString("dddd d MMM", CultureInfo.InvariantCulture);
+    public string RemainingTodaySummary => RemainingTodayCount == 1 ? "1 task remaining today." : $"{RemainingTodayCount} tasks remaining today.";
+
+    public int RemainingTodayCount
+    {
+        get => _remainingTodayCount;
+        set
+        {
+            if (SetProperty(ref _remainingTodayCount, value))
+            {
+                OnPropertyChanged(nameof(RemainingTodaySummary));
+            }
+        }
+    }
+
+    public int ActiveCount
+    {
+        get => _activeCount;
+        set => SetProperty(ref _activeCount, value);
+    }
+
+    public int CompletedCount
+    {
+        get => _completedCount;
+        set => SetProperty(ref _completedCount, value);
+    }
+
+    public int TotalCount
+    {
+        get => _totalCount;
+        set => SetProperty(ref _totalCount, value);
+    }
+
+    public int OverdueCount
+    {
+        get => _overdueCount;
+        set => SetProperty(ref _overdueCount, value);
+    }
+
+    public int CompletionPercent => TotalCount > 0 ? (int)Math.Round((double)CompletedCount / TotalCount * 100) : 0;
+
+    public string TaggedCategoriesText => $"{CategoryWorkCount + CategoryPersonalCount + CategoryUrgentCount + CategoryStudyCount + CategoryIdeasCount} tagged";
+
+    public int CategoryWorkCount
+    {
+        get => _categoryWorkCount;
+        set { if (SetProperty(ref _categoryWorkCount, value)) OnPropertyChanged(nameof(TaggedCategoriesText)); }
+    }
+
+    public int CategoryPersonalCount
+    {
+        get => _categoryPersonalCount;
+        set { if (SetProperty(ref _categoryPersonalCount, value)) OnPropertyChanged(nameof(TaggedCategoriesText)); }
+    }
+
+    public int CategoryUrgentCount
+    {
+        get => _categoryUrgentCount;
+        set { if (SetProperty(ref _categoryUrgentCount, value)) OnPropertyChanged(nameof(TaggedCategoriesText)); }
+    }
+
+    public int CategoryStudyCount
+    {
+        get => _categoryStudyCount;
+        set { if (SetProperty(ref _categoryStudyCount, value)) OnPropertyChanged(nameof(TaggedCategoriesText)); }
+    }
+
+    public int CategoryIdeasCount
+    {
+        get => _categoryIdeasCount;
+        set { if (SetProperty(ref _categoryIdeasCount, value)) OnPropertyChanged(nameof(TaggedCategoriesText)); }
+    }
+
+    public IReadOnlyList<string> SortOptions { get; } = new[] { "Custom", "Due Date", "Priority", "Title" };
+
+    public string SortOption
+    {
+        get => _sortOption;
+        set
+        {
+            if (SetProperty(ref _sortOption, value))
+            {
+                _ = LoadTasksAsync();
+            }
+        }
+    }
+
+    public ICommand ToggleQuickAddDetailsCommand { get; }
+    public ICommand SelectQuickAddCategoryCommand { get; }
+    public ICommand SubmitQuickAddCommand { get; }
+
     // Backwards-compatible aliases for legacy properties
     public string NewTaskTitle { get => ModalTitle; set => ModalTitle = value; }
     public string NewTaskDescription { get => ModalDescription; set => ModalDescription = value; }
@@ -257,6 +422,9 @@ public class TasksViewModel : ObservableObject
     public ICommand DeleteTaskCommand { get; }
     public ICommand SetStatusFilterCommand { get; }
     public ICommand SetCategoryFilterCommand { get; }
+    public ICommand MoveTaskUpCommand { get; }
+    public ICommand MoveTaskDownCommand { get; }
+    public ICommand? NavigateToPlanMyDayCommand { get; set; }
 
     public TasksViewModel(ITaskRepository taskRepository)
     {
@@ -272,6 +440,8 @@ public class TasksViewModel : ObservableObject
         CreateTaskCommand = SaveModalCommand;
         ToggleCompleteCommand = new RelayCommand(async (param) => await ToggleCompleteAsync(param));
         DeleteTaskCommand = new RelayCommand(async (param) => await DeleteTaskAsync(param));
+        MoveTaskUpCommand = new RelayCommand((param) => MoveTaskUp(param));
+        MoveTaskDownCommand = new RelayCommand((param) => MoveTaskDown(param));
         SetStatusFilterCommand = new RelayCommand((param) =>
         {
             if (param is string status)
@@ -279,6 +449,15 @@ public class TasksViewModel : ObservableObject
                 StatusFilter = status;
             }
         });
+        ToggleQuickAddDetailsCommand = new RelayCommand(() => IsQuickAddDetailsOpen = !IsQuickAddDetailsOpen);
+        SelectQuickAddCategoryCommand = new RelayCommand((param) =>
+        {
+            if (param is string cat)
+            {
+                QuickAddCategory = cat;
+            }
+        });
+        SubmitQuickAddCommand = new RelayCommand(async () => await SubmitQuickAddAsync());
         SetCategoryFilterCommand = new RelayCommand((param) =>
         {
             if (param is string cat)
@@ -286,6 +465,30 @@ public class TasksViewModel : ObservableObject
                 CategoryFilter = cat;
             }
         });
+    }
+
+    public void MoveTaskUp(object? param)
+    {
+        if (param is TaskItemViewModel item)
+        {
+            int idx = Tasks.IndexOf(item);
+            if (idx > 0)
+            {
+                Tasks.Move(idx, idx - 1);
+            }
+        }
+    }
+
+    public void MoveTaskDown(object? param)
+    {
+        if (param is TaskItemViewModel item)
+        {
+            int idx = Tasks.IndexOf(item);
+            if (idx >= 0 && idx < Tasks.Count - 1)
+            {
+                Tasks.Move(idx, idx + 1);
+            }
+        }
     }
 
     public void OpenCreateModal()
@@ -420,6 +623,20 @@ public class TasksViewModel : ObservableObject
             string? search = string.IsNullOrWhiteSpace(SearchQuery) ? null : SearchQuery.Trim();
 
             var items = await _taskRepository.ListAsync(status, category, search);
+            if (string.Equals(SortOption, "Due Date", StringComparison.OrdinalIgnoreCase))
+            {
+                items = items.OrderBy(t => string.IsNullOrWhiteSpace(t.DueDate) ? "9999" : t.DueDate).ToList();
+            }
+            else if (string.Equals(SortOption, "Priority", StringComparison.OrdinalIgnoreCase))
+            {
+                static int PriorityWeight(string p) => string.Equals(p, "high", StringComparison.OrdinalIgnoreCase) ? 1 : (string.Equals(p, "medium", StringComparison.OrdinalIgnoreCase) ? 2 : 3);
+                items = items.OrderBy(t => PriorityWeight(t.Priority)).ToList();
+            }
+            else if (string.Equals(SortOption, "Title", StringComparison.OrdinalIgnoreCase))
+            {
+                items = items.OrderBy(t => t.Title, StringComparer.OrdinalIgnoreCase).ToList();
+            }
+
             Tasks.Clear();
             foreach (var item in items)
             {
@@ -434,6 +651,7 @@ public class TasksViewModel : ObservableObject
             {
                 SelectedTask = Tasks[0];
             }
+            await UpdateSidebarMetricsAsync();
         }
         catch (Exception ex)
         {
@@ -521,6 +739,79 @@ public class TasksViewModel : ObservableObject
         catch (Exception ex)
         {
             ErrorMessage = $"Failed to delete task: {ex.Message}";
+        }
+        await UpdateSidebarMetricsAsync();
+    }
+
+    public async Task SubmitQuickAddAsync()
+    {
+        if (string.IsNullOrWhiteSpace(QuickAddTitle)) return;
+
+        int? estimatedMinutes = null;
+        if (!string.IsNullOrWhiteSpace(QuickAddEstimatedMinutesText) &&
+            int.TryParse(QuickAddEstimatedMinutesText.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out int mins) && mins >= 0)
+        {
+            estimatedMinutes = mins;
+        }
+
+        try
+        {
+            var task = new TaskItem
+            {
+                Title = QuickAddTitle.Trim(),
+                Description = QuickAddDescription?.Trim() ?? string.Empty,
+                Priority = QuickAddPriority,
+                Category = QuickAddCategory,
+                DueDate = string.IsNullOrWhiteSpace(QuickAddDueDate) ? null : QuickAddDueDate.Trim(),
+                EstimatedMinutes = estimatedMinutes
+            };
+
+            var created = await _taskRepository.CreateAsync(task);
+            var createdVm = new TaskItemViewModel(created);
+            Tasks.Insert(0, createdVm);
+            SelectedTask = createdVm;
+
+            QuickAddTitle = string.Empty;
+            QuickAddDescription = string.Empty;
+            QuickAddDueDate = null;
+            QuickAddEstimatedMinutesText = null;
+            IsQuickAddDetailsOpen = false;
+
+            await UpdateSidebarMetricsAsync();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Failed to create task: {ex.Message}";
+        }
+    }
+
+    public async Task UpdateSidebarMetricsAsync()
+    {
+        try
+        {
+            var all = await _taskRepository.ListAsync();
+            TotalCount = all.Count;
+            ActiveCount = all.Count(t => !t.Completed);
+            CompletedCount = all.Count(t => t.Completed);
+
+            var todayKey = DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            RemainingTodayCount = all.Count(t => !t.Completed && !string.IsNullOrWhiteSpace(t.DueDate) && t.DueDate.StartsWith(todayKey, StringComparison.OrdinalIgnoreCase));
+            OverdueCount = all.Count(t => !t.Completed && !string.IsNullOrWhiteSpace(t.DueDate) && string.Compare(t.DueDate, todayKey, StringComparison.OrdinalIgnoreCase) < 0);
+
+            CategoryWorkCount = all.Count(t => string.Equals(t.Category, "work", StringComparison.OrdinalIgnoreCase));
+            CategoryPersonalCount = all.Count(t => string.Equals(t.Category, "personal", StringComparison.OrdinalIgnoreCase));
+            CategoryUrgentCount = all.Count(t => string.Equals(t.Category, "urgent", StringComparison.OrdinalIgnoreCase));
+            CategoryStudyCount = all.Count(t => string.Equals(t.Category, "study", StringComparison.OrdinalIgnoreCase));
+            CategoryIdeasCount = all.Count(t => string.Equals(t.Category, "ideas", StringComparison.OrdinalIgnoreCase));
+
+            OnPropertyChanged(nameof(CompletionPercent));
+            OnPropertyChanged(nameof(TodayDisplay));
+            OnPropertyChanged(nameof(RemainingTodaySummary));
+            OnPropertyChanged(nameof(TaggedCategoriesText));
+        }
+        catch
+        {
+            // Ignore metrics refresh failures
         }
     }
 }

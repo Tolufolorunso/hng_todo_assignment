@@ -6,515 +6,862 @@
              xmlns:vm="clr-namespace:TaskFlow.ViewModels"
              d:DataContext="{d:DesignInstance vm:FollowUpsViewModel}"
              mc:Ignorable="d">
-    <Grid Margin="24">
-        <!-- Main Content -->
-        <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
-            </Grid.RowDefinitions>
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    </UserControl.Resources>
 
-            <!-- Top Action and Filter Bar -->
-            <Grid Grid.Row="0" Margin="0,0,0,16">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="260" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
+    <Grid>
+        <!-- Main Content ScrollViewer -->
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <Grid Margin="28,22,28,32">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
 
-                <!-- Search Input -->
-                <Grid Grid.Column="0" Margin="0,0,16,0">
-                    <TextBox x:Name="SearchFollowUpsBox"
-                             Style="{StaticResource ModernTextBox}"
-                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                             Height="36"
-                             Padding="10,0"
-                             AutomationProperties.Name="Search follow ups" />
-                    <TextBlock Text="Search commitments..."
-                               Foreground="{DynamicResource TextMuted}"
-                               VerticalAlignment="Center"
-                               Margin="12,0,0,0"
-                               IsHitTestVisible="False">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock">
+                <!-- Header: Follow Ups + New Follow Up Button -->
+                <Grid Grid.Row="0" Margin="0,0,0,4">
+                    <TextBlock Text="Follow Ups"
+                               FontSize="26"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource TextPrimary}"
+                               VerticalAlignment="Center" />
+
+                    <Button HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            Content="+ New Follow Up"
+                            Style="{DynamicResource ModernButton}"
+                            Command="{Binding OpenCreatePanelCommand}"
+                            Padding="16,8"
+                            FontSize="13"
+                            AutomationProperties.Name="Open New Follow Up dialog" />
+                </Grid>
+
+                <!-- Subtitle -->
+                <TextBlock Grid.Row="1"
+                           Text="Manage commitments to people, recurring check-ins, and direct communication launchers."
+                           FontSize="13"
+                           Foreground="{DynamicResource TextSecondary}"
+                           Margin="0,0,0,24" />
+
+                <!-- Filter Tabs and Search Bar -->
+                <Grid Grid.Row="2" Margin="0,0,0,18">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left: Status Filter Tabs -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Content="{Binding AllCountText}"
+                                Style="{DynamicResource SecondaryButton}"
+                                Command="{Binding SetStatusFilterCommand}"
+                                CommandParameter="all"
+                                Margin="0,0,6,0"
+                                Padding="14,6"
+                                FontSize="12"
+                                AutomationProperties.Name="Filter all follow-ups" />
+
+                        <Button Content="{Binding DueOverdueCountText}"
+                                Style="{DynamicResource SecondaryButton}"
+                                Command="{Binding SetStatusFilterCommand}"
+                                CommandParameter="due_overdue"
+                                Margin="0,0,6,0"
+                                Padding="14,6"
+                                FontSize="12"
+                                AutomationProperties.Name="Filter due and overdue follow-ups" />
+
+                        <Button Content="{Binding UpcomingCountText}"
+                                Style="{DynamicResource SecondaryButton}"
+                                Command="{Binding SetStatusFilterCommand}"
+                                CommandParameter="upcoming"
+                                Margin="0,0,6,0"
+                                Padding="14,6"
+                                FontSize="12"
+                                AutomationProperties.Name="Filter upcoming follow-ups" />
+
+                        <Button Content="{Binding CompletedCountText}"
+                                Style="{DynamicResource SecondaryButton}"
+                                Command="{Binding SetStatusFilterCommand}"
+                                CommandParameter="completed"
+                                Padding="14,6"
+                                FontSize="12"
+                                AutomationProperties.Name="Filter completed follow-ups" />
+                    </StackPanel>
+
+                    <!-- Right: Search Input -->
+                    <Grid Grid.Column="1" Width="260">
+                        <TextBox x:Name="SearchFollowUpsBox"
+                                 Style="{DynamicResource ModernTextBox}"
+                                 Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                 Height="36"
+                                 Padding="28,6,10,6"
+                                 AutomationProperties.Name="Search follow ups" />
+                        <TextBlock Text="🔍"
+                                   FontSize="11"
+                                   Foreground="{DynamicResource TextMuted}"
+                                   VerticalAlignment="Center"
+                                   Margin="10,0,0,0"
+                                   IsHitTestVisible="False" />
+                        <TextBlock Text="Search follow-ups..."
+                                   Foreground="{DynamicResource TextMuted}"
+                                   FontSize="12"
+                                   VerticalAlignment="Center"
+                                   Margin="30,0,0,0"
+                                   IsHitTestVisible="False">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Text, ElementName=SearchFollowUpsBox}" Value="">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Grid>
+                </Grid>
+
+                <!-- Follow-up Cards List -->
+                <Grid Grid.Row="3">
+                    <!-- Empty State -->
+                    <Border Padding="36"
+                            VerticalAlignment="Center"
+                            HorizontalAlignment="Center"
+                            Width="400">
+                        <Border.Style>
+                            <Style TargetType="Border" BasedOn="{StaticResource ModernCard}">
                                 <Setter Property="Visibility" Value="Collapsed" />
                                 <Style.Triggers>
-                                    <DataTrigger Binding="{Binding Text, ElementName=SearchFollowUpsBox}" Value="">
+                                    <DataTrigger Binding="{Binding FilteredFollowUps.Count}" Value="0">
                                         <Setter Property="Visibility" Value="Visible" />
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
-                </Grid>
-
-                <!-- Status Filter Tabs -->
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <!-- All Tab -->
-                    <Button Content="All"
-                            Style="{DynamicResource SecondaryButton}"
-                            Command="{Binding SetStatusFilterCommand}"
-                            CommandParameter="all"
-                            Margin="0,0,6,0"
-                            Padding="12,6"
-                            AutomationProperties.Name="Filter all follow-ups" />
-
-                    <!-- Open Tab with Count -->
-                    <Button Style="{DynamicResource SecondaryButton}"
-                            Command="{Binding SetStatusFilterCommand}"
-                            CommandParameter="open"
-                            Margin="0,0,6,0"
-                            Padding="12,6"
-                            AutomationProperties.Name="Filter open follow-ups">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Open" VerticalAlignment="Center" />
-                            <Border Background="{DynamicResource BgSurfaceElevated}" CornerRadius="10" Padding="6,1" Margin="6,0,0,0">
-                                <TextBlock Text="{Binding OpenCount}" FontSize="11" Foreground="{DynamicResource TextSecondary}" />
-                            </Border>
+                        </Border.Style>
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="👥" FontSize="36" HorizontalAlignment="Center" Margin="0,0,0,12" />
+                            <TextBlock Text="No follow-ups found" Style="{DynamicResource CardTitleText}" HorizontalAlignment="Center" Margin="0,0,0,6" />
+                            <TextBlock Text="Create a follow-up commitment with the button above, or clear your search and filters."
+                                       Style="{DynamicResource CardSubtitleText}"
+                                       TextAlignment="Center"
+                                       TextWrapping="Wrap" />
                         </StackPanel>
-                    </Button>
+                    </Border>
 
-                    <!-- Overdue Tab with Warning Badge -->
-                    <Button Style="{DynamicResource SecondaryButton}"
-                            Command="{Binding SetStatusFilterCommand}"
-                            CommandParameter="overdue"
-                            Margin="0,0,6,0"
-                            Padding="12,6"
-                            AutomationProperties.Name="Filter overdue follow-ups">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Overdue" VerticalAlignment="Center" Foreground="{DynamicResource AccentRose}" FontWeight="SemiBold" />
-                            <Border Background="{DynamicResource PriorityHighBrush}" CornerRadius="10" Padding="6,1" Margin="6,0,0,0">
-                                <TextBlock Text="{Binding OverdueCount}" FontSize="11" Foreground="White" FontWeight="Bold" />
-                            </Border>
-                        </StackPanel>
-                    </Button>
-
-                    <!-- Completed Tab with Count -->
-                    <Button Style="{DynamicResource SecondaryButton}"
-                            Command="{Binding SetStatusFilterCommand}"
-                            CommandParameter="completed"
-                            Padding="12,6"
-                            AutomationProperties.Name="Filter completed follow-ups">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Completed" VerticalAlignment="Center" />
-                            <Border Background="{DynamicResource BgSurfaceElevated}" CornerRadius="10" Padding="6,1" Margin="6,0,0,0">
-                                <TextBlock Text="{Binding CompletedCount}" FontSize="11" Foreground="{DynamicResource TextSecondary}" />
-                            </Border>
-                        </StackPanel>
-                    </Button>
-                </StackPanel>
-
-                <!-- New Commitment Button -->
-                <Button Grid.Column="2"
-                        Content="+ New Commitment"
-                        Style="{StaticResource ModernButton}"
-                        Command="{Binding OpenCreatePanelCommand}"
-                        AutomationProperties.Name="Add new follow-up commitment" />
-            </Grid>
-
-            <!-- Create / Edit Follow-up Drawer Panel -->
-            <Border Grid.Row="1"
-                    Padding="18"
-                    Margin="0,0,0,16">
-                <Border.Style>
-                    <Style TargetType="Border" BasedOn="{StaticResource ModernCard}">
-                        <Setter Property="Visibility" Value="Collapsed" />
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding IsCreatePanelVisible}" Value="True">
-                                <Setter Property="Visibility" Value="Visible" />
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding IsEditPanelVisible}" Value="True">
-                                <Setter Property="Visibility" Value="Visible" />
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Border.Style>
-                <StackPanel>
-                    <TextBlock FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,12">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="Text" Value="New Follow-Up Commitment" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsEditPanelVisible}" Value="True">
-                                        <Setter Property="Text" Value="Edit Follow-Up Commitment" />
-                                    </DataTrigger>
-                                </Style.Triggers>
+                    <!-- Items List -->
+                    <ListBox ItemsSource="{Binding FilteredFollowUps}"
+                             SelectedItem="{Binding SelectedFollowUp}"
+                             Background="Transparent"
+                             BorderThickness="0"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                             AutomationProperties.Name="Follow-ups list">
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                <Setter Property="Padding" Value="0,0,0,10" />
+                                <Setter Property="Background" Value="Transparent" />
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ListBoxItem">
+                                            <ContentPresenter />
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
                             </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
+                        </ListBox.ItemContainerStyle>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate DataType="{x:Type vm:FollowUpItemViewModel}">
+                                <Border Style="{DynamicResource ModernCard}"
+                                        Margin="0,0,0,12"
+                                        Padding="18,16"
+                                        AutomationProperties.Name="{Binding PersonName}">
+                                    <StackPanel>
+                                        <!-- Top Row: CheckBox + Person Name + Action Toolbar -->
+                                        <Grid Margin="0,0,0,4">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
 
-                    <!-- Row 1: Contact, Commitment, Due Date -->
-                    <Grid Margin="0,0,0,12">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="200" />
-                        </Grid.ColumnDefinitions>
+                                            <!-- CheckBox -->
+                                            <CheckBox Grid.Column="0"
+                                                      IsChecked="{Binding IsCompleted, Mode=OneWay}"
+                                                      Command="{Binding DataContext.CompleteOccurrenceCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                      CommandParameter="{Binding}"
+                                                      VerticalAlignment="Center"
+                                                      Margin="0,0,12,0"
+                                                      AutomationProperties.Name="Complete follow-up occurrence" />
 
-                        <!-- Contact Person -->
-                        <StackPanel Grid.Column="0" Margin="0,0,10,0">
-                            <TextBlock Text="Contact Person *" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4" />
-                            <TextBox x:Name="NewFollowUpPersonInput" Style="{StaticResource ModernTextBox}" Text="{Binding PersonName, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Contact person name" />
-                        </StackPanel>
+                                            <!-- Person Name -->
+                                            <TextBlock Grid.Column="1"
+                                                       Text="{Binding PersonName}"
+                                                       FontSize="15"
+                                                       FontWeight="Bold"
+                                                       Foreground="{DynamicResource TextPrimary}"
+                                                       VerticalAlignment="Center">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsCompleted}" Value="True">
+                                                                <Setter Property="TextDecorations" Value="Strikethrough" />
+                                                                <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
 
-                        <!-- Commitment -->
-                        <StackPanel Grid.Column="1" Margin="0,0,10,0">
-                            <TextBlock Text="Commitment Details *" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4" />
-                            <TextBox x:Name="NewFollowUpCommitmentInput" Style="{StaticResource ModernTextBox}" Text="{Binding Commitment, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Commitment details" />
-                        </StackPanel>
+                                            <!-- Action Toolbar: History, Calendar, Snooze, Edit, Delete -->
+                                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                                <Button Content="⏱"
+                                                        Style="{DynamicResource SecondaryButton}"
+                                                        Padding="7,4"
+                                                        FontSize="11"
+                                                        Margin="0,0,5,0"
+                                                        Command="{Binding DataContext.OpenHistoryCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        ToolTip="View occurrence history"
+                                                        AutomationProperties.Name="View occurrence history" />
 
-                        <!-- Due Date -->
-                        <StackPanel Grid.Column="2">
-                            <TextBlock Text="Due Date (ISO/Local) *" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4" />
-                            <TextBox x:Name="NewFollowUpDueAtInput" Style="{StaticResource ModernTextBox}" Text="{Binding DueAt, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Commitment due date" />
-                        </StackPanel>
-                    </Grid>
+                                                <Button Content="📅"
+                                                        Style="{DynamicResource SecondaryButton}"
+                                                        Padding="7,4"
+                                                        FontSize="11"
+                                                        Margin="0,0,5,0"
+                                                        Command="{Binding DataContext.OpenRescheduleModalCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        ToolTip="Reschedule commitment"
+                                                        AutomationProperties.Name="Reschedule follow-up" />
 
-                    <!-- Row 2: Details -->
-                    <StackPanel Margin="0,0,0,12">
-                        <TextBlock Text="Additional Details / Context" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4" />
-                        <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding Details, UpdateSourceTrigger=PropertyChanged}" Height="54" TextWrapping="Wrap" AcceptsReturn="True" AutomationProperties.Name="Additional details" />
-                    </StackPanel>
+                                                <Button Content="🕒"
+                                                        Style="{DynamicResource SecondaryButton}"
+                                                        Padding="7,4"
+                                                        FontSize="11"
+                                                        Margin="0,0,5,0"
+                                                        Command="{Binding DataContext.SnoozeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        ToolTip="Snooze 24 hours"
+                                                        AutomationProperties.Name="Snooze follow-up" />
 
-                    <!-- Row 3: Communication & Launchers -->
-                    <Grid Margin="0,0,0,12">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="140" />
-                        </Grid.ColumnDefinitions>
+                                                <Button Content="✎"
+                                                        Style="{DynamicResource SecondaryButton}"
+                                                        Padding="7,4"
+                                                        FontSize="11"
+                                                        Margin="0,0,5,0"
+                                                        Command="{Binding DataContext.OpenEditPanelCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        ToolTip="Edit follow-up"
+                                                        AutomationProperties.Name="Edit follow-up" />
 
-                        <!-- Email Address -->
-                        <StackPanel Grid.Column="0" Margin="0,0,10,0">
-                            <TextBlock Text="Email Address" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4" />
-                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding EmailAddress, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Contact email address" />
-                        </StackPanel>
-
-                        <!-- Phone Number -->
-                        <StackPanel Grid.Column="1" Margin="0,0,10,0">
-                            <TextBlock Text="Phone Number" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4" />
-                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding PhoneNumber, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Contact phone number" />
-                        </StackPanel>
-
-                        <!-- WhatsApp Number -->
-                        <StackPanel Grid.Column="2" Margin="0,0,10,0">
-                            <TextBlock Text="WhatsApp Number" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4" />
-                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding WhatsAppNumber, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Contact WhatsApp number" />
-                        </StackPanel>
-
-                        <!-- Preferred Action -->
-                        <StackPanel Grid.Column="3">
-                            <TextBlock Text="Preferred Action" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4" />
-                            <ComboBox SelectedValuePath="Content" SelectedValue="{Binding PreferredAction}" Height="34" AutomationProperties.Name="Preferred action">
-                                <ComboBoxItem Content="email" />
-                                <ComboBoxItem Content="whatsapp" />
-                                <ComboBoxItem Content="phone" />
-                            </ComboBox>
-                        </StackPanel>
-                    </Grid>
-
-                    <!-- Row 4: Recurrence Rule -->
-                    <Grid Margin="0,0,0,16">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="150" />
-                            <ColumnDefinition Width="120" />
-                            <ColumnDefinition Width="180" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-
-                        <!-- Recurrence Frequency -->
-                        <StackPanel Grid.Column="0" Margin="0,0,10,0">
-                            <TextBlock Text="Recurrence" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4" />
-                            <ComboBox SelectedValuePath="Content" SelectedValue="{Binding RecurrenceFrequency}" Height="34" AutomationProperties.Name="Recurrence frequency">
-                                <ComboBoxItem Content="none" />
-                                <ComboBoxItem Content="daily" />
-                                <ComboBoxItem Content="weekly" />
-                                <ComboBoxItem Content="monthly" />
-                            </ComboBox>
-                        </StackPanel>
-
-                        <!-- Interval -->
-                        <StackPanel Grid.Column="1" Margin="0,0,10,0">
-                            <TextBlock Text="Interval" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4" />
-                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding RecurrenceInterval, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Recurrence interval" />
-                        </StackPanel>
-
-                        <!-- Mode -->
-                        <StackPanel Grid.Column="2" Margin="0,0,10,0">
-                            <TextBlock Text="Recurrence Mode" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4" />
-                            <ComboBox SelectedValuePath="Content" SelectedValue="{Binding RecurrenceMode}" Height="34" AutomationProperties.Name="Recurrence mode">
-                                <ComboBoxItem Content="calendarAnchored" />
-                                <ComboBoxItem Content="completionRelative" />
-                            </ComboBox>
-                        </StackPanel>
-                    </Grid>
-
-                    <!-- Action Buttons -->
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                        <Button Content="Cancel" Style="{StaticResource SecondaryButton}" Command="{Binding ClosePanelsCommand}" Margin="0,0,8,0" AutomationProperties.Name="Cancel follow-up" />
-                        <Button Content="Save Follow-Up" AutomationProperties.Name="Save follow-up">
-                            <Button.Style>
-                                <Style TargetType="Button" BasedOn="{StaticResource ModernButton}">
-                                    <Setter Property="Command" Value="{Binding CreateCommand}" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsEditPanelVisible}" Value="True">
-                                            <Setter Property="Command" Value="{Binding SaveEditCommand}" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
-                        </Button>
-                    </StackPanel>
-                </StackPanel>
-            </Border>
-
-            <!-- Follow-ups List -->
-            <ListBox Grid.Row="2"
-                     ItemsSource="{Binding FilteredFollowUps}"
-                     SelectedItem="{Binding SelectedFollowUp}"
-                     Background="Transparent"
-                     BorderThickness="0"
-                     AutomationProperties.Name="Follow-ups list">
-                <ListBox.ItemContainerStyle>
-                    <Style TargetType="ListBoxItem">
-                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                        <Setter Property="Padding" Value="0,0,0,10" />
-                        <Setter Property="Background" Value="Transparent" />
-                        <Setter Property="Template">
-                            <Setter.Value>
-                                <ControlTemplate TargetType="ListBoxItem">
-                                    <ContentPresenter />
-                                </ControlTemplate>
-                            </Setter.Value>
-                        </Setter>
-                    </Style>
-                </ListBox.ItemContainerStyle>
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <Border Padding="16,14" Margin="0,0,0,12">
-                            <Border.Style>
-                                <Style TargetType="Border" BasedOn="{StaticResource ModernCard}">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsCompleted}" Value="True">
-                                            <Setter Property="Opacity" Value="0.65" />
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding IsOverdue}" Value="True">
-                                            <Setter Property="BorderBrush" Value="{DynamicResource AccentRose}" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Border.Style>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-
-                                <!-- Left: Completion Checkbox & Initials Avatar -->
-                                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Top" Margin="0,2,14,0">
-                                    <!-- Checkbox -->
-                                    <CheckBox IsChecked="{Binding IsCompleted, Mode=OneWay}"
-                                              Command="{Binding DataContext.CompleteOccurrenceCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                              CommandParameter="{Binding}"
-                                              VerticalAlignment="Center"
-                                              Margin="0,0,12,0"
-                                              AutomationProperties.Name="Complete follow up commitment" />
-
-                                    <!-- Contact Initials Avatar Circle -->
-                                    <Border Width="40" Height="40" CornerRadius="20" Background="{Binding AvatarColor}" VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding Initials}" FontSize="14" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                    </Border>
-                                </StackPanel>
-
-                                <!-- Center: Details and Badges -->
-                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                    <!-- Person Name & Badges Header -->
-                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                        <TextBlock Text="{Binding PersonName}" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,8,0" />
-
-                                        <!-- Overdue Badge -->
-                                        <Border Visibility="{Binding IsOverdue, Converter={StaticResource BoolToVis}}" Background="#3B0D0D" BorderBrush="{DynamicResource AccentRose}" BorderThickness="1" CornerRadius="4" Padding="6,2" Margin="0,0,6,0">
-                                            <TextBlock Text="OVERDUE" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AccentRose}" />
-                                        </Border>
-
-                                        <!-- Completed Badge -->
-                                        <Border Visibility="{Binding IsCompleted, Converter={StaticResource BoolToVis}}" Background="#0F2F24" BorderBrush="{DynamicResource AccentGreen}" BorderThickness="1" CornerRadius="4" Padding="6,2" Margin="0,0,6,0">
-                                            <TextBlock Text="COMPLETED" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AccentGreen}" />
-                                        </Border>
-
-                                        <!-- Recurrence Pill -->
-                                        <Border Visibility="{Binding HasRecurrence, Converter={StaticResource BoolToVis}}" Background="{DynamicResource BgSurfaceElevated}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="4" Padding="6,2">
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="🔄 " FontSize="10" />
-                                                <TextBlock Text="{Binding RecurrenceLabel}" FontSize="11" Foreground="{DynamicResource AccentBlue}" FontWeight="SemiBold" />
+                                                <Button Content="🗑"
+                                                        Style="{DynamicResource DangerButton}"
+                                                        Padding="7,4"
+                                                        FontSize="11"
+                                                        Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        ToolTip="Delete follow-up"
+                                                        AutomationProperties.Name="Delete follow-up" />
                                             </StackPanel>
-                                        </Border>
-                                    </StackPanel>
+                                        </Grid>
 
-                                    <!-- Commitment Text -->
-                                    <TextBlock Text="{Binding Commitment}" FontSize="14" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,4">
+                                        <!-- Commitment Title -->
+                                        <TextBlock Text="{Binding Commitment}"
+                                                   FontSize="14"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextPrimary}"
+                                                   Margin="30,0,0,3" />
+
+                                        <!-- Details (if present) -->
+                                        <TextBlock Text="{Binding Details}"
+                                                   FontSize="12"
+                                                   Foreground="{DynamicResource TextSecondary}"
+                                                   TextWrapping="Wrap"
+                                                   Margin="30,0,0,8">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding HasDetails}" Value="True">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+
+                                        <!-- Due Date and Communication Launchers Row -->
+                                        <StackPanel Margin="30,0,0,0">
+                                            <!-- Due Date Display -->
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                                <TextBlock Text="🕒 " FontSize="11" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" />
+                                                <TextBlock Text="{Binding WebFormattedDueAt}" FontSize="12" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsOverdue}" Value="True">
+                                                                    <Setter Property="Foreground" Value="{DynamicResource AccentRose}" />
+                                                                    <Setter Property="FontWeight" Value="SemiBold" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </StackPanel>
+
+                                            <!-- Communication Launchers -->
+                                            <StackPanel Orientation="Horizontal">
+                                                <!-- Email Launcher -->
+                                                <Button Style="{DynamicResource SecondaryButton}"
+                                                        Padding="10,4"
+                                                        Margin="0,0,6,0"
+                                                        Command="{Binding DataContext.LaunchEmailCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        AutomationProperties.Name="Send Email">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="✉ Email" FontSize="11" VerticalAlignment="Center" />
+                                                    </StackPanel>
+                                                </Button>
+
+                                                <!-- WhatsApp Launcher -->
+                                                <Button Style="{DynamicResource SecondaryButton}"
+                                                        Padding="10,4"
+                                                        Margin="0,0,6,0"
+                                                        Command="{Binding DataContext.LaunchWhatsAppCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        AutomationProperties.Name="Send WhatsApp message">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="💬 WhatsApp" FontSize="11" VerticalAlignment="Center" />
+                                                    </StackPanel>
+                                                </Button>
+
+                                                <!-- Call Launcher -->
+                                                <Button Style="{DynamicResource SecondaryButton}"
+                                                        Padding="10,4"
+                                                        Command="{Binding DataContext.LaunchPhoneCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        AutomationProperties.Name="Call phone">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="📞 Call" FontSize="11" VerticalAlignment="Center" />
+                                                    </StackPanel>
+                                                </Button>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+            </Grid>
+        </ScrollViewer>
+
+        <!-- CENTERED NEW / EDIT FOLLOW UP MODAL OVERLAY -->
+        <Grid Background="#99000000"
+              Visibility="{Binding IsCreatePanelVisible, Converter={StaticResource BoolToVis}}">
+            <Border Style="{DynamicResource ModernCard}"
+                    Background="{DynamicResource BgSurfaceElevated}"
+                    BorderBrush="{DynamicResource BorderSubtle}"
+                    BorderThickness="1"
+                    CornerRadius="10"
+                    Width="520"
+                    MaxHeight="640"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center"
+                    Padding="24">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Modal Header -->
+                    <Grid Grid.Row="0" Margin="0,0,0,16">
+                        <TextBlock Text="New Follow Up"
+                                   FontSize="18"
+                                   FontWeight="Bold"
+                                   Foreground="{DynamicResource TextPrimary}"
+                                   VerticalAlignment="Center" />
+
+                        <Button Content="✕"
+                                Style="{DynamicResource SecondaryButton}"
+                                Padding="8,4"
+                                FontSize="12"
+                                Command="{Binding ClosePanelsCommand}"
+                                HorizontalAlignment="Right"
+                                AutomationProperties.Name="Close follow-up modal" />
+                    </Grid>
+
+                    <!-- Form Body -->
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,0,0,20">
+                        <StackPanel>
+                            <!-- PERSON OR CONTACT * -->
+                            <StackPanel Margin="0,0,0,14">
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                                    <TextBlock Text="PERSON OR CONTACT" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" />
+                                    <TextBlock Text=" *" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AccentRose}" />
+                                </StackPanel>
+                                <TextBox Style="{DynamicResource ModernTextBox}"
+                                         Text="{Binding PersonName, UpdateSourceTrigger=PropertyChanged}"
+                                         Height="38"
+                                         Padding="12,8"
+                                         FontSize="13"
+                                         AutomationProperties.Name="Contact person name" />
+                            </StackPanel>
+
+                            <!-- COMMITMENT / FOLLOW UP * -->
+                            <StackPanel Margin="0,0,0,14">
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                                    <TextBlock Text="COMMITMENT / FOLLOW UP" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" />
+                                    <TextBlock Text=" *" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AccentRose}" />
+                                </StackPanel>
+                                <Grid>
+                                    <TextBox x:Name="CommitmentInputBox"
+                                             Style="{DynamicResource ModernTextBox}"
+                                             Text="{Binding Commitment, UpdateSourceTrigger=PropertyChanged}"
+                                             Height="38"
+                                             Padding="12,8"
+                                             FontSize="13"
+                                             AutomationProperties.Name="Commitment title" />
+                                    <TextBlock Text="e.g. Send updated budget proposal, review draft"
+                                               Foreground="{DynamicResource TextMuted}"
+                                               FontSize="12"
+                                               VerticalAlignment="Center"
+                                               Margin="14,0,0,0"
+                                               IsHitTestVisible="False">
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock">
+                                                <Setter Property="Visibility" Value="Collapsed" />
                                                 <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsCompleted}" Value="True">
-                                                        <Setter Property="TextDecorations" Value="Strikethrough" />
-                                                        <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+                                                    <DataTrigger Binding="{Binding Text, ElementName=CommitmentInputBox}" Value="">
+                                                        <Setter Property="Visibility" Value="Visible" />
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
                                         </TextBlock.Style>
                                     </TextBlock>
+                                </Grid>
+                            </StackPanel>
 
-                                    <!-- Details (Optional) -->
-                                    <TextBlock Visibility="{Binding HasDetails, Converter={StaticResource BoolToVis}}"
-                                               Text="{Binding Details}"
+                            <!-- DUE DATE & TIME * -->
+                            <StackPanel Margin="0,0,0,14">
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                                    <TextBlock Text="DUE DATE &amp; TIME" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" />
+                                    <TextBlock Text=" *" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AccentRose}" />
+                                </StackPanel>
+                                <Grid>
+                                    <TextBox x:Name="DueAtInputBox"
+                                             Style="{DynamicResource ModernTextBox}"
+                                             Text="{Binding DueAt, UpdateSourceTrigger=PropertyChanged}"
+                                             Height="38"
+                                             Padding="12,8,36,8"
+                                             FontSize="13"
+                                             AutomationProperties.Name="Due date and time" />
+                                    <TextBlock Text="📅"
+                                               FontSize="13"
+                                               Foreground="{DynamicResource TextMuted}"
+                                               HorizontalAlignment="Right"
+                                               VerticalAlignment="Center"
+                                               Margin="0,0,12,0"
+                                               IsHitTestVisible="False" />
+                                    <TextBlock Text="29/10/2026 05:53 pm"
+                                               Foreground="{DynamicResource TextMuted}"
                                                FontSize="12"
+                                               VerticalAlignment="Center"
+                                               Margin="14,0,0,0"
+                                               IsHitTestVisible="False">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Text, ElementName=DueAtInputBox}" Value="">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </Grid>
+                            </StackPanel>
+
+                            <!-- DETAILS & CONTEXT -->
+                            <StackPanel Margin="0,0,0,14">
+                                <TextBlock Text="DETAILS &amp; CONTEXT" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,5" />
+                                <Grid>
+                                    <TextBox x:Name="DetailsInputBox"
+                                             Style="{DynamicResource ModernTextBox}"
+                                             Text="{Binding Details, UpdateSourceTrigger=PropertyChanged}"
+                                             Height="80"
+                                             TextWrapping="Wrap"
+                                             AcceptsReturn="True"
+                                             Padding="12,8"
+                                             FontSize="13"
+                                             AutomationProperties.Name="Follow up details and context" />
+                                    <TextBlock Text="Include background context, links, or discussion notes..."
+                                               Foreground="{DynamicResource TextMuted}"
+                                               FontSize="12"
+                                               VerticalAlignment="Top"
+                                               Margin="14,10,0,0"
+                                               IsHitTestVisible="False">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Text, ElementName=DetailsInputBox}" Value="">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </Grid>
+                            </StackPanel>
+
+                            <!-- COMMUNICATION LAUNCHERS (OPTIONAL) BOX -->
+                            <Border Style="{DynamicResource ModernCard}"
+                                    Background="{DynamicResource BgSurface}"
+                                    Padding="14"
+                                    Margin="0,0,0,14">
+                                <StackPanel>
+                                    <TextBlock Text="COMMUNICATION LAUNCHERS (OPTIONAL)"
+                                               FontSize="11"
+                                               FontWeight="SemiBold"
                                                Foreground="{DynamicResource TextSecondary}"
-                                               Margin="0,0,0,4"
-                                               TextWrapping="Wrap" />
+                                               Margin="0,0,0,10" />
 
-                                    <!-- Due Date and Source Note Quote -->
-                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                        <TextBlock Text="⏰ Due: " FontSize="11" Foreground="{DynamicResource TextMuted}" />
-                                        <TextBlock Text="{Binding FormattedDueAt}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AccentAmber}" Margin="0,0,12,0" />
+                                    <Grid Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="8" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="8" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
 
-                                        <Border Visibility="{Binding HasSourceNote, Converter={StaticResource BoolToVis}}" Background="{DynamicResource BgSurfaceElevated}" CornerRadius="3" Padding="6,2">
-                                            <TextBlock Text="{Binding SourceExcerpt, StringFormat='&quot;{0}&quot;'}" FontSize="11" FontStyle="Italic" Foreground="{DynamicResource TextSecondary}" MaxWidth="280" TextTrimming="CharacterEllipsis" />
-                                        </Border>
-                                    </StackPanel>
+                                        <!-- Email -->
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="Email" FontSize="11" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,3" />
+                                            <TextBox Style="{DynamicResource ModernTextBox}"
+                                                     Text="{Binding EmailAddress, UpdateSourceTrigger=PropertyChanged}"
+                                                     Height="34"
+                                                     Padding="8,5"
+                                                     FontSize="12"
+                                                     AutomationProperties.Name="Email address" />
+                                        </StackPanel>
 
-                                    <!-- Branded Launchers Row -->
-                                    <StackPanel Orientation="Horizontal">
-                                        <!-- Email Launcher -->
-                                        <Button Visibility="{Binding HasEmail, Converter={StaticResource BoolToVis}}"
-                                                Command="{Binding DataContext.LaunchEmailCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                CommandParameter="{Binding}"
-                                                Style="{StaticResource SecondaryButton}"
-                                                Padding="8,3"
-                                                Margin="0,0,6,0"
-                                                AutomationProperties.Name="Send email to contact">
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="✉️ Email" FontSize="11" />
-                                                <Border Visibility="{Binding IsPreferredEmail, Converter={StaticResource BoolToVis}}" Background="{DynamicResource AccentBlue}" CornerRadius="2" Padding="4,0" Margin="4,0,0,0">
-                                                    <TextBlock Text="★" FontSize="9" Foreground="White" />
-                                                </Border>
-                                            </StackPanel>
-                                        </Button>
+                                        <!-- Phone -->
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Text="Phone" FontSize="11" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,3" />
+                                            <TextBox Style="{DynamicResource ModernTextBox}"
+                                                     Text="{Binding PhoneNumber, UpdateSourceTrigger=PropertyChanged}"
+                                                     Height="34"
+                                                     Padding="8,5"
+                                                     FontSize="12"
+                                                     AutomationProperties.Name="Phone number" />
+                                        </StackPanel>
 
-                                        <!-- WhatsApp Launcher -->
-                                        <Button Visibility="{Binding HasWhatsApp, Converter={StaticResource BoolToVis}}"
-                                                Command="{Binding DataContext.LaunchWhatsAppCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                CommandParameter="{Binding}"
-                                                Style="{StaticResource SecondaryButton}"
-                                                Padding="8,3"
-                                                Margin="0,0,6,0"
-                                                AutomationProperties.Name="Send WhatsApp message to contact">
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="💬 WhatsApp" FontSize="11" Foreground="#25D366" FontWeight="SemiBold" />
-                                                <Border Visibility="{Binding IsPreferredWhatsApp, Converter={StaticResource BoolToVis}}" Background="#25D366" CornerRadius="2" Padding="4,0" Margin="4,0,0,0">
-                                                    <TextBlock Text="★" FontSize="9" Foreground="Black" />
-                                                </Border>
-                                            </StackPanel>
-                                        </Button>
+                                        <!-- WhatsApp -->
+                                        <StackPanel Grid.Column="4">
+                                            <TextBlock Text="WhatsApp" FontSize="11" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,3" />
+                                            <TextBox Style="{DynamicResource ModernTextBox}"
+                                                     Text="{Binding WhatsAppNumber, UpdateSourceTrigger=PropertyChanged}"
+                                                     Height="34"
+                                                     Padding="8,5"
+                                                     FontSize="12"
+                                                     AutomationProperties.Name="WhatsApp number" />
+                                        </StackPanel>
+                                    </Grid>
 
-                                        <!-- Phone Launcher -->
-                                        <Button Visibility="{Binding HasPhone, Converter={StaticResource BoolToVis}}"
-                                                Command="{Binding DataContext.LaunchPhoneCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                CommandParameter="{Binding}"
-                                                Style="{StaticResource SecondaryButton}"
-                                                Padding="8,3"
-                                                AutomationProperties.Name="Call contact phone number">
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="📞 Call" FontSize="11" />
-                                                <Border Visibility="{Binding IsPreferredPhone, Converter={StaticResource BoolToVis}}" Background="{DynamicResource AccentBlue}" CornerRadius="2" Padding="4,0" Margin="4,0,0,0">
-                                                    <TextBlock Text="★" FontSize="9" Foreground="White" />
-                                                </Border>
-                                            </StackPanel>
-                                        </Button>
-                                    </StackPanel>
+                                    <!-- Preferred Action Launcher Dropdown -->
+                                    <TextBlock Text="Preferred Action Launcher" FontSize="11" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,3" />
+                                    <ComboBox ItemsSource="{Binding PreferredActionOptions}"
+                                              SelectedItem="{Binding PreferredAction}"
+                                              Height="34"
+                                              AutomationProperties.Name="Preferred action launcher" />
                                 </StackPanel>
+                            </Border>
 
-                                <!-- Right: Occurrence Actions -->
-                                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                                    <!-- Snooze +24h Button -->
-                                    <Button Content="+24h Snooze"
-                                            Style="{StaticResource SecondaryButton}"
-                                            Padding="8,4"
-                                            FontSize="11"
-                                            Margin="0,0,6,0"
-                                            Command="{Binding DataContext.SnoozeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                            CommandParameter="{Binding}"
-                                            AutomationProperties.Name="Snooze follow-up 24 hours" />
+                            <!-- RECURRING COMMITMENT CHECKBOX -->
+                            <CheckBox IsChecked="{Binding IsRecurring}"
+                                      Margin="0,0,0,6"
+                                      AutomationProperties.Name="Toggle recurring commitment">
+                                <TextBlock Text="RECURRING COMMITMENT"
+                                           FontSize="11"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextSecondary}"
+                                           VerticalAlignment="Center" />
+                            </CheckBox>
+                        </StackPanel>
+                    </ScrollViewer>
 
-                                    <!-- Reschedule Button -->
-                                    <Button Content="📅 Reschedule"
-                                            Style="{StaticResource SecondaryButton}"
-                                            Padding="8,4"
-                                            FontSize="11"
-                                            Margin="0,0,6,0"
-                                            Command="{Binding DataContext.OpenRescheduleModalCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                            CommandParameter="{Binding}"
-                                            AutomationProperties.Name="Reschedule follow-up" />
+                    <!-- Modal Footer -->
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Content="Cancel"
+                                Style="{DynamicResource SecondaryButton}"
+                                Command="{Binding ClosePanelsCommand}"
+                                Padding="16,8"
+                                FontSize="13"
+                                Margin="0,0,10,0"
+                                AutomationProperties.Name="Cancel follow-up modal" />
+                        <Button Content="Create Follow Up"
+                                Style="{DynamicResource ModernButton}"
+                                Command="{Binding CreateCommand}"
+                                Padding="20,8"
+                                FontSize="13"
+                                AutomationProperties.Name="Confirm create follow-up" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
 
-                                    <!-- Occurrence History Button -->
-                                    <Button Content="📜 History"
-                                            Style="{StaticResource SecondaryButton}"
-                                            Padding="8,4"
-                                            FontSize="11"
-                                            Margin="0,0,6,0"
-                                            Command="{Binding DataContext.OpenHistoryCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                            CommandParameter="{Binding}"
-                                            AutomationProperties.Name="View occurrence history" />
+        <!-- CENTERED EDIT FOLLOW UP MODAL OVERLAY -->
+        <Grid Background="#99000000"
+              Visibility="{Binding IsEditPanelVisible, Converter={StaticResource BoolToVis}}">
+            <Border Style="{DynamicResource ModernCard}"
+                    Background="{DynamicResource BgSurfaceElevated}"
+                    BorderBrush="{DynamicResource BorderSubtle}"
+                    BorderThickness="1"
+                    CornerRadius="10"
+                    Width="520"
+                    MaxHeight="640"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center"
+                    Padding="24">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
 
-                                    <!-- Edit Button -->
-                                    <Button Content="Edit"
-                                            Style="{StaticResource SecondaryButton}"
-                                            Padding="8,4"
-                                            FontSize="11"
-                                            Margin="0,0,6,0"
-                                            Command="{Binding DataContext.OpenEditPanelCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                            CommandParameter="{Binding}"
-                                            AutomationProperties.Name="Edit follow-up" />
+                    <!-- Modal Header -->
+                    <Grid Grid.Row="0" Margin="0,0,0,16">
+                        <TextBlock Text="Edit Follow Up"
+                                   FontSize="18"
+                                   FontWeight="Bold"
+                                   Foreground="{DynamicResource TextPrimary}"
+                                   VerticalAlignment="Center" />
 
-                                    <!-- Delete Button -->
-                                    <Button Content="✕"
-                                            Style="{StaticResource DangerButton}"
-                                            Padding="8,4"
-                                            FontSize="11"
-                                            Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                            CommandParameter="{Binding}"
-                                            AutomationProperties.Name="Delete follow-up" />
+                        <Button Content="✕"
+                                Style="{DynamicResource SecondaryButton}"
+                                Padding="8,4"
+                                FontSize="12"
+                                Command="{Binding ClosePanelsCommand}"
+                                HorizontalAlignment="Right"
+                                AutomationProperties.Name="Close edit modal" />
+                    </Grid>
+
+                    <!-- Form Body -->
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,0,0,20">
+                        <StackPanel>
+                            <!-- PERSON OR CONTACT * -->
+                            <StackPanel Margin="0,0,0,14">
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                                    <TextBlock Text="PERSON OR CONTACT" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" />
+                                    <TextBlock Text=" *" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AccentRose}" />
                                 </StackPanel>
-                            </Grid>
-                        </Border>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
+                                <TextBox Style="{DynamicResource ModernTextBox}"
+                                         Text="{Binding PersonName, UpdateSourceTrigger=PropertyChanged}"
+                                         Height="38"
+                                         Padding="12,8"
+                                         FontSize="13"
+                                         AutomationProperties.Name="Contact person name" />
+                            </StackPanel>
+
+                            <!-- COMMITMENT / FOLLOW UP * -->
+                            <StackPanel Margin="0,0,0,14">
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                                    <TextBlock Text="COMMITMENT / FOLLOW UP" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" />
+                                    <TextBlock Text=" *" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AccentRose}" />
+                                </StackPanel>
+                                <TextBox Style="{DynamicResource ModernTextBox}"
+                                         Text="{Binding Commitment, UpdateSourceTrigger=PropertyChanged}"
+                                         Height="38"
+                                         Padding="12,8"
+                                         FontSize="13"
+                                         AutomationProperties.Name="Commitment title" />
+                            </StackPanel>
+
+                            <!-- DUE DATE & TIME * -->
+                            <StackPanel Margin="0,0,0,14">
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                                    <TextBlock Text="DUE DATE &amp; TIME" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" />
+                                    <TextBlock Text=" *" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AccentRose}" />
+                                </StackPanel>
+                                <TextBox Style="{DynamicResource ModernTextBox}"
+                                         Text="{Binding DueAt, UpdateSourceTrigger=PropertyChanged}"
+                                         Height="38"
+                                         Padding="12,8"
+                                         FontSize="13"
+                                         AutomationProperties.Name="Due date and time" />
+                            </StackPanel>
+
+                            <!-- DETAILS & CONTEXT -->
+                            <StackPanel Margin="0,0,0,14">
+                                <TextBlock Text="DETAILS &amp; CONTEXT" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,5" />
+                                <TextBox Style="{DynamicResource ModernTextBox}"
+                                         Text="{Binding Details, UpdateSourceTrigger=PropertyChanged}"
+                                         Height="80"
+                                         TextWrapping="Wrap"
+                                         AcceptsReturn="True"
+                                         Padding="12,8"
+                                         FontSize="13"
+                                         AutomationProperties.Name="Follow up details and context" />
+                            </StackPanel>
+
+                            <!-- COMMUNICATION LAUNCHERS (OPTIONAL) BOX -->
+                            <Border Style="{DynamicResource ModernCard}"
+                                    Background="{DynamicResource BgSurface}"
+                                    Padding="14"
+                                    Margin="0,0,0,14">
+                                <StackPanel>
+                                    <TextBlock Text="COMMUNICATION LAUNCHERS (OPTIONAL)"
+                                               FontSize="11"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource TextSecondary}"
+                                               Margin="0,0,0,10" />
+
+                                    <Grid Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="8" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="8" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- Email -->
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="Email" FontSize="11" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,3" />
+                                            <TextBox Style="{DynamicResource ModernTextBox}"
+                                                     Text="{Binding EmailAddress, UpdateSourceTrigger=PropertyChanged}"
+                                                     Height="34"
+                                                     Padding="8,5"
+                                                     FontSize="12"
+                                                     AutomationProperties.Name="Email address" />
+                                        </StackPanel>
+
+                                        <!-- Phone -->
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Text="Phone" FontSize="11" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,3" />
+                                            <TextBox Style="{DynamicResource ModernTextBox}"
+                                                     Text="{Binding PhoneNumber, UpdateSourceTrigger=PropertyChanged}"
+                                                     Height="34"
+                                                     Padding="8,5"
+                                                     FontSize="12"
+                                                     AutomationProperties.Name="Phone number" />
+                                        </StackPanel>
+
+                                        <!-- WhatsApp -->
+                                        <StackPanel Grid.Column="4">
+                                            <TextBlock Text="WhatsApp" FontSize="11" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,3" />
+                                            <TextBox Style="{DynamicResource ModernTextBox}"
+                                                     Text="{Binding WhatsAppNumber, UpdateSourceTrigger=PropertyChanged}"
+                                                     Height="34"
+                                                     Padding="8,5"
+                                                     FontSize="12"
+                                                     AutomationProperties.Name="WhatsApp number" />
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <!-- Preferred Action Launcher Dropdown -->
+                                    <TextBlock Text="Preferred Action Launcher" FontSize="11" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,3" />
+                                    <ComboBox ItemsSource="{Binding PreferredActionOptions}"
+                                              SelectedItem="{Binding PreferredAction}"
+                                              Height="34"
+                                              AutomationProperties.Name="Preferred action launcher" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- RECURRING COMMITMENT CHECKBOX -->
+                            <CheckBox IsChecked="{Binding IsRecurring}"
+                                      Margin="0,0,0,6"
+                                      AutomationProperties.Name="Toggle recurring commitment">
+                                <TextBlock Text="RECURRING COMMITMENT"
+                                           FontSize="11"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextSecondary}"
+                                           VerticalAlignment="Center" />
+                            </CheckBox>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- Modal Footer -->
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Content="Cancel"
+                                Style="{DynamicResource SecondaryButton}"
+                                Command="{Binding ClosePanelsCommand}"
+                                Padding="16,8"
+                                FontSize="13"
+                                Margin="0,0,10,0"
+                                AutomationProperties.Name="Cancel edit modal" />
+                        <Button Content="Save Changes"
+                                Style="{DynamicResource ModernButton}"
+                                Command="{Binding SaveEditCommand}"
+                                Padding="20,8"
+                                FontSize="13"
+                                AutomationProperties.Name="Save follow-up changes" />
+                    </StackPanel>
+                </Grid>
+            </Border>
         </Grid>
 
         <!-- Reschedule Modal Overlay -->
-        <Grid Visibility="{Binding IsRescheduleModalOpen, Converter={StaticResource BoolToVis}}" Background="#80000000">
-            <Border Style="{StaticResource ElevatedCard}" Width="400" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="20">
+        <Grid Visibility="{Binding IsRescheduleModalOpen, Converter={StaticResource BoolToVis}}" Background="#99000000">
+            <Border Style="{DynamicResource ModernCard}"
+                    Background="{DynamicResource BgSurfaceElevated}"
+                    BorderBrush="{DynamicResource BorderSubtle}"
+                    BorderThickness="1"
+                    CornerRadius="10"
+                    Width="420"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Padding="22">
                 <StackPanel>
                     <TextBlock Text="Reschedule Follow-Up" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,10" />
                     <TextBlock Text="Set a new due date for this commitment:" FontSize="12" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,12" />
 
-                    <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding RescheduleDueAt, UpdateSourceTrigger=PropertyChanged}" Height="36" Margin="0,0,0,16" AutomationProperties.Name="New due date" />
+                    <TextBox Style="{DynamicResource ModernTextBox}"
+                             Text="{Binding RescheduleDueAt, UpdateSourceTrigger=PropertyChanged}"
+                             Height="36"
+                             Padding="10,6"
+                             Margin="0,0,0,16"
+                             AutomationProperties.Name="New due date" />
 
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                        <Button Content="Cancel" Style="{StaticResource SecondaryButton}" Command="{Binding CloseRescheduleModalCommand}" Margin="0,0,8,0" AutomationProperties.Name="Cancel reschedule" />
-                        <Button Content="Confirm Reschedule" Style="{StaticResource ModernButton}" Command="{Binding RescheduleCommand}" AutomationProperties.Name="Confirm reschedule" />
+                        <Button Content="Cancel"
+                                Style="{DynamicResource SecondaryButton}"
+                                Command="{Binding CloseRescheduleModalCommand}"
+                                Padding="14,6"
+                                Margin="0,0,8,0"
+                                AutomationProperties.Name="Cancel reschedule" />
+                        <Button Content="Confirm Reschedule"
+                                Style="{DynamicResource ModernButton}"
+                                Command="{Binding RescheduleCommand}"
+                                Padding="16,6"
+                                AutomationProperties.Name="Confirm reschedule" />
                     </StackPanel>
                 </StackPanel>
             </Border>
         </Grid>
 
         <!-- Occurrence History Modal Overlay -->
-        <Grid Visibility="{Binding IsHistoryModalOpen, Converter={StaticResource BoolToVis}}" Background="#80000000">
-            <Border Style="{StaticResource ElevatedCard}" Width="480" MaxHeight="450" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="20">
+        <Grid Visibility="{Binding IsHistoryModalOpen, Converter={StaticResource BoolToVis}}" Background="#99000000">
+            <Border Style="{DynamicResource ModernCard}"
+                    Background="{DynamicResource BgSurfaceElevated}"
+                    BorderBrush="{DynamicResource BorderSubtle}"
+                    BorderThickness="1"
+                    CornerRadius="10"
+                    Width="480"
+                    MaxHeight="450"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Padding="22">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -549,7 +896,13 @@
                         </ListBox.ItemTemplate>
                     </ListBox>
 
-                    <Button Grid.Row="2" Content="Close" Style="{StaticResource SecondaryButton}" Command="{Binding CloseHistoryModalCommand}" HorizontalAlignment="Right" AutomationProperties.Name="Close occurrence history" />
+                    <Button Grid.Row="2"
+                            Content="Close"
+                            Style="{DynamicResource SecondaryButton}"
+                            Command="{Binding CloseHistoryModalCommand}"
+                            Padding="14,6"
+                            HorizontalAlignment="Right"
+                            AutomationProperties.Name="Close occurrence history" />
                 </Grid>
             </Border>
         </Grid>

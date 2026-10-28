@@ -191,6 +191,9 @@ public class MainViewModel : ObservableObject
         NavigateToAnalyticsCommand = new RelayCommand(() => ActiveTab = "Analytics");
         NavigateToBackupCommand = new RelayCommand(() => ActiveTab = "Backup");
         NavigateToAccountCommand = new RelayCommand(() => ActiveTab = "Account");
+        TasksVM.NavigateToPlanMyDayCommand ??= NavigateToPlanMyDayCommand;
+        CalendarVM.NavigateToTasksCommand ??= NavigateToTasksCommand;
+        CalendarVM.NavigateToPlanMyDayCommand ??= NavigateToPlanMyDayCommand;
         OpenConflictsCommand = new RelayCommand(async () => await ConflictVM.LoadConflictsAsync());
         SyncNowCommand = new RelayCommand(async () =>
         {
@@ -312,7 +315,11 @@ public class MainViewModel : ObservableObject
 
     private void OnTabActivated(string tab)
     {
-        if (string.Equals(tab, "FollowUps", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(tab, "Tasks", StringComparison.OrdinalIgnoreCase))
+        {
+            _ = TasksVM.LoadTasksAsync();
+        }
+        else if (string.Equals(tab, "FollowUps", StringComparison.OrdinalIgnoreCase))
         {
             _ = FollowUpsVM.LoadAsync();
         }

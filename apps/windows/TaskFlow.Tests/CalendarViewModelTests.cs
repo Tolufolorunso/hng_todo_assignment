@@ -124,4 +124,47 @@ public class CalendarViewModelTests : IDisposable
         Assert.True(todayCell.HasTasks);
         Assert.True(todayCell.HasFollowUps);
     }
+
+    [Fact]
+    public async Task CalendarViewModel_MondayFirstOffset_StartsOnMonday()
+    {
+        var vm = new CalendarViewModel(_taskRepo, _followUpRepo);
+
+        // October 2026: Oct 1 is Thursday, so Monday-first offset starts on Monday Sep 28
+        vm.CurrentMonth = new DateTime(2026, 10, 1);
+        await vm.RefreshCalendarAsync();
+
+        Assert.Equal(42, vm.Days.Count);
+        Assert.Equal(DayOfWeek.Monday, vm.Days[0].Date.DayOfWeek);
+        Assert.Equal(new DateTime(2026, 9, 28), vm.Days[0].Date);
+
+        // Days[3] should be Thursday Oct 1
+        Assert.Equal(DayOfWeek.Thursday, vm.Days[3].Date.DayOfWeek);
+        Assert.Equal(new DateTime(2026, 10, 1), vm.Days[3].Date);
+
+        // Days[6] should be Sunday Oct 4
+        Assert.Equal(DayOfWeek.Sunday, vm.Days[6].Date.DayOfWeek);
+        Assert.Equal(new DateTime(2026, 10, 4), vm.Days[6].Date);
+
+        // Inline task addition for selected date
+        vm.SelectedDate = new DateTime(2026, 10, 28);
+        vm.NewTaskTitle = "Review Parity Screen";
+        await vm.AddTaskForSelectedDateAsync();
+
+        Assert.Empty(vm.NewTaskTitle);
+        var oct28 = vm.Days.FirstOrDefault(d => d.Date == new DateTime(2026, 10, 28));
+        Assert.NotNull(oct28);
+        Assert.True(oct28.TaskCount >= 1);
+        Assert.Equal("Review Parity Screen", oct28.FirstItem?.Title);
+
+        // Unscheduled tasks
+        await _taskRepo.CreateAsync(new TaskItem { Title = "Backlog idea", DueDate = null });
+        await vm.RefreshCalendarAsync();
+        Assert.True(vm.UnscheduledCount >= 1);
+
+        // Toggle unscheduled
+        Assert.False(vm.IsUnscheduledOpen);
+        vm.ToggleUnscheduledCommand.Execute(null);
+        Assert.True(vm.IsUnscheduledOpen);
+    }
 }

@@ -81,6 +81,18 @@ public class FollowUpItemViewModel : ObservableObject
         }
     }
 
+    public string WebFormattedDueAt
+    {
+        get
+        {
+            if (DateTimeOffset.TryParse(DueAt, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var dt))
+            {
+                return $"Due: {dt.ToLocalTime().ToString("ddd d MMM, HH:mm", CultureInfo.InvariantCulture)}";
+            }
+            return $"Due: {DueAt}";
+        }
+    }
+
     public string? RecurrenceLabel
     {
         get

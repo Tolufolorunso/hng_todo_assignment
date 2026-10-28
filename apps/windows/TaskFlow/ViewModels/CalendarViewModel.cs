@@ -19,9 +19,35 @@ public class CalendarViewModel : ObservableObject
     private DateTime _currentMonth = new(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
     private DateTime? _selectedDate;
     private CalendarDayItem? _selectedDay;
+    private string _newTaskTitle = string.Empty;
+    private int _unscheduledCount;
+    private bool _isUnscheduledOpen;
 
     public ObservableCollection<CalendarDayItem> Days { get; } = new();
     public ObservableCollection<PlanItemReference> SelectedDayItems { get; } = new();
+    public ObservableCollection<TaskItem> UnscheduledTasks { get; } = new();
+
+    public string NewTaskTitle
+    {
+        get => _newTaskTitle;
+        set => SetProperty(ref _newTaskTitle, value);
+    }
+
+    public int UnscheduledCount
+    {
+        get => _unscheduledCount;
+        set => SetProperty(ref _unscheduledCount, value);
+    }
+
+    public bool IsUnscheduledOpen
+    {
+        get => _isUnscheduledOpen;
+        set => SetProperty(ref _isUnscheduledOpen, value);
+    }
+
+    public string SelectedDaySummary => SelectedDayItems.Count == 0
+        ? "No tasks scheduled for this day."
+        : (SelectedDayItems.Count == 1 ? "1 task scheduled for this day." : $"{SelectedDayItems.Count} tasks scheduled for this day.");
 
     public DateTime CurrentMonth
     {
@@ -65,6 +91,10 @@ public class CalendarViewModel : ObservableObject
     public ICommand SelectDateCommand { get; }
     public ICommand LoadCommand { get; }
     public ICommand ToggleItemCompletedCommand { get; }
+    public ICommand AddTaskForSelectedDateCommand { get; }
+    public ICommand ToggleUnscheduledCommand { get; }
+    public ICommand? NavigateToTasksCommand { get; set; }
+    public ICommand? NavigateToPlanMyDayCommand { get; set; }
 
     public CalendarViewModel(ITaskRepository taskRepo, IFollowUpRepository followUpRepo)
     {
@@ -106,6 +136,7 @@ public class CalendarViewModel : ObservableObject
                 SelectedDayItems.Add(item);
             }
             OnPropertyChanged(nameof(HasSelectedDayItems));
+            OnPropertyChanged(nameof(SelectedDaySummary));
         });
 
         ToggleItemCompletedCommand = new RelayCommand<PlanItemReference>(async item =>
@@ -126,7 +157,25 @@ public class CalendarViewModel : ObservableObject
             await RefreshCalendarAsync();
         });
 
+        AddTaskForSelectedDateCommand = new RelayCommand(async () => await AddTaskForSelectedDateAsync());
+        ToggleUnscheduledCommand = new RelayCommand(() => IsUnscheduledOpen = !IsUnscheduledOpen);
         LoadCommand = new RelayCommand(async () => await RefreshCalendarAsync());
+    }
+
+    public async Task AddTaskForSelectedDateAsync()
+    {
+        if (string.IsNullOrWhiteSpace(NewTaskTitle)) return;
+        var targetDate = (SelectedDate ?? DateTime.UtcNow).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        var task = new TaskItem
+        {
+            Title = NewTaskTitle.Trim(),
+            DueDate = targetDate,
+            Priority = "medium",
+            Category = "work"
+        };
+        await _taskRepo.CreateAsync(task);
+        NewTaskTitle = string.Empty;
+        await RefreshCalendarAsync();
     }
 
     public async Task RefreshCalendarAsync()
@@ -137,8 +186,8 @@ public class CalendarViewModel : ObservableObject
         var today = DateTime.UtcNow.Date;
         var firstDayOfMonth = new DateTime(CurrentMonth.Year, CurrentMonth.Month, 1);
 
-        // Day of week offset (Sunday = 0)
-        int startOffset = (int)firstDayOfMonth.DayOfWeek;
+        // Monday-first weekday offset (0 = Monday, 6 = Sunday)
+        int startOffset = ((int)firstDayOfMonth.DayOfWeek + 6) % 7;
         var startDate = firstDayOfMonth.AddDays(-startOffset);
 
         Days.Clear();
@@ -187,6 +236,14 @@ public class CalendarViewModel : ObservableObject
 
             Days.Add(dayItem);
         }
+
+        var unscheduled = tasks.Where(t => !t.Completed && string.IsNullOrWhiteSpace(t.DueDate)).ToList();
+        UnscheduledTasks.Clear();
+        foreach (var u in unscheduled)
+        {
+            UnscheduledTasks.Add(u);
+        }
+        UnscheduledCount = unscheduled.Count;
 
         if (!SelectedDate.HasValue)
         {

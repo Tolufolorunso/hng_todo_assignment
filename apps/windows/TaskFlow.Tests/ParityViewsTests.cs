@@ -359,4 +359,124 @@ public class ParityViewsTests : IDisposable
         Assert.True(mainVm.IsAccountTabActive);
         Assert.False(mainVm.IsBackupTabActive);
     }
+
+    [Fact]
+    public async Task TasksViewModel_QuickAddAndSidebarMetrics_CalculatesCorrectly()
+    {
+        var vm = new TasksViewModel(_taskRepository);
+        await vm.LoadTasksAsync();
+
+        Assert.False(vm.IsQuickAddDetailsOpen);
+        vm.ToggleQuickAddDetailsCommand.Execute(null);
+        Assert.True(vm.IsQuickAddDetailsOpen);
+
+        // Fill quick add fields
+        vm.QuickAddTitle = "Ship Feature 63";
+        vm.QuickAddDescription = "<p>Complete parity overhaul</p>";
+        vm.QuickAddPriority = "urgent";
+        vm.QuickAddCategory = "work";
+        vm.QuickAddDueDate = DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        vm.QuickAddEstimatedMinutesText = "45";
+
+        Assert.Equal("Ship Feature 63".Length + "/200", vm.QuickAddCharCounter);
+
+        await vm.SubmitQuickAddAsync();
+
+        Assert.Empty(vm.QuickAddTitle);
+        Assert.Empty(vm.QuickAddDescription);
+        Assert.False(vm.IsQuickAddDetailsOpen);
+        Assert.True(vm.Tasks.Count >= 1);
+        Assert.Equal("Ship Feature 63", vm.Tasks[0].Title);
+
+        // Sidebar metrics
+        Assert.True(vm.TotalCount >= 1);
+        Assert.True(vm.ActiveCount >= 1);
+        Assert.True(vm.CategoryWorkCount >= 1);
+        Assert.Contains("tagged", vm.TaggedCategoriesText);
+        Assert.Contains("remaining today", vm.RemainingTodaySummary);
+
+        // Reordering
+        await _taskRepository.CreateAsync(new TaskItem { Title = "Task 2" });
+        await vm.LoadTasksAsync();
+        Assert.True(vm.Tasks.Count >= 2);
+
+        var first = vm.Tasks[0];
+        var second = vm.Tasks[1];
+
+        vm.MoveTaskDown(first);
+        Assert.Equal(first.Id, vm.Tasks[1].Id);
+
+        vm.MoveTaskUp(first);
+        Assert.Equal(first.Id, vm.Tasks[0].Id);
+    }
+
+    [Fact]
+    public async Task FollowUpsViewModel_WebParity_FilterCountsAndModal()
+    {
+        var vm = new FollowUpsViewModel(_followUpRepository, _launcherService);
+
+        var tomorrow = DateTimeOffset.UtcNow.AddDays(1).ToString("o", CultureInfo.InvariantCulture);
+        var yesterday = DateTimeOffset.UtcNow.AddDays(-1).ToString("o", CultureInfo.InvariantCulture);
+
+        await _followUpRepository.CreateAsync(new FollowUpItem
+        {
+            PersonName = "Bruce Wayne",
+            Commitment = "Review board agenda",
+            DueAt = tomorrow,
+            Status = "open"
+        });
+
+        await _followUpRepository.CreateAsync(new FollowUpItem
+        {
+            PersonName = "Lucius Fox",
+            Commitment = "Deliver tech prototype",
+            DueAt = yesterday,
+            Status = "open"
+        });
+
+        await _followUpRepository.CreateAsync(new FollowUpItem
+        {
+            PersonName = "Alfred",
+            Commitment = "Prepare report",
+            DueAt = yesterday,
+            Status = "completed"
+        });
+
+        await vm.LoadAsync();
+
+        // Count labels
+        Assert.Equal("All (3)", vm.AllCountText);
+        Assert.Equal("Due & Overdue", vm.DueOverdueCountText);
+        Assert.Equal("Upcoming (1)", vm.UpcomingCountText);
+        Assert.Equal("Completed (1)", vm.CompletedCountText);
+
+        // All filter
+        vm.StatusFilter = "all";
+        Assert.Equal(3, vm.FilteredFollowUps.Count);
+
+        // Upcoming filter
+        vm.StatusFilter = "upcoming";
+        Assert.Single(vm.FilteredFollowUps);
+        Assert.Equal("Bruce Wayne", vm.FilteredFollowUps[0].PersonName);
+
+        // Due & Overdue filter
+        vm.StatusFilter = "due_overdue";
+        Assert.Single(vm.FilteredFollowUps);
+        Assert.Equal("Lucius Fox", vm.FilteredFollowUps[0].PersonName);
+
+        // Completed filter
+        vm.StatusFilter = "completed";
+        Assert.Single(vm.FilteredFollowUps);
+        Assert.Equal("Alfred", vm.FilteredFollowUps[0].PersonName);
+
+        // Recurring toggle
+        Assert.False(vm.IsRecurring);
+        vm.IsRecurring = true;
+        Assert.True(vm.IsRecurring);
+        Assert.NotEqual("none", vm.RecurrenceFrequency);
+
+        // WebFormattedDueAt
+        var firstItem = vm.FilteredFollowUps[0];
+        Assert.StartsWith("Due: ", firstItem.WebFormattedDueAt);
+    }
 }

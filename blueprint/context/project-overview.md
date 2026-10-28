@@ -1,6 +1,6 @@
 # TaskFlow - Project Overview
 
-<!-- blueprint:source-hash 8f46a9bf0d3da8786bb10da319bc9de505d398ffdf18e679f115e31fd024bad0 -->
+<!-- blueprint:source-hash b023d352db589e5979fac8cc7ba9b4efc189fb729d7098d66c0dafb6c4bfa8e7 -->
 
 > A differentiated local-first personal productivity suite for web, Android/iOS, and Windows, with optional synchronization and proactive Follow Up reminders.
 

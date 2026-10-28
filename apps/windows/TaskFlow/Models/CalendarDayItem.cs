@@ -25,5 +25,12 @@ public class CalendarDayItem : ObservableObject
     public int FollowUpCount => Items.Count(i => string.Equals(i.Type, "followup", StringComparison.OrdinalIgnoreCase));
     public bool HasTasks => TaskCount > 0;
     public bool HasFollowUps => FollowUpCount > 0;
+    public bool HasItems => Items.Count > 0;
+    public bool HasFirstItem => Items.Count > 0;
+    public bool HasSecondItem => Items.Count > 1;
+    public bool HasMoreItems => Items.Count > 2;
+    public string MoreItemsText => Items.Count > 2 ? $"+{Items.Count - 2} more" : string.Empty;
+    public PlanItemReference? FirstItem => Items.Count > 0 ? Items[0] : null;
+    public PlanItemReference? SecondItem => Items.Count > 1 ? Items[1] : null;
     public List<PlanItemReference> Items { get; set; } = new();
 }

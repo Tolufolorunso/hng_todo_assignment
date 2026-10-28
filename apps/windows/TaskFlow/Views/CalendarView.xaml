@@ -4,245 +4,488 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:TaskFlow.ViewModels"
+             xmlns:models="clr-namespace:TaskFlow.Models"
              d:DataContext="{d:DesignInstance vm:CalendarViewModel}"
              mc:Ignorable="d">
-    <Grid Margin="24">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-            <RowDefinition Height="220" />
-        </Grid.RowDefinitions>
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    </UserControl.Resources>
 
-        <!-- Calendar Month Navigation Bar -->
-        <Grid Grid.Row="0" Margin="0,0,0,14">
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
-                <Button Content="‹" Style="{StaticResource SecondaryButton}" Command="{Binding PreviousMonthCommand}" Width="36" Height="34" FontSize="16" Margin="0,0,6,0" AutomationProperties.Name="Previous month" />
-                <Button Content="›" Style="{StaticResource SecondaryButton}" Command="{Binding NextMonthCommand}" Width="36" Height="34" FontSize="16" Margin="0,0,12,0" AutomationProperties.Name="Next month" />
-                <TextBlock Text="{Binding MonthDisplay}" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" />
-            </StackPanel>
-            <Button Content="Today" Style="{StaticResource SecondaryButton}" Command="{Binding TodayCommand}" Padding="14,6" HorizontalAlignment="Right" VerticalAlignment="Center" AutomationProperties.Name="Jump to today" />
-        </Grid>
-
-        <!-- Monthly Grid Container -->
-        <Border Grid.Row="1" Style="{StaticResource ModernCard}" Padding="10" Margin="0,0,0,16">
-            <Grid>
+    <Grid>
+        <!-- Main Scrollable Content -->
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <Grid Margin="28,22,28,32">
                 <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
-                <!-- Weekday 7-Column Header -->
-                <UniformGrid Grid.Row="0" Columns="7" Margin="0,0,0,8">
-                    <TextBlock Text="SUN" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" />
-                    <TextBlock Text="MON" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" />
-                    <TextBlock Text="TUE" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" />
-                    <TextBlock Text="WED" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" />
-                    <TextBlock Text="THU" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" />
-                    <TextBlock Text="FRI" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" />
-                    <TextBlock Text="SAT" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" />
-                </UniformGrid>
+                <!-- Header Row: Calendar & Schedule + Manage Tasks Button -->
+                <Grid Grid.Row="0" Margin="0,0,0,4">
+                    <TextBlock Text="Calendar &amp; Schedule"
+                               FontSize="26"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource TextPrimary}"
+                               VerticalAlignment="Center" />
 
-                <!-- 42-cell UniformGrid -->
-                <ItemsControl Grid.Row="1" ItemsSource="{Binding Days}">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <UniformGrid Rows="6" Columns="7" />
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Button Command="{Binding DataContext.SelectDateCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                    CommandParameter="{Binding}"
-                                    Background="Transparent"
-                                    BorderThickness="0"
-                                    Padding="2">
-                                <Border CornerRadius="6"
-                                        Background="{DynamicResource BgSurfaceElevated}"
-                                        BorderThickness="2"
-                                        BorderBrush="Transparent"
-                                        Padding="6">
-                                    <Border.Style>
-                                        <Style TargetType="Border">
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsCurrentMonth}" Value="False">
-                                                    <Setter Property="Opacity" Value="0.4" />
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding IsToday}" Value="True">
-                                                    <Setter Property="BorderBrush" Value="{DynamicResource AccentBlue}" />
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                    <Setter Property="Background" Value="{DynamicResource BgSurface}" />
-                                                    <Setter Property="BorderBrush" Value="{DynamicResource AccentBlue}" />
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Border.Style>
-                                    <Grid>
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="*" />
-                                        </Grid.RowDefinitions>
-
-                                        <!-- Day Number and Today Badge Header -->
-                                        <Grid Grid.Row="0">
-                                            <TextBlock Text="{Binding DayNumber}" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
-                                            <Border Visibility="{Binding IsToday, Converter={StaticResource BoolToVis}}"
-                                                    Background="{DynamicResource AccentBlue}"
-                                                    CornerRadius="3"
-                                                    Padding="4,1"
-                                                    HorizontalAlignment="Right">
-                                                <TextBlock Text="Today" FontSize="9" FontWeight="Bold" Foreground="White" />
-                                            </Border>
-                                        </Grid>
-
-                                        <!-- Event Badges (Tasks and Follow-ups) -->
-                                        <StackPanel Grid.Row="1" Margin="0,4,0,0">
-                                            <!-- Tasks Badge (Blue) -->
-                                            <Border Visibility="{Binding HasTasks, Converter={StaticResource BoolToVis}}"
-                                                    Background="#102A45"
-                                                    BorderBrush="{DynamicResource AccentBlue}"
-                                                    BorderThickness="1"
-                                                    CornerRadius="3"
-                                                    Padding="4,1"
-                                                    Margin="0,0,0,2">
-                                                <TextBlock Text="{Binding TaskCount, StringFormat='{}{0} tasks'}" FontSize="10" Foreground="{DynamicResource AccentBlue}" FontWeight="SemiBold" />
-                                            </Border>
-
-                                            <!-- Follow-ups Badge (Amber) -->
-                                            <Border Visibility="{Binding HasFollowUps, Converter={StaticResource BoolToVis}}"
-                                                    Background="#38260F"
-                                                    BorderBrush="{DynamicResource AccentAmber}"
-                                                    BorderThickness="1"
-                                                    CornerRadius="3"
-                                                    Padding="4,1">
-                                                <TextBlock Text="{Binding FollowUpCount, StringFormat='{}{0} follow-ups'}" FontSize="10" Foreground="{DynamicResource AccentAmber}" FontWeight="Bold" />
-                                            </Border>
-                                        </StackPanel>
-                                    </Grid>
-                                </Border>
-                            </Button>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </Grid>
-        </Border>
-
-        <!-- Day Agenda Inspector -->
-        <Border Grid.Row="2" Style="{StaticResource ModernCard}" Padding="16">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                </Grid.RowDefinitions>
-
-                <!-- Agenda Header -->
-                <Grid Grid.Row="0" Margin="0,0,0,10">
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Text="{Binding SelectedDateDisplay}" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,10,0" />
-                        <Border Background="{DynamicResource BgSurfaceElevated}" CornerRadius="10" Padding="8,2">
-                            <TextBlock Text="{Binding SelectedDayItems.Count, StringFormat='{}{0} scheduled'}" FontSize="11" Foreground="{DynamicResource AccentBlue}" FontWeight="SemiBold" />
-                        </Border>
-                    </StackPanel>
+                    <Button HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            Content="+ Manage Tasks"
+                            Style="{DynamicResource SecondaryButton}"
+                            Command="{Binding NavigateToTasksCommand}"
+                            Padding="14,7"
+                            FontSize="12"
+                            FontWeight="SemiBold"
+                            AutomationProperties.Name="Manage tasks" />
                 </Grid>
 
-                <!-- Scheduled Items List -->
-                <ListBox Grid.Row="1"
-                         ItemsSource="{Binding SelectedDayItems}"
-                         Background="Transparent"
-                         BorderThickness="0"
-                         AutomationProperties.Name="Selected day agenda items">
-                    <ListBox.ItemContainerStyle>
-                        <Style TargetType="ListBoxItem">
-                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                            <Setter Property="Padding" Value="0,0,0,6" />
-                            <Setter Property="Background" Value="Transparent" />
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="ListBoxItem">
-                                        <ContentPresenter />
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                        </Style>
-                    </ListBox.ItemContainerStyle>
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <Border Background="{DynamicResource BgSurfaceElevated}" CornerRadius="6" Padding="12,8" Margin="0,0,0,12">
+                <!-- Subtitle -->
+                <TextBlock Grid.Row="1"
+                           Text="Map, track, and inspect tasks by their scheduled due dates."
+                           FontSize="13"
+                           Foreground="{DynamicResource TextSecondary}"
+                           Margin="0,0,0,24" />
+
+                <!-- 2-Column Calendar Layout -->
+                <Grid Grid.Row="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="2.2*" />
+                        <ColumnDefinition Width="24" />
+                        <ColumnDefinition Width="1*" MinWidth="260" MaxWidth="360" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- LEFT COLUMN: Navigation Card + 42-day Grid -->
+                    <StackPanel Grid.Column="0">
+
+                        <!-- Month Navigation Bar -->
+                        <Border Style="{DynamicResource ModernCard}"
+                                Padding="14,10"
+                                Margin="0,0,0,16">
+                            <Grid>
+                                <!-- Month Title + Today Badge Button -->
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding MonthDisplay}"
+                                               FontSize="18"
+                                               FontWeight="Bold"
+                                               Foreground="{DynamicResource TextPrimary}"
+                                               VerticalAlignment="Center" />
+
+                                    <Button Content="Today"
+                                            Style="{DynamicResource SecondaryButton}"
+                                            Command="{Binding TodayCommand}"
+                                            Padding="10,3"
+                                            FontSize="11"
+                                            Margin="12,0,0,0"
+                                            VerticalAlignment="Center"
+                                            AutomationProperties.Name="Jump to today" />
+                                </StackPanel>
+
+                                <!-- Navigation Chevrons (< and >) -->
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                    <Button Content="‹"
+                                            Style="{DynamicResource SecondaryButton}"
+                                            Command="{Binding PreviousMonthCommand}"
+                                            Width="32"
+                                            Height="32"
+                                            FontSize="16"
+                                            Margin="0,0,6,0"
+                                            AutomationProperties.Name="Previous month" />
+                                    <Button Content="›"
+                                            Style="{DynamicResource SecondaryButton}"
+                                            Command="{Binding NextMonthCommand}"
+                                            Width="32"
+                                            Height="32"
+                                            FontSize="16"
+                                            AutomationProperties.Name="Next month" />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- Month Calendar Grid Card -->
+                        <Border Style="{DynamicResource ModernCard}"
+                                Padding="12">
+                            <StackPanel>
+                                <!-- Weekday 7-Column Monday-First Header -->
+                                <UniformGrid Columns="7" Margin="0,0,0,10">
+                                    <TextBlock Text="MON" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" />
+                                    <TextBlock Text="TUE" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" />
+                                    <TextBlock Text="WED" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" />
+                                    <TextBlock Text="THU" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" />
+                                    <TextBlock Text="FRI" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" />
+                                    <TextBlock Text="SAT" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" />
+                                    <TextBlock Text="SUN" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" />
+                                </UniformGrid>
+
+                                <!-- 42-cell UniformGrid -->
+                                <ItemsControl ItemsSource="{Binding Days}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <UniformGrid Rows="6" Columns="7" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type models:CalendarDayItem}">
+                                            <Button Command="{Binding DataContext.SelectDateCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    Background="Transparent"
+                                                    BorderThickness="0"
+                                                    Padding="2"
+                                                    Cursor="Hand">
+                                                <Border CornerRadius="6"
+                                                        Background="{DynamicResource BgSurface}"
+                                                        BorderThickness="2"
+                                                        BorderBrush="Transparent"
+                                                        Height="82"
+                                                        Padding="6">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsCurrentMonth}" Value="False">
+                                                                    <Setter Property="Opacity" Value="0.35" />
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding IsToday}" Value="True">
+                                                                    <Setter Property="BorderBrush" Value="{DynamicResource AccentBlue}" />
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                                    <Setter Property="Background" Value="{DynamicResource BgSurfaceElevated}" />
+                                                                    <Setter Property="BorderBrush" Value="{DynamicResource AccentBlue}" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+
+                                                    <Grid>
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition Height="Auto" />
+                                                            <RowDefinition Height="*" />
+                                                        </Grid.RowDefinitions>
+
+                                                        <!-- Day Number Header with Today Purple Circle -->
+                                                        <Grid Grid.Row="0">
+                                                            <!-- Normal Day Number -->
+                                                            <TextBlock Text="{Binding DayNumber}"
+                                                                       FontSize="11"
+                                                                       FontWeight="SemiBold"
+                                                                       Foreground="{DynamicResource TextPrimary}"
+                                                                       HorizontalAlignment="Right">
+                                                                <TextBlock.Style>
+                                                                    <Style TargetType="TextBlock">
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding IsToday}" Value="True">
+                                                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </TextBlock.Style>
+                                                            </TextBlock>
+
+                                                            <!-- Today Badge Circle -->
+                                                            <Border Width="20"
+                                                                    Height="20"
+                                                                    CornerRadius="10"
+                                                                    Background="{DynamicResource AccentBlue}"
+                                                                    HorizontalAlignment="Right"
+                                                                    Visibility="{Binding IsToday, Converter={StaticResource BoolToVis}}">
+                                                                <TextBlock Text="{Binding DayNumber}"
+                                                                           FontSize="10"
+                                                                           FontWeight="Bold"
+                                                                           Foreground="White"
+                                                                           HorizontalAlignment="Center"
+                                                                           VerticalAlignment="Center" />
+                                                            </Border>
+                                                        </Grid>
+
+                                                        <!-- Event Chips Area -->
+                                                        <StackPanel Grid.Row="1" VerticalAlignment="Bottom" Margin="0,2,0,0">
+                                                            <!-- Chip 1 -->
+                                                            <Border Visibility="{Binding HasFirstItem, Converter={StaticResource BoolToVis}}"
+                                                                    Background="{DynamicResource BgSurfaceElevated}"
+                                                                    CornerRadius="3"
+                                                                    Padding="4,1"
+                                                                    Margin="0,0,0,2">
+                                                                <StackPanel Orientation="Horizontal">
+                                                                    <Ellipse Width="5" Height="5" Fill="{DynamicResource AccentBlue}" Margin="0,0,4,0" VerticalAlignment="Center" />
+                                                                    <TextBlock Text="{Binding FirstItem.Title}"
+                                                                               FontSize="9"
+                                                                               Foreground="{DynamicResource TextPrimary}"
+                                                                               TextTrimming="CharacterEllipsis"
+                                                                               MaxWidth="90" />
+                                                                </StackPanel>
+                                                            </Border>
+
+                                                            <!-- Chip 2 -->
+                                                            <Border Visibility="{Binding HasSecondItem, Converter={StaticResource BoolToVis}}"
+                                                                    Background="{DynamicResource BgSurfaceElevated}"
+                                                                    CornerRadius="3"
+                                                                    Padding="4,1">
+                                                                <StackPanel Orientation="Horizontal">
+                                                                    <Ellipse Width="5" Height="5" Fill="{DynamicResource CategoryPersonalBrush}" Margin="0,0,4,0" VerticalAlignment="Center" />
+                                                                    <TextBlock Text="{Binding SecondItem.Title}"
+                                                                               FontSize="9"
+                                                                               Foreground="{DynamicResource TextPrimary}"
+                                                                               TextTrimming="CharacterEllipsis"
+                                                                               MaxWidth="90" />
+                                                                </StackPanel>
+                                                            </Border>
+
+                                                            <!-- More Items Count Text -->
+                                                            <TextBlock Text="{Binding MoreItemsText}"
+                                                                       Visibility="{Binding HasMoreItems, Converter={StaticResource BoolToVis}}"
+                                                                       FontSize="9"
+                                                                       Foreground="{DynamicResource AccentBlue}"
+                                                                       Margin="2,1,0,0" />
+                                                        </StackPanel>
+                                                    </Grid>
+                                                </Border>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- RIGHT COLUMN: Today Card, Tasks For This Day, Unscheduled Drawer -->
+                    <StackPanel Grid.Column="2">
+
+                        <!-- TODAY CARD -->
+                        <Border Style="{DynamicResource ModernCard}"
+                                Padding="18"
+                                Margin="0,0,0,16">
+                            <StackPanel>
+                                <TextBlock Text="TODAY"
+                                           FontSize="11"
+                                           FontWeight="Bold"
+                                           Foreground="{DynamicResource AccentBlue}"
+                                           Margin="0,0,0,6" />
+
+                                <TextBlock Text="{Binding SelectedDateDisplay}"
+                                           FontSize="18"
+                                           FontWeight="Bold"
+                                           Foreground="{DynamicResource TextPrimary}"
+                                           Margin="0,0,0,4" />
+
+                                <TextBlock Text="{Binding SelectedDaySummary}"
+                                           FontSize="12"
+                                           Foreground="{DynamicResource TextSecondary}"
+                                           Margin="0,0,0,14" />
+
+                                <!-- Plan My Day Button -->
+                                <Button HorizontalAlignment="Left"
+                                        Style="{DynamicResource SecondaryButton}"
+                                        Command="{Binding NavigateToPlanMyDayCommand}"
+                                        Padding="14,6"
+                                        FontSize="12"
+                                        Margin="0,0,0,14"
+                                        AutomationProperties.Name="Plan My Day">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="⏱" FontSize="12" Margin="0,0,6,0" Foreground="{DynamicResource AccentBlue}" VerticalAlignment="Center" />
+                                        <TextBlock Text="Plan My Day" FontWeight="SemiBold" FontSize="12" Foreground="{DynamicResource AccentBlue}" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
+
+                                <!-- Inline Quick Add Form -->
                                 <Grid>
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
 
-                                    <!-- Completion Checkbox -->
-                                    <CheckBox Grid.Column="0"
-                                              IsChecked="{Binding IsCompleted, Mode=OneWay}"
-                                              Command="{Binding DataContext.ToggleItemCompletedCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                              CommandParameter="{Binding}"
-                                              VerticalAlignment="Center"
-                                              Margin="0,0,10,0"
-                                              AutomationProperties.Name="Toggle scheduled item completion" />
-
-                                    <!-- Entity Type Badge -->
-                                    <Border Grid.Column="1"
-                                            Background="{DynamicResource BgSurface}"
-                                            BorderBrush="{DynamicResource BorderSubtle}"
-                                            BorderThickness="1"
-                                            CornerRadius="4"
-                                            Padding="6,2"
-                                            Margin="0,0,10,0"
-                                            VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding TypeLabel}" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource AccentBlue}" />
-                                    </Border>
-
-                                    <!-- Title and Explanation -->
-                                    <StackPanel Grid.Column="2" VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding Title}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}">
+                                    <Grid Grid.Column="0">
+                                        <TextBox x:Name="InlineTaskInput"
+                                                 Style="{DynamicResource ModernTextBox}"
+                                                 Text="{Binding NewTaskTitle, UpdateSourceTrigger=PropertyChanged}"
+                                                 Height="34"
+                                                 Padding="10,6"
+                                                 FontSize="12"
+                                                 AutomationProperties.Name="Add task for this day input" />
+                                        <TextBlock Text="Add task for this day..."
+                                                   Foreground="{DynamicResource TextMuted}"
+                                                   FontSize="12"
+                                                   VerticalAlignment="Center"
+                                                   Margin="12,0,0,0"
+                                                   IsHitTestVisible="False">
                                             <TextBlock.Style>
                                                 <Style TargetType="TextBlock">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
                                                     <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsCompleted}" Value="True">
-                                                            <Setter Property="TextDecorations" Value="Strikethrough" />
-                                                            <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+                                                        <DataTrigger Binding="{Binding Text, ElementName=InlineTaskInput}" Value="">
+                                                            <Setter Property="Visibility" Value="Visible" />
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
                                             </TextBlock.Style>
                                         </TextBlock>
-                                        <TextBlock Text="{Binding Explanation}" FontSize="11" Foreground="{DynamicResource TextSecondary}" Margin="0,1,0,0" />
+                                    </Grid>
+
+                                    <Button Grid.Column="1"
+                                            Content="Add"
+                                            Style="{DynamicResource ModernButton}"
+                                            Command="{Binding AddTaskForSelectedDateCommand}"
+                                            Padding="14,6"
+                                            FontSize="12"
+                                            Height="34"
+                                            Margin="8,0,0,0"
+                                            AutomationProperties.Name="Confirm inline add task" />
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- TASKS FOR THIS DAY CARD -->
+                        <Border Style="{DynamicResource ModernCard}"
+                                Padding="18"
+                                Margin="0,0,0,16">
+                            <StackPanel>
+                                <TextBlock Text="TASKS FOR THIS DAY"
+                                           FontSize="11"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextSecondary}"
+                                           Margin="0,0,0,12" />
+
+                                <!-- Empty State when no tasks -->
+                                <Border BorderBrush="{DynamicResource BorderSubtle}"
+                                        BorderThickness="1"
+                                        CornerRadius="6"
+                                        Padding="20"
+                                        Visibility="{Binding HasSelectedDayItems, Converter={StaticResource BoolToVis}}">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding HasSelectedDayItems}" Value="True">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <StackPanel HorizontalAlignment="Center">
+                                        <TextBlock Text="No scheduled tasks."
+                                                   FontSize="12"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextPrimary}"
+                                                   HorizontalAlignment="Center"
+                                                   Margin="0,0,0,4" />
+                                        <TextBlock Text="Add one above or schedule from unscheduled tasks below."
+                                                   FontSize="11"
+                                                   Foreground="{DynamicResource TextMuted}"
+                                                   TextAlignment="Center"
+                                                   TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Items List -->
+                                <ItemsControl ItemsSource="{Binding SelectedDayItems}"
+                                              Visibility="{Binding HasSelectedDayItems, Converter={StaticResource BoolToVis}}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type models:PlanItemReference}">
+                                            <Border Background="{DynamicResource BgSurface}"
+                                                    CornerRadius="4"
+                                                    Padding="8,6"
+                                                    Margin="0,0,0,6">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+
+                                                    <CheckBox Grid.Column="0"
+                                                              IsChecked="{Binding IsCompleted, Mode=OneWay}"
+                                                              Command="{Binding DataContext.ToggleItemCompletedCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                              CommandParameter="{Binding}"
+                                                              VerticalAlignment="Center"
+                                                              Margin="0,0,8,0"
+                                                              AutomationProperties.Name="Toggle task completed" />
+
+                                                    <TextBlock Grid.Column="1"
+                                                               Text="{Binding Title}"
+                                                               FontSize="12"
+                                                               Foreground="{DynamicResource TextPrimary}"
+                                                               VerticalAlignment="Center">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsCompleted}" Value="True">
+                                                                        <Setter Property="TextDecorations" Value="Strikethrough" />
+                                                                        <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- UNSCHEDULED TASKS CARD / DRAWER -->
+                        <Border Style="{DynamicResource ModernCard}"
+                                Padding="16">
+                            <StackPanel>
+                                <Grid>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="UNSCHEDULED TASKS"
+                                                   FontSize="11"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextSecondary}"
+                                                   VerticalAlignment="Center" />
+                                        <TextBlock Text="{Binding UnscheduledCount}"
+                                                   FontSize="11"
+                                                   FontWeight="Bold"
+                                                   Foreground="{DynamicResource TextPrimary}"
+                                                   Margin="8,0,0,0"
+                                                   VerticalAlignment="Center" />
                                     </StackPanel>
 
-                                    <!-- Estimated Duration Badge -->
-                                    <Border Grid.Column="3" Background="{DynamicResource BgSurface}" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding FormattedEstimate}" FontSize="11" Foreground="{DynamicResource TextMuted}" />
-                                    </Border>
+                                    <!-- Show / Hide Button -->
+                                    <Button HorizontalAlignment="Right"
+                                            VerticalAlignment="Center"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            Padding="4,2"
+                                            Command="{Binding ToggleUnscheduledCommand}"
+                                            Cursor="Hand"
+                                            AutomationProperties.Name="Toggle unscheduled tasks drawer">
+                                        <TextBlock FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AccentBlue}">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Text" Value="Show" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsUnscheduledOpen}" Value="True">
+                                                            <Setter Property="Text" Value="Hide" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Button>
                                 </Grid>
-                            </Border>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
 
-                <!-- Empty State -->
-                <TextBlock Grid.Row="1"
-                           Text="No tasks or follow-ups scheduled for this day."
-                           FontSize="12"
-                           Foreground="{DynamicResource TextMuted}"
-                           HorizontalAlignment="Center"
-                           VerticalAlignment="Center">
-                    <TextBlock.Style>
-                        <Style TargetType="TextBlock">
-                            <Setter Property="Visibility" Value="Collapsed" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding HasSelectedDayItems}" Value="False">
-                                    <Setter Property="Visibility" Value="Visible" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </TextBlock.Style>
-                </TextBlock>
+                                <!-- Unscheduled Tasks Drawer Content -->
+                                <ItemsControl ItemsSource="{Binding UnscheduledTasks}"
+                                              Visibility="{Binding IsUnscheduledOpen, Converter={StaticResource BoolToVis}}"
+                                              Margin="0,10,0,0">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type models:TaskItem}">
+                                            <Border Background="{DynamicResource BgSurface}"
+                                                    CornerRadius="4"
+                                                    Padding="8,6"
+                                                    Margin="0,0,0,4">
+                                                <TextBlock Text="{Binding Title}"
+                                                           FontSize="12"
+                                                           Foreground="{DynamicResource TextPrimary}" />
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Grid>
             </Grid>
-        </Border>
+        </ScrollViewer>
     </Grid>
 </UserControl>
