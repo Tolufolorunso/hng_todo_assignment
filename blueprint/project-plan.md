@@ -1887,3 +1887,92 @@ public API contract, recurrence semantics, product scope, or the optional-accoun
 privacy model unless implementation uncovers a separate contract defect that is
 planned explicitly before code changes.
 
+
+
+## 18. Milestone Q: Windows Design Parity and Rich Formatting Overhaul
+
+Milestone Q addresses confirmed design, formatting, and usability gaps in the WPF Windows desktop application (`apps/windows`). While the top application header and left sidebar navigation persist as the desktop window shell, the entire content canvas will be modernized to match the exact look, feel, card layouts, badge designs, typography, and interactive workflows of the Next.js web application.
+
+In addition, the Windows text formatting engine will be upgraded from primitive Markdown token-wrapping in plain text boxes to a full Microsoft Word-style WYSIWYG editor with bidirectional HTML serialization (`taskflow-html-v1`), matching the Web capabilities.
+
+### 18.1 Windows design system, color tokens, and modular view architecture (Feature 57)
+
+- **Design Token Harmonization:** Extract and establish shared WPF resource dictionaries (`ModernTheme.xaml`, `ModernCards.xaml`, `ModernBadges.xaml`) adopting the Web application's Tailwind CSS color tokens:
+  - Deep dark canvas background: `#0B0F19`
+  - Elevated card surfaces: `#151C2C`
+  - High-elevation / hover surfaces: `#1E273A`
+  - Subtle borders: `#232E42`
+  - Category palette: Sky-400 (Work), Purple-400 (Personal), Rose-400 (Urgent), Emerald-400 (Study), Amber-400 (Ideas)
+  - Priority palette: Rose-500 (High), Amber-500 (Medium), Slate-400 (Low)
+  - Accent actions: Blue-500 (`#3B82F6`) with hover states
+- **Modular View Refactoring:** Decompose the monolithic content block in `MainWindow.xaml` into independent, maintainable UserControls:
+  - `TasksView.xaml`
+  - `FollowUpsView.xaml`
+  - `NotesView.xaml`
+  - `PlanMyDayView.xaml`
+  - `CalendarView.xaml`
+  - `AnalyticsView.xaml`
+  - `InboxView.xaml`
+- **Verification:** Clean build and execution with zero regressions in navigation switching, keyboard shortcuts, or window resizing.
+
+### 18.2 Windows WYSIWYG rich-text editor and HTML conversion engine (Feature 58)
+
+- **Reusable WYSIWYG Control (`WysiwygEditorControl.xaml`):** Build a dedicated WPF rich-text editing component wrapping `RichTextBox` and `FlowDocument` with a full ribbon toolbar matching `WysiwygEditor.tsx`:
+  - Inline formatting: Bold, Italic, Underline, Strikethrough, Superscript, Subscript.
+  - Block formatting: Headings (H1, H2, H3, Paragraph/Normal), Bullet Lists, Numbered Lists, Blockquotes.
+  - Text alignment: Align Left, Center, Align Right, Justify.
+  - Color palettes: 8 text colors (Default, Slate, Indigo, Blue, Emerald, Amber, Rose, Red) and 7 background highlight colors (None, Yellow, Green, Cyan, Purple, Pink, Orange).
+  - Quick symbol picker: 24 symbols (Check, Cross, Warning, Star, Lightning, Idea, Pin, Target, Fire, Rocket, Sparkles, Calendar, Timer, Hourglass, Arrow, etc.).
+  - History & metrics: Undo, Redo, live word count, and character count.
+- **Bidirectional HTML Converter:** Implement robust conversion between WPF `FlowDocument` and the shared `taskflow-html-v1` format stored in SQLite and synchronized to PostgreSQL.
+- **Read-Only Rich Text Renderer:** Provide a lightweight `FlowDocument` or formatted text presenter for cards and excerpts, rendering headers, bold, italics, lists, and quotes seamlessly without showing raw HTML markup.
+
+### 18.3 Windows Tasks view parity and task modal dialog (Feature 59)
+
+- **Web-Matching Task Cards:**
+  - Modern card container (`#151C2C` surface, `#232E42` border, rounded corners, subtle hover state).
+  - Custom circular/rounded checkbox with smooth completion state.
+  - Title with strikethrough and muted styling when completed.
+  - Formatted HTML description preview with inline styling and collapsible "Show more" / "Show less" toggle for long text.
+  - Category badge pills with colored dot indicators and uppercase labels.
+  - Priority badge pills with dot indicators.
+  - Due date badge with calendar icon and red/rose highlight when overdue.
+  - Estimated minutes badge and source note backlink badge.
+  - Reordering handles / arrow controls.
+- **Focused Task Modal Dialog:**
+  - Replace the top inline dropdown with a centered, accessible task modal dialog for both "+ Add Task" and editing existing tasks.
+  - Includes full `WysiwygEditorControl` for task description, Title input, Category dropdown, Priority dropdown, Due Date picker, and Effort Estimate.
+  - Clicking any task card opens this dialog in edit mode.
+
+### 18.4 Windows Notes view parity, rich editor, and document reader (Feature 60)
+
+- **Notes Card Grid / List:**
+  - Display notes in a modern card layout showing title, rich formatted excerpt, word count badge, reading time badge, and formatted date.
+  - Search bar and note count summary.
+- **Dedicated Document Reader View:**
+  - Replicate the Web standalone reader view (`/notes/[id]`) with clean reading typography, word count, reading time, print/export, and actionable text selection.
+  - "Edit Note" button transitions into the full WYSIWYG editing mode.
+  - "New Note" opens the full WYSIWYG editor directly.
+- **Actionable Note Integration:** Selecting text within the reader or editor offers one-click conversion into a Task or Follow-Up while preserving the source note link and excerpt snapshot.
+
+### 18.5 Windows Follow Ups, Plan My Day, Calendar, Analytics, and Inbox parity (Feature 61)
+
+- **Follow Ups Parity:**
+  - Contact cards with circular avatar (initials with accent background), contact person name, commitment title, and formatted detail text.
+  - Status badges (Overdue in rose, Due Today in amber, Upcoming in slate) and Recurrence badges (Calendar-anchored vs. Completion-relative).
+  - Branded one-tap launcher action buttons for Email, WhatsApp, and Phone.
+  - Occurrence actions: Complete, Snooze (+24h or custom), Reschedule, Skip, and Delete.
+  - Creation/edit modal with full contact, commitment, recurrence, and launcher fields.
+- **Plan My Day Parity:**
+  - Available capacity budgeting card with minutes stepper/slider and visual capacity meter.
+  - Recommended task and follow-up cards with transparent reason tags ("Overdue", "High Priority", "Fits available time").
+  - Overflow backlog list with "+ Include" controls.
+- **Calendar & Analytics Parity:**
+  - Monthly calendar grid with today ring, item badges, and selected date agenda drawer.
+  - Analytics dashboard cards with large figures and visual progress bars for category and priority distributions matching Web colors.
+- **Inbox / Fast Capture Parity:**
+  - Streamlined capture card and triage actions (Convert to Task, Convert to Note, Convert to Follow Up, Discard).
+
+### 18.6 Scope boundary
+
+Milestone Q applies exclusively to `apps/windows`. It does not modify `apps/web`, `apps/mobile`, the public API contract, or PostgreSQL database schemas. All rich-text content created in Windows will round-trip cleanly with the existing Web and Cloud `taskflow-html-v1` format.

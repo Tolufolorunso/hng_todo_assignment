@@ -108,57 +108,122 @@ public partial class MainWindow : Window
 
     private void ApplyTheme(string theme)
     {
+        ResourceDictionary target = Application.Current?.Resources ?? Resources;
+
         if (string.Equals(theme, "Light", StringComparison.OrdinalIgnoreCase))
         {
-            Resources["BgPrimary"] = new SolidColorBrush(Color.FromRgb(0xF8, 0xFA, 0xFC));
-            Resources["BgSurface"] = new SolidColorBrush(Color.FromRgb(0xFF, 0xFF, 0xFF));
-            Resources["BgSurfaceElevated"] = new SolidColorBrush(Color.FromRgb(0xF1, 0xF5, 0xF9));
-            Resources["BorderSubtle"] = new SolidColorBrush(Color.FromRgb(0xE2, 0xE8, 0xF0));
-            Resources["TextPrimary"] = new SolidColorBrush(Color.FromRgb(0x0F, 0x17, 0x2A));
-            Resources["TextSecondary"] = new SolidColorBrush(Color.FromRgb(0x47, 0x55, 0x69));
-            Resources["TextMuted"] = new SolidColorBrush(Color.FromRgb(0x94, 0xA3, 0xB8));
-            Resources["AccentBlue"] = new SolidColorBrush(Color.FromRgb(0x25, 0x63, 0xEB));
-            Resources["AccentBlueHover"] = new SolidColorBrush(Color.FromRgb(0x1D, 0x4E, 0xD8));
-            Resources["AccentGreen"] = new SolidColorBrush(Color.FromRgb(0x05, 0x96, 0x69));
-            Resources["AccentAmber"] = new SolidColorBrush(Color.FromRgb(0xD9, 0x77, 0x06));
-            Resources["AccentRose"] = new SolidColorBrush(Color.FromRgb(0xDC, 0x26, 0x26));
-            Background = (Brush)Resources["BgPrimary"];
-            Foreground = (Brush)Resources["TextPrimary"];
+            SetThemeBrushes(target,
+                bgPrimary: Color.FromRgb(0xF8, 0xFA, 0xFC),
+                bgSurface: Color.FromRgb(0xFF, 0xFF, 0xFF),
+                bgSurfaceElevated: Color.FromRgb(0xF1, 0xF5, 0xF9),
+                borderSubtle: Color.FromRgb(0xE2, 0xE8, 0xF0),
+                textPrimary: Color.FromRgb(0x0F, 0x17, 0x2A),
+                textSecondary: Color.FromRgb(0x47, 0x55, 0x69),
+                textMuted: Color.FromRgb(0x94, 0xA3, 0xB8),
+                accentBlue: Color.FromRgb(0x25, 0x63, 0xEB),
+                accentBlueHover: Color.FromRgb(0x1D, 0x4E, 0xD8),
+                accentGreen: Color.FromRgb(0x05, 0x96, 0x69),
+                accentAmber: Color.FromRgb(0xD9, 0x77, 0x06),
+                accentRose: Color.FromRgb(0xDC, 0x26, 0x26),
+                catWork: Color.FromRgb(0x02, 0x84, 0xC7),
+                catPersonal: Color.FromRgb(0x93, 0x33, 0xEA),
+                catUrgent: Color.FromRgb(0xE1, 0x1D, 0x48),
+                catStudy: Color.FromRgb(0x05, 0x96, 0x69),
+                catIdeas: Color.FromRgb(0xD9, 0x77, 0x06),
+                prioHigh: Color.FromRgb(0xDC, 0x26, 0x26),
+                prioMed: Color.FromRgb(0xD9, 0x77, 0x06),
+                prioLow: Color.FromRgb(0x64, 0x74, 0x8B));
         }
         else if (string.Equals(theme, "HighContrast", StringComparison.OrdinalIgnoreCase))
         {
-            Resources["BgPrimary"] = new SolidColorBrush(Color.FromRgb(0x00, 0x00, 0x00));
-            Resources["BgSurface"] = new SolidColorBrush(Color.FromRgb(0x00, 0x00, 0x00));
-            Resources["BgSurfaceElevated"] = new SolidColorBrush(Color.FromRgb(0x1A, 0x1A, 0x1A));
-            Resources["BorderSubtle"] = new SolidColorBrush(Color.FromRgb(0xFF, 0xFF, 0xFF));
-            Resources["TextPrimary"] = new SolidColorBrush(Color.FromRgb(0xFF, 0xFF, 0xFF));
-            Resources["TextSecondary"] = new SolidColorBrush(Color.FromRgb(0xFF, 0xFF, 0x00));
-            Resources["TextMuted"] = new SolidColorBrush(Color.FromRgb(0x00, 0xFF, 0xFF));
-            Resources["AccentBlue"] = new SolidColorBrush(Color.FromRgb(0x00, 0xFF, 0xFF));
-            Resources["AccentBlueHover"] = new SolidColorBrush(Color.FromRgb(0xFF, 0xFF, 0xFF));
-            Resources["AccentGreen"] = new SolidColorBrush(Color.FromRgb(0x00, 0xFF, 0x00));
-            Resources["AccentAmber"] = new SolidColorBrush(Color.FromRgb(0xFF, 0xFF, 0x00));
-            Resources["AccentRose"] = new SolidColorBrush(Color.FromRgb(0xFF, 0x00, 0x00));
-            Background = (Brush)Resources["BgPrimary"];
-            Foreground = (Brush)Resources["TextPrimary"];
+            SetThemeBrushes(target,
+                bgPrimary: Color.FromRgb(0x00, 0x00, 0x00),
+                bgSurface: Color.FromRgb(0x00, 0x00, 0x00),
+                bgSurfaceElevated: Color.FromRgb(0x1A, 0x1A, 0x1A),
+                borderSubtle: Color.FromRgb(0xFF, 0xFF, 0xFF),
+                textPrimary: Color.FromRgb(0xFF, 0xFF, 0xFF),
+                textSecondary: Color.FromRgb(0xFF, 0xFF, 0x00),
+                textMuted: Color.FromRgb(0x00, 0xFF, 0xFF),
+                accentBlue: Color.FromRgb(0x00, 0xFF, 0xFF),
+                accentBlueHover: Color.FromRgb(0xFF, 0xFF, 0xFF),
+                accentGreen: Color.FromRgb(0x00, 0xFF, 0x00),
+                accentAmber: Color.FromRgb(0xFF, 0xFF, 0x00),
+                accentRose: Color.FromRgb(0xFF, 0x00, 0x00),
+                catWork: Color.FromRgb(0x00, 0xFF, 0xFF),
+                catPersonal: Color.FromRgb(0xFF, 0x00, 0xFF),
+                catUrgent: Color.FromRgb(0xFF, 0x00, 0x00),
+                catStudy: Color.FromRgb(0x00, 0xFF, 0x00),
+                catIdeas: Color.FromRgb(0xFF, 0xFF, 0x00),
+                prioHigh: Color.FromRgb(0xFF, 0x00, 0x00),
+                prioMed: Color.FromRgb(0xFF, 0xFF, 0x00),
+                prioLow: Color.FromRgb(0x00, 0xFF, 0xFF));
         }
         else // Dark
         {
-            Resources["BgPrimary"] = new SolidColorBrush(Color.FromRgb(0x0B, 0x0F, 0x19));
-            Resources["BgSurface"] = new SolidColorBrush(Color.FromRgb(0x15, 0x1C, 0x2C));
-            Resources["BgSurfaceElevated"] = new SolidColorBrush(Color.FromRgb(0x1E, 0x27, 0x3A));
-            Resources["BorderSubtle"] = new SolidColorBrush(Color.FromRgb(0x23, 0x2E, 0x42));
-            Resources["TextPrimary"] = new SolidColorBrush(Color.FromRgb(0xF8, 0xFA, 0xFC));
-            Resources["TextSecondary"] = new SolidColorBrush(Color.FromRgb(0x94, 0xA3, 0xB8));
-            Resources["TextMuted"] = new SolidColorBrush(Color.FromRgb(0x64, 0x74, 0x8B));
-            Resources["AccentBlue"] = new SolidColorBrush(Color.FromRgb(0x3B, 0x82, 0xF6));
-            Resources["AccentBlueHover"] = new SolidColorBrush(Color.FromRgb(0x25, 0x63, 0xEB));
-            Resources["AccentGreen"] = new SolidColorBrush(Color.FromRgb(0x10, 0xB9, 0x81));
-            Resources["AccentAmber"] = new SolidColorBrush(Color.FromRgb(0xF5, 0x9E, 0x0B));
-            Resources["AccentRose"] = new SolidColorBrush(Color.FromRgb(0xEF, 0x44, 0x44));
-            Background = (Brush)Resources["BgPrimary"];
-            Foreground = (Brush)Resources["TextPrimary"];
+            SetThemeBrushes(target,
+                bgPrimary: Color.FromRgb(0x0B, 0x0F, 0x19),
+                bgSurface: Color.FromRgb(0x15, 0x1C, 0x2C),
+                bgSurfaceElevated: Color.FromRgb(0x1E, 0x27, 0x3A),
+                borderSubtle: Color.FromRgb(0x23, 0x2E, 0x42),
+                textPrimary: Color.FromRgb(0xF8, 0xFA, 0xFC),
+                textSecondary: Color.FromRgb(0x94, 0xA3, 0xB8),
+                textMuted: Color.FromRgb(0x64, 0x74, 0x8B),
+                accentBlue: Color.FromRgb(0x3B, 0x82, 0xF6),
+                accentBlueHover: Color.FromRgb(0x25, 0x63, 0xEB),
+                accentGreen: Color.FromRgb(0x10, 0xB9, 0x81),
+                accentAmber: Color.FromRgb(0xF5, 0x9E, 0x0B),
+                accentRose: Color.FromRgb(0xEF, 0x44, 0x44),
+                catWork: Color.FromRgb(0x38, 0xBD, 0xF8),
+                catPersonal: Color.FromRgb(0xC0, 0x84, 0xFC),
+                catUrgent: Color.FromRgb(0xFB, 0x71, 0x85),
+                catStudy: Color.FromRgb(0x34, 0xD3, 0x99),
+                catIdeas: Color.FromRgb(0xFB, 0xBF, 0x24),
+                prioHigh: Color.FromRgb(0xEF, 0x44, 0x44),
+                prioMed: Color.FromRgb(0xF5, 0x9E, 0x0B),
+                prioLow: Color.FromRgb(0x94, 0xA3, 0xB8));
         }
+
+        Background = (Brush)Resources["BgPrimary"];
+        Foreground = (Brush)Resources["TextPrimary"];
+    }
+
+    private void SetThemeBrushes(ResourceDictionary dict,
+        Color bgPrimary, Color bgSurface, Color bgSurfaceElevated, Color borderSubtle,
+        Color textPrimary, Color textSecondary, Color textMuted,
+        Color accentBlue, Color accentBlueHover, Color accentGreen, Color accentAmber, Color accentRose,
+        Color catWork, Color catPersonal, Color catUrgent, Color catStudy, Color catIdeas,
+        Color prioHigh, Color prioMed, Color prioLow)
+    {
+        SetBrush(dict, "BgPrimary", bgPrimary);
+        SetBrush(dict, "BgSurface", bgSurface);
+        SetBrush(dict, "BgSurfaceElevated", bgSurfaceElevated);
+        SetBrush(dict, "BorderSubtle", borderSubtle);
+        SetBrush(dict, "TextPrimary", textPrimary);
+        SetBrush(dict, "TextSecondary", textSecondary);
+        SetBrush(dict, "TextMuted", textMuted);
+        SetBrush(dict, "AccentBlue", accentBlue);
+        SetBrush(dict, "AccentBlueHover", accentBlueHover);
+        SetBrush(dict, "AccentGreen", accentGreen);
+        SetBrush(dict, "AccentAmber", accentAmber);
+        SetBrush(dict, "AccentRose", accentRose);
+
+        SetBrush(dict, "CategoryWorkBrush", catWork);
+        SetBrush(dict, "CategoryPersonalBrush", catPersonal);
+        SetBrush(dict, "CategoryUrgentBrush", catUrgent);
+        SetBrush(dict, "CategoryStudyBrush", catStudy);
+        SetBrush(dict, "CategoryIdeasBrush", catIdeas);
+
+        SetBrush(dict, "PriorityHighBrush", prioHigh);
+        SetBrush(dict, "PriorityMediumBrush", prioMed);
+        SetBrush(dict, "PriorityLowBrush", prioLow);
+    }
+
+    private void SetBrush(ResourceDictionary dict, string key, Color color)
+    {
+        var brush = new SolidColorBrush(color);
+        brush.Freeze();
+        dict[key] = brush;
+        Resources[key] = brush;
     }
 
     private void OnFormatTextClick(object sender, RoutedEventArgs e)

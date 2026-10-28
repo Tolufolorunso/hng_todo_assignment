@@ -1,0 +1,75 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Base Pill Badge Style -->
+    <Style x:Key="PillBadge" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource BgSurfaceElevated}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="Padding" Value="8,2" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+    </Style>
+
+    <Style x:Key="PillBadgeText" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="10" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
+    </Style>
+
+    <!-- Category Badges -->
+    <Style x:Key="CategoryWorkBadge" TargetType="Border" BasedOn="{StaticResource PillBadge}">
+        <Setter Property="Background" Value="#102A45" />
+        <Setter Property="BorderBrush" Value="{DynamicResource CategoryWorkBrush}" />
+    </Style>
+
+    <Style x:Key="CategoryPersonalBadge" TargetType="Border" BasedOn="{StaticResource PillBadge}">
+        <Setter Property="Background" Value="#2A1B4E" />
+        <Setter Property="BorderBrush" Value="{DynamicResource CategoryPersonalBrush}" />
+    </Style>
+
+    <Style x:Key="CategoryUrgentBadge" TargetType="Border" BasedOn="{StaticResource PillBadge}">
+        <Setter Property="Background" Value="#3D141E" />
+        <Setter Property="BorderBrush" Value="{DynamicResource CategoryUrgentBrush}" />
+    </Style>
+
+    <Style x:Key="CategoryStudyBadge" TargetType="Border" BasedOn="{StaticResource PillBadge}">
+        <Setter Property="Background" Value="#0F2F24" />
+        <Setter Property="BorderBrush" Value="{DynamicResource CategoryStudyBrush}" />
+    </Style>
+
+    <Style x:Key="CategoryIdeasBadge" TargetType="Border" BasedOn="{StaticResource PillBadge}">
+        <Setter Property="Background" Value="#38260F" />
+        <Setter Property="BorderBrush" Value="{DynamicResource CategoryIdeasBrush}" />
+    </Style>
+
+    <!-- Priority Badges -->
+    <Style x:Key="PriorityHighBadge" TargetType="Border" BasedOn="{StaticResource PillBadge}">
+        <Setter Property="Background" Value="#3B0D0D" />
+        <Setter Property="BorderBrush" Value="{DynamicResource PriorityHighBrush}" />
+    </Style>
+
+    <Style x:Key="PriorityMediumBadge" TargetType="Border" BasedOn="{StaticResource PillBadge}">
+        <Setter Property="Background" Value="#381E05" />
+        <Setter Property="BorderBrush" Value="{DynamicResource PriorityMediumBrush}" />
+    </Style>
+
+    <Style x:Key="PriorityLowBadge" TargetType="Border" BasedOn="{StaticResource PillBadge}">
+        <Setter Property="Background" Value="#172033" />
+        <Setter Property="BorderBrush" Value="{DynamicResource PriorityLowBrush}" />
+    </Style>
+
+    <!-- Due Date & Overdue Badges -->
+    <Style x:Key="OverdueBadge" TargetType="Border" BasedOn="{StaticResource PillBadge}">
+        <Setter Property="Background" Value="#3B0D0D" />
+        <Setter Property="BorderBrush" Value="{DynamicResource AccentRose}" />
+    </Style>
+
+    <Style x:Key="DueDateBadge" TargetType="Border" BasedOn="{StaticResource PillBadge}">
+        <Setter Property="Background" Value="{DynamicResource BgSurfaceElevated}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}" />
+    </Style>
+
+</ResourceDictionary>
+
