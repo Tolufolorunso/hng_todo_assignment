@@ -1,0 +1,280 @@
+<UserControl x:Class="TaskFlow.Controls.WysiwygEditorControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignHeight="260" d:DesignWidth="680">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+
+        <!-- Ribbon Toolbar Button Style -->
+        <Style x:Key="RibbonToolButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="6,4" />
+            <Setter Property="Margin" Value="1,0" />
+            <Setter Property="MinHeight" Value="28" />
+            <Setter Property="MinWidth" Value="28" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource BgSurfaceElevated}" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource AccentBlue}" />
+                                <Setter Property="Foreground" Value="White" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="RibbonSeparator" TargetType="Separator">
+            <Setter Property="Margin" Value="4,4" />
+            <Setter Property="Width" Value="1" />
+            <Setter Property="Background" Value="{DynamicResource BorderSubtle}" />
+        </Style>
+    </UserControl.Resources>
+
+    <Border Style="{DynamicResource ModernCard}" Padding="0" ClipToBounds="True">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- RIBBON TOOLBAR -->
+            <Border x:Name="ToolbarBorder" Grid.Row="0" Background="{DynamicResource BgSurfaceElevated}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="0,0,0,1" Padding="6,4">
+                <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- History Group -->
+                    <Button Style="{StaticResource RibbonToolButton}" Command="ApplicationCommands.Undo" ToolTip="Undo (Ctrl+Z)" AutomationProperties.Name="Undo">
+                        <TextBlock Text="↶" FontSize="14" FontWeight="Bold" />
+                    </Button>
+                    <Button Style="{StaticResource RibbonToolButton}" Command="ApplicationCommands.Redo" ToolTip="Redo (Ctrl+Y)" AutomationProperties.Name="Redo">
+                        <TextBlock Text="↷" FontSize="14" FontWeight="Bold" />
+                    </Button>
+
+                    <Separator Style="{StaticResource RibbonSeparator}" />
+
+                    <!-- Block Format Selector -->
+                    <ComboBox x:Name="BlockFormatCombo" Width="100" Height="28" Margin="2,0" SelectionChanged="OnBlockFormatChanged" AutomationProperties.Name="Paragraph block format">
+                        <ComboBoxItem Content="Normal" Tag="p" IsSelected="True" />
+                        <ComboBoxItem Content="Heading 1" Tag="h1" FontWeight="Bold" />
+                        <ComboBoxItem Content="Heading 2" Tag="h2" FontWeight="SemiBold" />
+                        <ComboBoxItem Content="Heading 3" Tag="h3" />
+                    </ComboBox>
+
+                    <Separator Style="{StaticResource RibbonSeparator}" />
+
+                    <!-- Inline Formatting -->
+                    <Button Style="{StaticResource RibbonToolButton}" Command="EditingCommands.ToggleBold" FontWeight="Bold" ToolTip="Bold (Ctrl+B)" AutomationProperties.Name="Bold text">
+                        <TextBlock Text="B" FontWeight="Bold" />
+                    </Button>
+                    <Button Style="{StaticResource RibbonToolButton}" Command="EditingCommands.ToggleItalic" FontStyle="Italic" ToolTip="Italic (Ctrl+I)" AutomationProperties.Name="Italic text">
+                        <TextBlock Text="I" FontStyle="Italic" />
+                    </Button>
+                    <Button Style="{StaticResource RibbonToolButton}" Command="EditingCommands.ToggleUnderline" ToolTip="Underline (Ctrl+U)" AutomationProperties.Name="Underline text">
+                        <TextBlock Text="U" TextDecorations="Underline" />
+                    </Button>
+                    <Button Style="{StaticResource RibbonToolButton}" Click="OnToggleStrikethroughClick" ToolTip="Strikethrough" AutomationProperties.Name="Strikethrough text">
+                        <TextBlock Text="S" TextDecorations="Strikethrough" />
+                    </Button>
+                    <Button Style="{StaticResource RibbonToolButton}" Click="OnToggleSubscriptClick" ToolTip="Subscript" AutomationProperties.Name="Subscript text">
+                        <TextBlock Text="X₂" FontSize="11" />
+                    </Button>
+                    <Button Style="{StaticResource RibbonToolButton}" Click="OnToggleSuperscriptClick" ToolTip="Superscript" AutomationProperties.Name="Superscript text">
+                        <TextBlock Text="X²" FontSize="11" />
+                    </Button>
+
+                    <Separator Style="{StaticResource RibbonSeparator}" />
+
+                    <!-- Lists & Quote -->
+                    <Button Style="{StaticResource RibbonToolButton}" Command="EditingCommands.ToggleBullets" ToolTip="Bullet list" AutomationProperties.Name="Bullet list">
+                        <TextBlock Text="• List" />
+                    </Button>
+                    <Button Style="{StaticResource RibbonToolButton}" Command="EditingCommands.ToggleNumbering" ToolTip="Numbered list" AutomationProperties.Name="Numbered list">
+                        <TextBlock Text="1. List" />
+                    </Button>
+                    <Button Style="{StaticResource RibbonToolButton}" Click="OnToggleBlockquoteClick" ToolTip="Quote block" AutomationProperties.Name="Quote block">
+                        <TextBlock Text="❝ Quote" />
+                    </Button>
+
+                    <Separator Style="{StaticResource RibbonSeparator}" />
+
+                    <!-- Alignment -->
+                    <Button Style="{StaticResource RibbonToolButton}" Command="EditingCommands.AlignLeft" ToolTip="Align left" AutomationProperties.Name="Align left">
+                        <TextBlock Text="≡L" />
+                    </Button>
+                    <Button Style="{StaticResource RibbonToolButton}" Command="EditingCommands.AlignCenter" ToolTip="Align center" AutomationProperties.Name="Align center">
+                        <TextBlock Text="≡C" />
+                    </Button>
+                    <Button Style="{StaticResource RibbonToolButton}" Command="EditingCommands.AlignRight" ToolTip="Align right" AutomationProperties.Name="Align right">
+                        <TextBlock Text="≡R" />
+                    </Button>
+                    <Button Style="{StaticResource RibbonToolButton}" Command="EditingCommands.AlignJustify" ToolTip="Justify" AutomationProperties.Name="Justify">
+                        <TextBlock Text="≡J" />
+                    </Button>
+
+                    <Separator Style="{StaticResource RibbonSeparator}" />
+
+                    <!-- Text Color Picker Popup Button -->
+                    <Grid>
+                        <Button x:Name="TextColorButton" Style="{StaticResource RibbonToolButton}" Click="OnTextColorButtonClick" ToolTip="Text color" AutomationProperties.Name="Select text color">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="A" FontWeight="Bold" />
+                                <Border x:Name="ColorBar" Width="10" Height="3" Background="{DynamicResource AccentBlue}" Margin="2,8,0,0" VerticalAlignment="Bottom" />
+                            </StackPanel>
+                        </Button>
+                        <Popup x:Name="TextColorPopup" PlacementTarget="{Binding ElementName=TextColorButton}" StaysOpen="False" AllowsTransparency="True">
+                            <Border Background="{DynamicResource BgSurfaceElevated}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="6" Padding="8" Margin="4">
+                                <UniformGrid Columns="4" Rows="2">
+                                    <Button Style="{StaticResource RibbonToolButton}" Tag="inherit" Click="OnColorSelected" ToolTip="Default" Width="28" Height="28">
+                                        <Border Width="18" Height="18" Background="#F8FAFC" CornerRadius="3" />
+                                    </Button>
+                                    <Button Style="{StaticResource RibbonToolButton}" Tag="#94a3b8" Click="OnColorSelected" ToolTip="Slate" Width="28" Height="28">
+                                        <Border Width="18" Height="18" Background="#94a3b8" CornerRadius="3" />
+                                    </Button>
+                                    <Button Style="{StaticResource RibbonToolButton}" Tag="#818cf8" Click="OnColorSelected" ToolTip="Indigo" Width="28" Height="28">
+                                        <Border Width="18" Height="18" Background="#818cf8" CornerRadius="3" />
+                                    </Button>
+                                    <Button Style="{StaticResource RibbonToolButton}" Tag="#38bdf8" Click="OnColorSelected" ToolTip="Blue" Width="28" Height="28">
+                                        <Border Width="18" Height="18" Background="#38bdf8" CornerRadius="3" />
+                                    </Button>
+                                    <Button Style="{StaticResource RibbonToolButton}" Tag="#34d399" Click="OnColorSelected" ToolTip="Emerald" Width="28" Height="28">
+                                        <Border Width="18" Height="18" Background="#34d399" CornerRadius="3" />
+                                    </Button>
+                                    <Button Style="{StaticResource RibbonToolButton}" Tag="#fbbf24" Click="OnColorSelected" ToolTip="Amber" Width="28" Height="28">
+                                        <Border Width="18" Height="18" Background="#fbbf24" CornerRadius="3" />
+                                    </Button>
+                                    <Button Style="{StaticResource RibbonToolButton}" Tag="#fb7185" Click="OnColorSelected" ToolTip="Rose" Width="28" Height="28">
+                                        <Border Width="18" Height="18" Background="#fb7185" CornerRadius="3" />
+                                    </Button>
+                                    <Button Style="{StaticResource RibbonToolButton}" Tag="#f87171" Click="OnColorSelected" ToolTip="Red" Width="28" Height="28">
+                                        <Border Width="18" Height="18" Background="#f87171" CornerRadius="3" />
+                                    </Button>
+                                </UniformGrid>
+                            </Border>
+                        </Popup>
+                    </Grid>
+
+                    <!-- Highlight Color Picker Popup Button -->
+                    <Grid>
+                        <Button x:Name="HighlightColorButton" Style="{StaticResource RibbonToolButton}" Click="OnHighlightColorButtonClick" ToolTip="Highlight color" AutomationProperties.Name="Select highlight color">
+                            <TextBlock Text="🖍" FontSize="13" />
+                        </Button>
+                        <Popup x:Name="HighlightColorPopup" PlacementTarget="{Binding ElementName=HighlightColorButton}" StaysOpen="False" AllowsTransparency="True">
+                            <Border Background="{DynamicResource BgSurfaceElevated}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="6" Padding="8" Margin="4">
+                                <UniformGrid Columns="4" Rows="2">
+                                    <Button Style="{StaticResource RibbonToolButton}" Tag="transparent" Click="OnHighlightSelected" ToolTip="None" Width="28" Height="28">
+                                        <TextBlock Text="✕" FontSize="12" Foreground="{DynamicResource TextMuted}" />
+                                    </Button>
+                                    <Button Style="{StaticResource RibbonToolButton}" Tag="#facc15" Click="OnHighlightSelected" ToolTip="Yellow" Width="28" Height="28">
+                                        <Border Width="18" Height="18" Background="#facc15" CornerRadius="3" />
+                                    </Button>
+                                    <Button Style="{StaticResource RibbonToolButton}" Tag="#4ade80" Click="OnHighlightSelected" ToolTip="Green" Width="28" Height="28">
+                                        <Border Width="18" Height="18" Background="#4ade80" CornerRadius="3" />
+                                    </Button>
+                                    <Button Style="{StaticResource RibbonToolButton}" Tag="#38bdf8" Click="OnHighlightSelected" ToolTip="Cyan" Width="28" Height="28">
+                                        <Border Width="18" Height="18" Background="#38bdf8" CornerRadius="3" />
+                                    </Button>
+                                    <Button Style="{StaticResource RibbonToolButton}" Tag="#a855f7" Click="OnHighlightSelected" ToolTip="Purple" Width="28" Height="28">
+                                        <Border Width="18" Height="18" Background="#a855f7" CornerRadius="3" />
+                                    </Button>
+                                    <Button Style="{StaticResource RibbonToolButton}" Tag="#f472b6" Click="OnHighlightSelected" ToolTip="Pink" Width="28" Height="28">
+                                        <Border Width="18" Height="18" Background="#f472b6" CornerRadius="3" />
+                                    </Button>
+                                    <Button Style="{StaticResource RibbonToolButton}" Tag="#fb923c" Click="OnHighlightSelected" ToolTip="Orange" Width="28" Height="28">
+                                        <Border Width="18" Height="18" Background="#fb923c" CornerRadius="3" />
+                                    </Button>
+                                </UniformGrid>
+                            </Border>
+                        </Popup>
+                    </Grid>
+
+                    <!-- Quick Symbol Picker Popup Button -->
+                    <Grid>
+                        <Button x:Name="SymbolButton" Style="{StaticResource RibbonToolButton}" Click="OnSymbolButtonClick" ToolTip="Quick symbol picker" AutomationProperties.Name="Insert symbol">
+                            <TextBlock Text="★" FontSize="13" />
+                        </Button>
+                        <Popup x:Name="SymbolPopup" PlacementTarget="{Binding ElementName=SymbolButton}" StaysOpen="False" AllowsTransparency="True">
+                            <Border Background="{DynamicResource BgSurfaceElevated}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="6" Padding="8" Margin="4">
+                                <UniformGrid Columns="6" Rows="4">
+                                    <Button Style="{StaticResource RibbonToolButton}" Tag="✔" Click="OnSymbolSelected" Content="✔" Width="28" Height="28" />
+                                    <Button Style="{StaticResource RibbonToolButton}" Tag="✕" Click="OnSymbolSelected" Content="✕" Width="28" Height="28" />
+                                    <Button Style="{StaticResource RibbonToolButton}" Tag="⚠️" Click="OnSymbolSelected" Content="⚠️" Width="28" Height="28" />
+                                    <Button Style="{StaticResource RibbonToolButton}" Tag="★" Click="OnSymbolSelected" Content="★" Width="28" Height="28" />
+                                    <Button Style="{StaticResource RibbonToolButton}" Tag="⚡" Click="OnSymbolSelected" Content="⚡" Width="28" Height="28" />
+                                    <Button Style="{StaticResource RibbonToolButton}" Tag="💡" Click="OnSymbolSelected" Content="💡" Width="28" Height="28" />
+                                    <Button Style="{StaticResource RibbonToolButton}" Tag="📌" Click="OnSymbolSelected" Content="📌" Width="28" Height="28" />
+                                    <Button Style="{StaticResource RibbonToolButton}" Tag="🎯" Click="OnSymbolSelected" Content="🎯" Width="28" Height="28" />
+                                    <Button Style="{StaticResource RibbonToolButton}" Tag="🔥" Click="OnSymbolSelected" Content="🔥" Width="28" Height="28" />
+                                    <Button Style="{StaticResource RibbonToolButton}" Tag="🚀" Click="OnSymbolSelected" Content="🚀" Width="28" Height="28" />
+                                    <Button Style="{StaticResource RibbonToolButton}" Tag="✨" Click="OnSymbolSelected" Content="✨" Width="28" Height="28" />
+                                    <Button Style="{StaticResource RibbonToolButton}" Tag="📅" Click="OnSymbolSelected" Content="📅" Width="28" Height="28" />
+                                    <Button Style="{StaticResource RibbonToolButton}" Tag="⏱️" Click="OnSymbolSelected" Content="⏱️" Width="28" Height="28" />
+                                    <Button Style="{StaticResource RibbonToolButton}" Tag="⏳" Click="OnSymbolSelected" Content="⏳" Width="28" Height="28" />
+                                    <Button Style="{StaticResource RibbonToolButton}" Tag="➔" Click="OnSymbolSelected" Content="➔" Width="28" Height="28" />
+                                    <Button Style="{StaticResource RibbonToolButton}" Tag="➤" Click="OnSymbolSelected" Content="➤" Width="28" Height="28" />
+                                    <Button Style="{StaticResource RibbonToolButton}" Tag="•" Click="OnSymbolSelected" Content="•" Width="28" Height="28" />
+                                    <Button Style="{StaticResource RibbonToolButton}" Tag="❖" Click="OnSymbolSelected" Content="❖" Width="28" Height="28" />
+                                    <Button Style="{StaticResource RibbonToolButton}" Tag="≈" Click="OnSymbolSelected" Content="≈" Width="28" Height="28" />
+                                    <Button Style="{StaticResource RibbonToolButton}" Tag="≠" Click="OnSymbolSelected" Content="≠" Width="28" Height="28" />
+                                    <Button Style="{StaticResource RibbonToolButton}" Tag="±" Click="OnSymbolSelected" Content="±" Width="28" Height="28" />
+                                    <Button Style="{StaticResource RibbonToolButton}" Tag="∞" Click="OnSymbolSelected" Content="∞" Width="28" Height="28" />
+                                    <Button Style="{StaticResource RibbonToolButton}" Tag="§" Click="OnSymbolSelected" Content="§" Width="28" Height="28" />
+                                    <Button Style="{StaticResource RibbonToolButton}" Tag="©" Click="OnSymbolSelected" Content="©" Width="28" Height="28" />
+                                </UniformGrid>
+                            </Border>
+                        </Popup>
+                    </Grid>
+                </WrapPanel>
+            </Border>
+
+            <!-- EDITOR CONTENT CANVAS -->
+            <Grid Grid.Row="1" MinHeight="{Binding MinEditorHeight, RelativeSource={RelativeSource AncestorType=UserControl}}">
+                <RichTextBox x:Name="EditorBox"
+                             Background="Transparent"
+                             Foreground="{DynamicResource TextPrimary}"
+                             CaretBrush="{DynamicResource AccentBlue}"
+                             BorderThickness="0"
+                             Padding="12,10"
+                             AcceptsReturn="True"
+                             AcceptsTab="True"
+                             IsDocumentEnabled="True"
+                             FontFamily="Segoe UI"
+                             FontSize="13"
+                             TextChanged="OnEditorTextChanged"
+                             AutomationProperties.Name="WYSIWYG rich text editor" />
+
+                <!-- Watermark placeholder -->
+                <TextBlock x:Name="PlaceholderBlock"
+                           Text="{Binding Placeholder, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                           Margin="14,11,0,0"
+                           Foreground="{DynamicResource TextMuted}"
+                           FontSize="13"
+                           IsHitTestVisible="False"
+                           VerticalAlignment="Top" />
+            </Grid>
+
+            <!-- FOOTER STATUS METRICS -->
+            <Border x:Name="FooterBorder" Grid.Row="2" Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="0,1,0,0" Padding="12,5">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <TextBlock x:Name="WordCountBlock" Text="0 words" FontSize="11" Foreground="{DynamicResource TextMuted}" Margin="0,0,12,0" />
+                    <TextBlock x:Name="CharCountBlock" Text="0 characters" FontSize="11" Foreground="{DynamicResource TextMuted}" />
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Border>
+</UserControl>
