@@ -14,13 +14,13 @@ import {
   unsubscribeFromWebPush,
   updateNotificationPrivacy,
 } from "@/lib/notifications";
-import type { SessionInfo } from "@/types/auth";
+import type { AuthUser, SessionInfo } from "@/types/auth";
 import type { ClientPushSubscriptionState, NotificationPreviewMode } from "@/types/notifications";
 
 interface AccountModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAuthenticated?: () => void;
+  onAuthenticated?: (user: AuthUser) => void;
 }
 
 export default function AccountModal({ isOpen, onClose, onAuthenticated }: AccountModalProps) {
@@ -119,8 +119,8 @@ export default function AccountModal({ isOpen, onClose, onAuthenticated }: Accou
     setLoading(false);
 
     if (res.ok) {
-      if (onAuthenticated) {
-        onAuthenticated();
+      if (onAuthenticated && res.user) {
+        onAuthenticated(res.user);
       }
     } else {
       setError(res.error || "Invalid code");

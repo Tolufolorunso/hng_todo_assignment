@@ -19,6 +19,7 @@ import FollowUpCard from "@/components/followups/FollowUpCard";
 import FollowUpModal from "@/components/followups/FollowUpModal";
 import RescheduleModal from "@/components/followups/RescheduleModal";
 import OccurrenceHistoryModal from "@/components/followups/OccurrenceHistoryModal";
+import { onSyncEvent } from "@/lib/broadcast";
 
 type FilterTab = "all" | "due" | "upcoming" | "completed";
 type ScreenStatus = "loading" | "ready" | "error";
@@ -56,6 +57,22 @@ export default function FollowUpsScreen() {
 
   useEffect(() => {
     void loadData();
+    const unsubscribe = onSyncEvent((event) => {
+      if (
+        event.type === "WORKSPACE_CHANGED" ||
+        event.type === "SYNC_COMPLETED" ||
+        event.type === "DATA_MUTATED"
+      ) {
+        setIsModalOpen(false);
+        setEditingTarget(null);
+        setRescheduleTarget(null);
+        setHistoryTarget(null);
+        void loadData();
+      }
+    });
+    return () => {
+      unsubscribe();
+    };
   }, [loadData]);
 
   // Handlers for CRUD and state transitions

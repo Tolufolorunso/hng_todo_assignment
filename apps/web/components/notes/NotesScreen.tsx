@@ -13,6 +13,7 @@ import {
   updateNote,
 } from "@/lib/notes";
 import type { Note } from "@/types/note";
+import { onSyncEvent } from "@/lib/broadcast";
 
 type Status = "loading" | "ready" | "error";
 
@@ -48,6 +49,20 @@ export default function NotesScreen() {
 
   useEffect(() => {
     void load();
+    const unsubscribe = onSyncEvent((event) => {
+      if (
+        event.type === "WORKSPACE_CHANGED" ||
+        event.type === "SYNC_COMPLETED" ||
+        event.type === "DATA_MUTATED"
+      ) {
+        setSelectedId(null);
+        setMutationError(null);
+        void load();
+      }
+    });
+    return () => {
+      unsubscribe();
+    };
   }, [load]);
 
   const selectedNote = useMemo(

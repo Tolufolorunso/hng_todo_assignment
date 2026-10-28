@@ -12,11 +12,14 @@ import {
   requestOtp as apiRequestOtp,
   verifyOtp as apiVerifyOtp,
 } from "@/lib/auth";
+import { setActiveWorkspaceId, DEFAULT_WORKSPACE_ID } from "@/lib/repository";
+import { getAccountWorkspaceId } from "@/lib/adoption";
+import { broadcastSyncEvent } from "@/lib/broadcast";
 
 interface AuthContextValue extends AuthState {
   isAuthenticated: boolean;
   requestOtp: (email: string) => Promise<{ ok: boolean; message?: string; expiresAt?: string; error?: string }>;
-  verifyOtp: (email: string, code: string) => Promise<{ ok: boolean; error?: string }>;
+  verifyOtp: (email: string, code: string) => Promise<{ ok: boolean; user?: AuthUser; token?: string; session?: AuthSession; error?: string }>;
   signOut: () => Promise<void>;
   refreshSession: () => Promise<boolean>;
   deleteAccount: () => Promise<{ ok: boolean; error?: string }>;
@@ -43,6 +46,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setToken(storedToken);
         setUser(storedUser);
         setStatus("authenticated");
+        const wsId = getAccountWorkspaceId(storedUser.id);
+        setActiveWorkspaceId(wsId);
+        broadcastSyncEvent({ type: "WORKSPACE_CHANGED", workspaceId: wsId });
         return;
       }
 
@@ -55,6 +61,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(refreshRes.data.user);
         setSession(refreshRes.data.session);
         setStatus("authenticated");
+        const wsId = getAccountWorkspaceId(refreshRes.data.user.id);
+        setActiveWorkspaceId(wsId);
+        broadcastSyncEvent({ type: "WORKSPACE_CHANGED", workspaceId: wsId });
       } else {
         setStatus("unauthenticated");
       }
@@ -78,7 +87,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(res.data.user);
       setSession(res.data.session);
       setStatus("authenticated");
-      return { ok: true };
+      return {
+        ok: true,
+        user: res.data.user,
+        token: res.data.accessToken,
+        session: res.data.session,
+      };
     }
     return { ok: false, error: res.error || "Failed to verify code" };
   }, []);
@@ -90,6 +104,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setSession(null);
     setStatus("unauthenticated");
+    setActiveWorkspaceId(DEFAULT_WORKSPACE_ID);
+    broadcastSyncEvent({ type: "WORKSPACE_CHANGED", workspaceId: DEFAULT_WORKSPACE_ID });
   }, [token]);
 
   const refreshSession = useCallback(async () => {
@@ -99,12 +115,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(res.data.user);
       setSession(res.data.session);
       setStatus("authenticated");
+      const wsId = getAccountWorkspaceId(res.data.user.id);
+      setActiveWorkspaceId(wsId);
+      broadcastSyncEvent({ type: "WORKSPACE_CHANGED", workspaceId: wsId });
       return true;
     } else {
       setToken(null);
       setUser(null);
       setSession(null);
       setStatus("unauthenticated");
+      setActiveWorkspaceId(DEFAULT_WORKSPACE_ID);
+      broadcastSyncEvent({ type: "WORKSPACE_CHANGED", workspaceId: DEFAULT_WORKSPACE_ID });
       return false;
     }
   }, []);
@@ -112,10 +133,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const deleteAccount = useCallback(async () => {
     const res = await apiDeleteAccount(token);
     if (res.ok) {
+      clearStoredAuth();
       setToken(null);
       setUser(null);
       setSession(null);
       setStatus("unauthenticated");
+      setActiveWorkspaceId(DEFAULT_WORKSPACE_ID);
+      broadcastSyncEvent({ type: "WORKSPACE_CHANGED", workspaceId: DEFAULT_WORKSPACE_ID });
       return { ok: true };
     }
     return { ok: false, error: res.error || "Failed to delete account" };

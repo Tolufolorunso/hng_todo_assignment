@@ -6,6 +6,15 @@ import {
   type TaskInput,
   type TaskPatch,
 } from "@/lib/validation";
+import {
+  getActiveWorkspaceId,
+  createTask as repoCreateTask,
+  getTask as repoGetTask,
+  listTasks as repoListTasks,
+  updateTask as repoUpdateTask,
+  deleteTask as repoDeleteTask,
+  setTaskOrder as repoSetTaskOrder,
+} from "@/lib/repository";
 import type { Task, TaskCategory, TaskPriority } from "@/types/task";
 
 export class TaskValidationError extends Error {
@@ -26,47 +35,25 @@ function now(): string {
   return new Date().toISOString();
 }
 
-function newId(): string {
-  return crypto.randomUUID();
-}
-
 export async function createTask(input: TaskInput): Promise<Task> {
   const validation = validateTaskInput(input);
   if (!validation.ok) {
     throw new TaskValidationError(validation.error);
   }
 
-  const timestamp = now();
-  const task: Task = {
-    id: newId(),
-    title: validation.value.title,
-    description: validation.value.description,
-    completed: false,
-    priority: validation.value.priority,
-    dueDate: validation.value.dueDate,
-    category: validation.value.category,
-    estimatedMinutes: validation.value.estimatedMinutes ?? null,
-    sourceNoteId: validation.value.sourceNoteId ?? null,
-    sourceExcerpt: validation.value.sourceExcerpt ?? null,
-    createdAt: timestamp,
-    updatedAt: timestamp,
-    completedAt: null,
-    ...(validation.value.order !== undefined ? { order: validation.value.order } : {}),
-  };
-
-  const db = await getDb();
-  await db.put("tasks", task);
-  return task;
+  const workspaceId = getActiveWorkspaceId();
+  return repoCreateTask(input, { workspaceId });
 }
 
 export async function getTask(id: string): Promise<Task | undefined> {
-  const db = await getDb();
-  return db.get("tasks", id);
+  const workspaceId = getActiveWorkspaceId();
+  const task = await repoGetTask(id, { workspaceId });
+  return task ?? undefined;
 }
 
 export async function listTasks(): Promise<Task[]> {
-  const db = await getDb();
-  const tasks = await db.getAll("tasks");
+  const workspaceId = getActiveWorkspaceId();
+  const tasks = await repoListTasks({ workspaceId });
   return tasks.sort((a, b) => {
     if (a.createdAt !== b.createdAt) {
       return a.createdAt < b.createdAt ? 1 : -1;
@@ -81,38 +68,38 @@ export async function updateTask(id: string, patch: TaskPatch): Promise<Task> {
     throw new TaskValidationError(validation.error);
   }
 
-  const db = await getDb();
-  const existing = await db.get("tasks", id);
-  if (existing === undefined) {
-    throw new TaskNotFoundError(id);
+  const workspaceId = getActiveWorkspaceId();
+  try {
+    return await repoUpdateTask(id, patch, { workspaceId });
+  } catch (err) {
+    if (err instanceof Error && err.message.includes("Task not found")) {
+      throw new TaskNotFoundError(id);
+    }
+    throw err;
   }
-
-  const updated: Task = { ...existing, ...validation.value, updatedAt: now() };
-  if (validation.value.completed !== undefined) {
-    updated.completedAt = validation.value.completed ? now() : null;
-  }
-
-  await db.put("tasks", updated);
-  return updated;
 }
 
 export async function deleteTask(id: string): Promise<void> {
-  const db = await getDb();
-  await db.delete("tasks", id);
+  const workspaceId = getActiveWorkspaceId();
+  await repoDeleteTask(id, { workspaceId });
 }
 
 export async function reorderTasks(orderedIds: string[]): Promise<void> {
+  const workspaceId = getActiveWorkspaceId();
   const db = await getDb();
   const tx = db.transaction("tasks", "readwrite");
+  const timestamp = now();
   for (let i = 0; i < orderedIds.length; i++) {
     const task = await tx.store.get(orderedIds[i]);
-    if (task) {
+    if (task && (task.workspaceId ?? "local") === workspaceId) {
       task.order = i;
-      task.updatedAt = now();
+      task.updatedAt = timestamp;
       await tx.store.put(task);
     }
   }
   await tx.done;
+
+  await repoSetTaskOrder(orderedIds, { workspaceId });
 }
 
 /**

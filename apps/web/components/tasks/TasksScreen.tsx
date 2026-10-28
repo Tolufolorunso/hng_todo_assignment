@@ -23,6 +23,7 @@ import {
   type TaskStatusFilter,
 } from "@/lib/tasks";
 import type { Task, TaskCategory, TaskPriority } from "@/types/task";
+import { onSyncEvent } from "@/lib/broadcast";
 
 type Status = "loading" | "ready" | "error";
 
@@ -76,6 +77,20 @@ export default function TasksScreen() {
 
   useEffect(() => {
     void load();
+    const unsubscribe = onSyncEvent((event) => {
+      if (
+        event.type === "WORKSPACE_CHANGED" ||
+        event.type === "SYNC_COMPLETED" ||
+        event.type === "DATA_MUTATED"
+      ) {
+        setPendingId(null);
+        setMutationError(null);
+        void load();
+      }
+    });
+    return () => {
+      unsubscribe();
+    };
   }, [load]);
 
   const refresh = useCallback(() => {

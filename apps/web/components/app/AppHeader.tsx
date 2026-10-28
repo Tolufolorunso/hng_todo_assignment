@@ -22,9 +22,10 @@ import { setActiveWorkspaceId } from "@/lib/repository";
 import { triggerSyncNow } from "@/lib/sync";
 import { getDueFollowUpsCount } from "@/lib/followups";
 import { getPendingCapturesCount } from "@/lib/inbox";
-import { onSyncEvent } from "@/lib/broadcast";
+import { onSyncEvent, broadcastSyncEvent } from "@/lib/broadcast";
 import { isPrimaryActive } from "@/lib/navigation";
 import { useGlobalShortcuts } from "@/hooks/useGlobalShortcuts";
+import type { AuthUser } from "@/types/auth";
 
 interface AppHeaderProps {
   active?: "tasks" | "notes" | "calendar" | "analytics" | "privacy" | "followups" | "plan" | "inbox";
@@ -36,6 +37,7 @@ function AppHeader({ active }: AppHeaderProps) {
   const [isCaptureOpen, setIsCaptureOpen] = useState(false);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const [isAdoptionOpen, setIsAdoptionOpen] = useState(false);
+  const [adoptionAccountId, setAdoptionAccountId] = useState<string | null>(null);
   const [isDesktopMoreOpen, setIsDesktopMoreOpen] = useState(false);
   const [isMobileMoreOpen, setIsMobileMoreOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
@@ -65,7 +67,10 @@ function AppHeader({ active }: AppHeaderProps) {
   const handleCloseDesktopMore = useCallback(() => setIsDesktopMoreOpen(false), []);
   const handleToggleDesktopMore = useCallback(() => setIsDesktopMoreOpen((prev) => !prev), []);
 
-  const handleCloseAdoption = useCallback(() => setIsAdoptionOpen(false), []);
+  const handleCloseAdoption = useCallback(() => {
+    setIsAdoptionOpen(false);
+    setAdoptionAccountId(null);
+  }, []);
 
   const refreshBadgeCounts = useCallback(() => {
     getDueFollowUpsCount()
@@ -105,22 +110,24 @@ function AppHeader({ active }: AppHeaderProps) {
     enabled: !isAnyModalOpen,
   });
 
-  const handleAuthenticated = useCallback(async () => {
-    if (user) {
+  const handleAuthenticated = useCallback(async (authUser: AuthUser) => {
+    if (authUser) {
+      setAdoptionAccountId(authUser.id);
       const hasData = await hasLocalDataToAdopt();
       if (hasData) {
         setIsAccountOpen(false);
         setIsAdoptionOpen(true);
       } else {
-        const wsId = getAccountWorkspaceId(user.id);
+        const wsId = getAccountWorkspaceId(authUser.id);
         setActiveWorkspaceId(wsId);
+        broadcastSyncEvent({ type: "WORKSPACE_CHANGED", workspaceId: wsId });
         void triggerSyncNow();
         setIsAccountOpen(false);
       }
     } else {
       setIsAccountOpen(false);
     }
-  }, [user]);
+  }, []);
 
   useEffect(() => {
     refreshBadgeCounts();
@@ -463,10 +470,10 @@ function AppHeader({ active }: AppHeaderProps) {
           />
         )}
 
-        {user && isAdoptionOpen && (
+        {(user || adoptionAccountId) && isAdoptionOpen && (
           <DataAdoptionModal
             isOpen={isAdoptionOpen}
-            accountId={user.id}
+            accountId={adoptionAccountId || user?.id || ""}
             onClose={handleCloseAdoption}
           />
         )}

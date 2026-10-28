@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import "fake-indexeddb/auto";
 import { deleteDb } from "./db";
+import { listTasks as bridgedListTasks, createTask as bridgedCreateTask } from "./tasks";
+import { listNotes as bridgedListNotes, createNote as bridgedCreateNote } from "./notes";
+import { listFollowUps as bridgedListFollowUps, createFollowUp as bridgedCreateFollowUp } from "./followups";
+import { listCaptures as bridgedListCaptures, createCapture as bridgedCreateCapture } from "./inbox";
+import { getDailyPlanByDate as bridgedGetDailyPlanByDate, createDailyPlan as bridgedCreateDailyPlan } from "./plans";
 import {
   DEFAULT_WORKSPACE_ID,
   getActiveWorkspaceId,
@@ -316,6 +321,103 @@ describe("Web Repository Boundaries (apps/web/lib/repository.ts)", () => {
       const allConflicts = await listLocalConflicts("local");
       expect(allConflicts[0].status).toBe("resolved");
       expect(allConflicts[0].resolvedAt).toBeDefined();
+    });
+  });
+
+  describe("Workspace Isolation across Bridged Operations", () => {
+    it("strictly isolates tasks, notes, followups, captures, and plans by active workspace", async () => {
+      // 1. In local workspace: create entities via bridged modules
+      setActiveWorkspaceId("local");
+      const localTask = await bridgedCreateTask({ title: "Local Task" });
+      const localNote = await bridgedCreateNote({ title: "Local Note", body: "Local Body" });
+      const localFu = await bridgedCreateFollowUp({
+        personName: "Local Person",
+        commitment: "Local Commitment",
+        dueAt: "2026-11-01T10:00:00.000Z",
+      });
+      const localCap = await bridgedCreateCapture({ text: "Local Capture" });
+      const localPlan = await bridgedCreateDailyPlan({
+        date: "2026-10-25",
+        availableMinutes: 120,
+        items: [],
+      });
+
+      expect(await bridgedListTasks()).toHaveLength(1);
+      expect(await bridgedListNotes()).toHaveLength(1);
+      expect(await bridgedListFollowUps()).toHaveLength(1);
+      expect(await bridgedListCaptures()).toHaveLength(1);
+      expect(localPlan.availableMinutes).toBe(120);
+      expect(await bridgedGetDailyPlanByDate("2026-10-25")).not.toBeNull();
+
+      // 2. Switch to account workspace: should see empty lists
+      setActiveWorkspaceId("account_user_999");
+      expect(await bridgedListTasks()).toHaveLength(0);
+      expect(await bridgedListNotes()).toHaveLength(0);
+      expect(await bridgedListFollowUps()).toHaveLength(0);
+      expect(await bridgedListCaptures()).toHaveLength(0);
+      expect(await bridgedGetDailyPlanByDate("2026-10-25")).toBeNull();
+
+      // 3. Create entities in account workspace
+      const accountTask = await bridgedCreateTask({ title: "Account Task" });
+      const accountNote = await bridgedCreateNote({ title: "Account Note", body: "Account Body" });
+      const accountFu = await bridgedCreateFollowUp({
+        personName: "Account Person",
+        commitment: "Account Commitment",
+        dueAt: "2026-11-02T10:00:00.000Z",
+      });
+      const accountCap = await bridgedCreateCapture({ text: "Account Capture" });
+      const accountPlan = await bridgedCreateDailyPlan({
+        date: "2026-10-25",
+        availableMinutes: 180,
+        items: [],
+      });
+
+      const accTasks = await bridgedListTasks();
+      expect(accTasks).toHaveLength(1);
+      expect(accTasks[0].id).toBe(accountTask.id);
+
+      const accNotes = await bridgedListNotes();
+      expect(accNotes).toHaveLength(1);
+      expect(accNotes[0].id).toBe(accountNote.id);
+
+      const accFollowUps = await bridgedListFollowUps();
+      expect(accFollowUps).toHaveLength(1);
+      expect(accFollowUps[0].id).toBe(accountFu.id);
+
+      const accCaptures = await bridgedListCaptures();
+      expect(accCaptures).toHaveLength(1);
+      expect(accCaptures[0].id).toBe(accountCap.id);
+
+      const accPlan = await bridgedGetDailyPlanByDate("2026-10-25");
+      expect(accPlan).not.toBeNull();
+      expect(accPlan?.availableMinutes).toBe(180);
+      expect(accountPlan.availableMinutes).toBe(180);
+
+      // Verify outbox mutations enqueued for account workspace
+      const accountOutbox = await listOutbox("account_user_999");
+      expect(accountOutbox.length).toBeGreaterThanOrEqual(5);
+
+      // 4. Switch back to local workspace: local entities remain unchanged
+      setActiveWorkspaceId("local");
+      const localTasksAfter = await bridgedListTasks();
+      expect(localTasksAfter).toHaveLength(1);
+      expect(localTasksAfter[0].id).toBe(localTask.id);
+
+      const localNotesAfter = await bridgedListNotes();
+      expect(localNotesAfter).toHaveLength(1);
+      expect(localNotesAfter[0].id).toBe(localNote.id);
+
+      const localFuAfter = await bridgedListFollowUps();
+      expect(localFuAfter).toHaveLength(1);
+      expect(localFuAfter[0].id).toBe(localFu.id);
+
+      const localCapAfter = await bridgedListCaptures();
+      expect(localCapAfter).toHaveLength(1);
+      expect(localCapAfter[0].id).toBe(localCap.id);
+
+      const localPlanAfter = await bridgedGetDailyPlanByDate("2026-10-25");
+      expect(localPlanAfter).not.toBeNull();
+      expect(localPlanAfter?.availableMinutes).toBe(120);
     });
   });
 });

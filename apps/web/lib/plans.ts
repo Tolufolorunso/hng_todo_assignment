@@ -2,6 +2,12 @@ import { getDb } from "@/lib/db";
 import type { DailyPlan, DailyPlanInput, DailyPlanItem } from "@/types/plan";
 import { updateTask } from "@/lib/tasks";
 import { completeFollowUp, getFollowUp } from "@/lib/followups";
+import {
+  getActiveWorkspaceId,
+  getDailyPlanByDate as repoGetDailyPlanByDate,
+  upsertDailyPlan as repoUpsertDailyPlan,
+  listDailyPlans as repoListDailyPlans,
+} from "@/lib/repository";
 
 export class DailyPlanNotFoundError extends Error {
   constructor(idOrDate: string) {
@@ -14,10 +20,6 @@ function now(): string {
   return new Date().toISOString();
 }
 
-function newId(): string {
-  return crypto.randomUUID();
-}
-
 export function getDefaultTimeZone(): string {
   try {
     return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
@@ -27,64 +29,50 @@ export function getDefaultTimeZone(): string {
 }
 
 export async function createDailyPlan(input: DailyPlanInput): Promise<DailyPlan> {
-  const db = await getDb();
-  const timestamp = now();
-  const plan: DailyPlan = {
-    id: newId(),
-    date: input.date,
-    timeZone: input.timeZone || getDefaultTimeZone(),
-    availableMinutes: input.availableMinutes,
-    items: input.items,
-    acceptedAt: input.acceptedAt ?? null,
-    createdAt: timestamp,
-    updatedAt: timestamp,
-  };
-
-  await db.put("daily_plans", plan);
-  return plan;
+  const workspaceId = getActiveWorkspaceId();
+  return repoUpsertDailyPlan(input, { workspaceId });
 }
 
 export async function getDailyPlan(id: string): Promise<DailyPlan | null> {
+  const workspaceId = getActiveWorkspaceId();
   const db = await getDb();
   const plan = await db.get("daily_plans", id);
-  return plan ?? null;
+  if (!plan || (plan.workspaceId && plan.workspaceId !== workspaceId)) {
+    return null;
+  }
+  return plan;
 }
 
 export async function getDailyPlanByDate(date: string): Promise<DailyPlan | null> {
-  const db = await getDb();
-  const index = db.transaction("daily_plans").store.index("date");
-  const plan = await index.get(date);
-  return plan ?? null;
+  const workspaceId = getActiveWorkspaceId();
+  return repoGetDailyPlanByDate(date, { workspaceId });
 }
 
 export async function saveDailyPlan(plan: DailyPlan): Promise<DailyPlan> {
-  const db = await getDb();
-  const updated: DailyPlan = {
-    ...plan,
-    updatedAt: now(),
-  };
-  await db.put("daily_plans", updated);
-  return updated;
+  const workspaceId = getActiveWorkspaceId();
+  return repoUpsertDailyPlan(plan, { workspaceId });
 }
 
 export async function updateDailyPlan(
   id: string,
   patch: Partial<Omit<DailyPlan, "id" | "createdAt">>,
 ): Promise<DailyPlan> {
-  const db = await getDb();
-  const existing = await db.get("daily_plans", id);
+  const existing = await getDailyPlan(id);
   if (!existing) {
     throw new DailyPlanNotFoundError(id);
   }
 
-  const updated: DailyPlan = {
-    ...existing,
-    ...patch,
-    updatedAt: now(),
-  };
-
-  await db.put("daily_plans", updated);
-  return updated;
+  const workspaceId = getActiveWorkspaceId();
+  return repoUpsertDailyPlan(
+    {
+      ...existing,
+      ...patch,
+      date: patch.date ?? existing.date,
+      availableMinutes: patch.availableMinutes ?? existing.availableMinutes,
+      items: patch.items ?? existing.items,
+    },
+    { workspaceId }
+  );
 }
 
 export async function acceptDailyPlan(id: string): Promise<DailyPlan> {
@@ -95,13 +83,40 @@ export async function acceptDailyPlan(id: string): Promise<DailyPlan> {
 }
 
 export async function deleteDailyPlan(id: string): Promise<void> {
+  const workspaceId = getActiveWorkspaceId();
   const db = await getDb();
-  await db.delete("daily_plans", id);
+  const existing = await getDailyPlan(id);
+  if (existing) {
+    const tx = db.transaction(["daily_plans", "outbox", "tombstones"], "readwrite");
+    await tx.objectStore("daily_plans").delete(id);
+    if (workspaceId !== "local") {
+      tx.objectStore("outbox").put({
+        mutationId: `mut_${crypto.randomUUID()}`,
+        workspaceId,
+        protocolVersion: 1,
+        entityType: "plan",
+        entityId: id,
+        action: "delete",
+        baseRevision: null,
+        payload: null,
+        createdAt: now(),
+        retryCount: 0,
+      });
+      tx.objectStore("tombstones").put({
+        id: `tomb_${crypto.randomUUID()}`,
+        workspaceId,
+        entityType: "plan",
+        entityId: id,
+        deletedAt: now(),
+      });
+    }
+    await tx.done;
+  }
 }
 
 export async function listDailyPlans(): Promise<DailyPlan[]> {
-  const db = await getDb();
-  const plans = await db.getAll("daily_plans");
+  const workspaceId = getActiveWorkspaceId();
+  const plans = await repoListDailyPlans({ workspaceId });
   return plans.sort((a, b) => b.date.localeCompare(a.date));
 }
 
@@ -110,8 +125,7 @@ export async function togglePlanItemCompletion(
   itemId: string,
   forceCompleted?: boolean,
 ): Promise<DailyPlan> {
-  const db = await getDb();
-  const plan = await db.get("daily_plans", planId);
+  const plan = await getDailyPlan(planId);
   if (!plan) {
     throw new DailyPlanNotFoundError(planId);
   }
@@ -155,9 +169,7 @@ export async function togglePlanItemCompletion(
   const updatedPlan: DailyPlan = {
     ...plan,
     items: updatedItems,
-    updatedAt: now(),
   };
 
-  await db.put("daily_plans", updatedPlan);
-  return updatedPlan;
+  return saveDailyPlan(updatedPlan);
 }

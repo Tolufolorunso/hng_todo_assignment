@@ -1,8 +1,15 @@
-import { getDb } from "@/lib/db";
 import { validateCaptureInput } from "@/lib/validation";
 import { createTask, getTask } from "@/lib/tasks";
 import { createNote, getNote } from "@/lib/notes";
 import { createFollowUp, getFollowUp } from "@/lib/followups";
+import {
+  getActiveWorkspaceId,
+  createInboxCapture as repoCreateInboxCapture,
+  getInboxCapture as repoGetInboxCapture,
+  listInboxCaptures as repoListInboxCaptures,
+  updateInboxCapture as repoUpdateInboxCapture,
+  deleteInboxCapture as repoDeleteInboxCapture,
+} from "@/lib/repository";
 import type {
   InboxCapture,
   InboxCaptureState,
@@ -11,115 +18,74 @@ import type {
   ProcessCaptureResult,
 } from "@/types/inbox";
 
-function generateId(): string {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-    return crypto.randomUUID();
-  }
-  return "capture-" + Date.now() + "-" + Math.random().toString(36).slice(2, 9);
-}
-
 export async function createCapture(input: CreateCaptureInput): Promise<InboxCapture> {
   const validated = validateCaptureInput(input);
   if (!validated.ok) {
     throw new Error(validated.error);
   }
 
-  const db = await getDb();
-  const now = new Date().toISOString();
-  const capture: InboxCapture = {
-    id: generateId(),
-    text: validated.value.text,
-    sharedUrl: validated.value.sharedUrl,
-    sourceAppLabel: validated.value.sourceAppLabel,
-    capturedAt: now,
-    state: "pending",
-    targetType: null,
-    targetId: null,
-    processedAt: null,
-    discardedAt: null,
-    createdAt: now,
-    updatedAt: now,
-  };
-
-  await db.put("inbox_captures", capture);
-  return capture;
+  const workspaceId = getActiveWorkspaceId();
+  return repoCreateInboxCapture(
+    {
+      text: validated.value.text,
+      sharedUrl: validated.value.sharedUrl,
+      sourceAppLabel: validated.value.sourceAppLabel,
+    },
+    { workspaceId }
+  );
 }
 
 export async function getCapture(id: string): Promise<InboxCapture | null> {
-  const db = await getDb();
-  const capture = await db.get("inbox_captures", id);
-  return capture ?? null;
+  const workspaceId = getActiveWorkspaceId();
+  return repoGetInboxCapture(id, { workspaceId });
 }
 
 export async function listCaptures(filter?: {
   state?: InboxCaptureState;
 }): Promise<InboxCapture[]> {
-  const db = await getDb();
-  let captures: InboxCapture[];
-
-  if (filter?.state) {
-    captures = await db.getAllFromIndex("inbox_captures", "state", filter.state);
-  } else {
-    captures = await db.getAll("inbox_captures");
-  }
+  const workspaceId = getActiveWorkspaceId();
+  const captures = await repoListInboxCaptures({
+    workspaceId,
+    state: filter?.state,
+  });
 
   // Sort by capturedAt descending (newest first)
   return captures.sort((a, b) => b.capturedAt.localeCompare(a.capturedAt));
 }
 
 export async function getPendingCapturesCount(): Promise<number> {
-  const db = await getDb();
-  try {
-    return await db.countFromIndex("inbox_captures", "state", "pending");
-  } catch {
-    const all = await db.getAll("inbox_captures");
-    return all.filter((c) => c.state === "pending").length;
-  }
+  const captures = await listCaptures({ state: "pending" });
+  return captures.length;
 }
 
 export async function updateCapture(
   id: string,
   patch: Partial<InboxCapture>
 ): Promise<InboxCapture> {
-  const db = await getDb();
-  const existing = await db.get("inbox_captures", id);
-  if (!existing) {
-    throw new Error(`Capture with id ${id} not found.`);
-  }
-
-  const updated: InboxCapture = {
-    ...existing,
-    ...patch,
-    id: existing.id,
-    updatedAt: new Date().toISOString(),
-  };
-
-  await db.put("inbox_captures", updated);
-  return updated;
+  const workspaceId = getActiveWorkspaceId();
+  return repoUpdateInboxCapture(id, patch, { workspaceId });
 }
 
 export async function discardCapture(id: string): Promise<InboxCapture> {
-  const existing = await getCapture(id);
-  if (!existing) {
-    throw new Error(`Capture with id ${id} not found.`);
-  }
-
-  const now = new Date().toISOString();
-  return updateCapture(id, {
-    state: "discarded",
-    discardedAt: now,
-  });
+  const workspaceId = getActiveWorkspaceId();
+  return repoUpdateInboxCapture(
+    id,
+    {
+      state: "discarded",
+    },
+    { workspaceId }
+  );
 }
 
 export async function deleteCapture(id: string): Promise<void> {
-  const db = await getDb();
-  await db.delete("inbox_captures", id);
+  const workspaceId = getActiveWorkspaceId();
+  await repoDeleteInboxCapture(id, { workspaceId });
 }
 
 function deriveTitle(text: string, fallback: string): string {
   const firstLine = text.split("\n")[0].trim();
   if (firstLine.length > 0) {
-    return firstLine.length > 100 ? firstLine.slice(0, 97) + "..." : firstLine;
+    return firstLine.length > 100 ? firstLine.slice(0, 100) : firstLine;
   }
   return fallback;
 }

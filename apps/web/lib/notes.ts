@@ -1,11 +1,20 @@
-import { getDb } from "@/lib/db";
+import { stripHtmlToText } from "@/lib/html";
 import {
   validateNoteInput,
   validateNotePatch,
   type NoteInput,
   type NotePatch,
 } from "@/lib/validation";
-import { stripHtmlToText } from "@/lib/html";
+import {
+  getActiveWorkspaceId,
+  createNote as repoCreateNote,
+  getNote as repoGetNote,
+  listNotes as repoListNotes,
+  updateNote as repoUpdateNote,
+  deleteNote as repoDeleteNote,
+  listTasks as repoListTasks,
+  listFollowUps as repoListFollowUps,
+} from "@/lib/repository";
 import type { Note } from "@/types/note";
 import type { Task } from "@/types/task";
 import type { FollowUp } from "@/types/followup";
@@ -24,42 +33,28 @@ export class NoteNotFoundError extends Error {
   }
 }
 
-function now(): string {
-  return new Date().toISOString();
-}
-
-function newId(): string {
-  return crypto.randomUUID();
-}
-
 export async function createNote(input: NoteInput): Promise<Note> {
   const validation = validateNoteInput(input);
   if (!validation.ok) {
     throw new NoteValidationError(validation.error);
   }
 
-  const timestamp = now();
-  const note: Note = {
-    id: newId(),
-    title: validation.value.title,
-    body: validation.value.body,
-    createdAt: timestamp,
-    updatedAt: timestamp,
-  };
-
-  const db = await getDb();
-  await db.put("notes", note);
-  return note;
+  const workspaceId = getActiveWorkspaceId();
+  return repoCreateNote(
+    { title: validation.value.title, body: validation.value.body },
+    { workspaceId }
+  );
 }
 
 export async function getNote(id: string): Promise<Note | undefined> {
-  const db = await getDb();
-  return db.get("notes", id);
+  const workspaceId = getActiveWorkspaceId();
+  const note = await repoGetNote(id, { workspaceId });
+  return note ?? undefined;
 }
 
 export async function listNotes(): Promise<Note[]> {
-  const db = await getDb();
-  const notes = await db.getAll("notes");
+  const workspaceId = getActiveWorkspaceId();
+  const notes = await repoListNotes({ workspaceId });
   return notes.sort((a, b) => {
     if (a.updatedAt !== b.updatedAt) {
       return a.updatedAt < b.updatedAt ? 1 : -1;
@@ -74,20 +69,20 @@ export async function updateNote(id: string, patch: NotePatch): Promise<Note> {
     throw new NoteValidationError(validation.error);
   }
 
-  const db = await getDb();
-  const existing = await db.get("notes", id);
-  if (existing === undefined) {
-    throw new NoteNotFoundError(id);
+  const workspaceId = getActiveWorkspaceId();
+  try {
+    return await repoUpdateNote(id, validation.value, { workspaceId });
+  } catch (err) {
+    if (err instanceof Error && err.message.includes("Note not found")) {
+      throw new NoteNotFoundError(id);
+    }
+    throw err;
   }
-
-  const updated: Note = { ...existing, ...validation.value, updatedAt: now() };
-  await db.put("notes", updated);
-  return updated;
 }
 
 export async function deleteNote(id: string): Promise<void> {
-  const db = await getDb();
-  await db.delete("notes", id);
+  const workspaceId = getActiveWorkspaceId();
+  await repoDeleteNote(id, { workspaceId });
 }
 
 export function filterNotes(notes: Note[], query: string): Note[] {
@@ -110,22 +105,12 @@ export interface NoteBacklinks {
 }
 
 export async function getNoteBacklinks(noteId: string): Promise<NoteBacklinks> {
-  const db = await getDb();
-  let tasks: Task[] = [];
-  try {
-    tasks = await db.getAllFromIndex("tasks", "sourceNoteId", noteId);
-  } catch {
-    const allTasks = await db.getAll("tasks");
-    tasks = allTasks.filter((t) => t.sourceNoteId === noteId);
-  }
+  const workspaceId = getActiveWorkspaceId();
+  const allTasks = await repoListTasks({ workspaceId });
+  const tasks = allTasks.filter((t) => t.sourceNoteId === noteId);
 
-  let followups: FollowUp[] = [];
-  try {
-    followups = await db.getAllFromIndex("followups", "sourceNoteId", noteId);
-  } catch {
-    const allFollowups = await db.getAll("followups");
-    followups = allFollowups.filter((f) => f.sourceNoteId === noteId);
-  }
+  const allFollowups = await repoListFollowUps({ workspaceId });
+  const followups = allFollowups.filter((f) => f.sourceNoteId === noteId);
 
   tasks.sort((a, b) => {
     if (a.createdAt !== b.createdAt) {

@@ -5,6 +5,7 @@ import { useModalAccessibility } from "@/hooks/useModalAccessibility";
 import { adoptLocalDataIntoAccount, getAccountWorkspaceId } from "@/lib/adoption";
 import { setActiveWorkspaceId } from "@/lib/repository";
 import { triggerSyncNow } from "@/lib/sync";
+import { broadcastSyncEvent } from "@/lib/broadcast";
 
 interface DataAdoptionModalProps {
   isOpen: boolean;
@@ -32,6 +33,7 @@ export default function DataAdoptionModal({
       await adoptLocalDataIntoAccount(accountId);
       const wsId = getAccountWorkspaceId(accountId);
       setActiveWorkspaceId(wsId);
+      broadcastSyncEvent({ type: "WORKSPACE_CHANGED", workspaceId: wsId });
       await triggerSyncNow();
       if (onCompleted) {
         onCompleted();
@@ -47,6 +49,7 @@ export default function DataAdoptionModal({
   function handleStartFresh() {
     const wsId = getAccountWorkspaceId(accountId);
     setActiveWorkspaceId(wsId);
+    broadcastSyncEvent({ type: "WORKSPACE_CHANGED", workspaceId: wsId });
     void triggerSyncNow();
     if (onCompleted) {
       onCompleted();

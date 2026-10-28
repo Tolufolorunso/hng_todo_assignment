@@ -17,6 +17,7 @@ import AvailableTimeInput from "@/components/plan/AvailableTimeInput";
 import CapacitySummary from "@/components/plan/CapacitySummary";
 import PlanItemCard from "@/components/plan/PlanItemCard";
 import PlanBacklogDrawer from "@/components/plan/PlanBacklogDrawer";
+import { onSyncEvent } from "@/lib/broadcast";
 
 function getLocalDateString(date: Date = new Date()): string {
   const year = date.getFullYear();
@@ -88,6 +89,19 @@ export default function PlanScreen() {
 
   useEffect(() => {
     loadData(currentDate);
+    const unsubscribe = onSyncEvent((event) => {
+      if (
+        event.type === "WORKSPACE_CHANGED" ||
+        event.type === "SYNC_COMPLETED" ||
+        event.type === "DATA_MUTATED"
+      ) {
+        setIsBacklogOpen(false);
+        loadData(currentDate);
+      }
+    });
+    return () => {
+      unsubscribe();
+    };
   }, [currentDate, loadData]);
 
   // Handle changing available time in draft mode

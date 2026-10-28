@@ -12,7 +12,7 @@ import {
   listCaptures,
   updateCapture,
 } from "@/lib/inbox";
-import { broadcastSyncEvent } from "@/lib/broadcast";
+import { broadcastSyncEvent, onSyncEvent } from "@/lib/broadcast";
 import { getActiveWorkspaceId } from "@/lib/repository";
 import type { InboxCapture, InboxCaptureState, InboxTargetType } from "@/types/inbox";
 
@@ -77,8 +77,22 @@ export default function InboxScreen({
         setLoading(false);
       });
 
+    const unsubscribe = onSyncEvent((event) => {
+      if (
+        event.type === "WORKSPACE_CHANGED" ||
+        event.type === "SYNC_COMPLETED" ||
+        event.type === "DATA_MUTATED"
+      ) {
+        setConfirmDeleteId(null);
+        setConvertTarget(null);
+        setErrorMessage(null);
+        setRefreshSignal((prev) => prev + 1);
+      }
+    });
+
     return () => {
       active = false;
+      unsubscribe();
     };
   }, [refreshSignal]);
 

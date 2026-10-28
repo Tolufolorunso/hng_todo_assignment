@@ -18,6 +18,7 @@ import {
   computeVelocity,
 } from "@/lib/analytics";
 import { listTasks, todayIsoDate } from "@/lib/tasks";
+import { onSyncEvent } from "@/lib/broadcast";
 import type { Task } from "@/types/task";
 
 type LoadingStatus = "loading" | "ready" | "error";
@@ -43,6 +44,18 @@ export default function AnalyticsScreen() {
 
   useEffect(() => {
     void load();
+    const unsubscribe = onSyncEvent((event) => {
+      if (
+        event.type === "WORKSPACE_CHANGED" ||
+        event.type === "SYNC_COMPLETED" ||
+        event.type === "DATA_MUTATED"
+      ) {
+        void load();
+      }
+    });
+    return () => {
+      unsubscribe();
+    };
   }, [load]);
 
   const summary = useMemo(() => computeSummary(tasks, todayIso), [tasks, todayIso]);
