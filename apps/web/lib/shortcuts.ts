@@ -5,7 +5,8 @@ export type ShortcutDestination =
   | "/inbox"
   | "/plan"
   | "/calendar"
-  | "/analytics";
+  | "/analytics"
+  | "more";
 
 export interface SequenceState {
   pendingPrefix: string | null;
@@ -71,6 +72,7 @@ const DESTINATION_MAP: Record<string, ShortcutDestination> = {
   p: "/plan",
   c: "/calendar",
   a: "/analytics",
+  m: "more",
 };
 
 export function processSequenceKey(

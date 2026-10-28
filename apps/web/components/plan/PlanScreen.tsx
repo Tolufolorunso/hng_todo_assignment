@@ -42,6 +42,7 @@ export default function PlanScreen() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [followups, setFollowups] = useState<FollowUp[]>([]);
   const [isBacklogOpen, setIsBacklogOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Load backlog data and existing plan for selected date
   const loadData = useCallback((dateStr: string) => {
@@ -54,6 +55,7 @@ export default function PlanScreen() {
       getDailyPlanByDate(yesterdayStr),
     ])
       .then(([allTasks, allFollowups, existingPlan, yesterdayPlan]) => {
+        setErrorMessage(null);
         setTasks(allTasks);
         setFollowups(allFollowups);
 
@@ -77,6 +79,7 @@ export default function PlanScreen() {
       })
       .catch((err) => {
         console.error("Failed to load plan data", err);
+        setErrorMessage("Failed to load plan data. Please check your connection.");
       })
       .finally(() => {
         setLoading(false);
@@ -146,6 +149,7 @@ export default function PlanScreen() {
   // Accept or save the plan
   const handleAcceptPlan = async () => {
     setSaving(true);
+    setErrorMessage(null);
     try {
       if (plan) {
         const updated = await saveDailyPlan({
@@ -167,6 +171,7 @@ export default function PlanScreen() {
       setIsEditingAccepted(false);
     } catch (err) {
       console.error("Failed to accept plan", err);
+      setErrorMessage("Failed to save daily plan. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -175,6 +180,7 @@ export default function PlanScreen() {
   // Toggle item completion in execution mode
   const handleToggleComplete = async (itemId: string) => {
     if (!plan) return;
+    setErrorMessage(null);
     try {
       const updated = await togglePlanItemCompletion(plan.id, itemId);
       setPlan(updated);
@@ -184,6 +190,7 @@ export default function PlanScreen() {
       listFollowUps().then(setFollowups);
     } catch (err) {
       console.error("Failed to toggle item completion", err);
+      setErrorMessage("Failed to update plan item status. Please try again.");
     }
   };
 
@@ -194,6 +201,24 @@ export default function PlanScreen() {
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-6 pb-24 sm:px-6 sm:py-8 sm:pb-20">
+      {/* Visible Error Feedback Banner */}
+      {errorMessage && (
+        <div
+          role="alert"
+          className="flex items-center justify-between rounded-2xl border border-danger/30 bg-danger/10 px-4 py-3 text-xs font-medium text-danger shadow-xs"
+        >
+          <span>{errorMessage}</span>
+          <button
+            type="button"
+            onClick={() => setErrorMessage(null)}
+            className="ml-3 rounded-lg p-1 text-danger/80 hover:bg-danger/20 hover:text-danger"
+            aria-label="Dismiss error"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* Date Header & Stepper */}
       <div className="flex flex-col gap-3 rounded-3xl border border-border bg-surface p-5 shadow-xs sm:flex-row sm:items-center sm:justify-between sm:p-6">
         <div>

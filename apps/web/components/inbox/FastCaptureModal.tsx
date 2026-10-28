@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useModalAccessibility } from "@/hooks/useModalAccessibility";
 import { createCapture } from "@/lib/inbox";
 import { extractFirstUrl } from "@/lib/validation";
 import type { InboxCapture } from "@/types/inbox";
@@ -31,6 +32,7 @@ export default function FastCaptureModal({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const { containerRef } = useModalAccessibility({ isOpen, onClose, initialFocusRef: textareaRef });
 
   useEffect(() => {
     if (!isOpen) return;
@@ -105,9 +107,14 @@ export default function FastCaptureModal({
       aria-modal="true"
       aria-labelledby="fast-capture-title"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-150"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <div
-        className="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl border border-border/80 bg-surface p-5 shadow-2xl transition-all duration-150 scale-in-95"
+        ref={containerRef}
+        tabIndex={-1}
+        className="w-full max-w-lg max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-2xl border border-border/80 bg-surface p-5 shadow-2xl transition-all duration-150 scale-in-95"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-border/60 pb-3">

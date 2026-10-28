@@ -15,12 +15,14 @@ import AboutDeveloperModal from "@/components/app/AboutDeveloperModal";
 import AccountModal from "@/components/auth/AccountModal";
 import DataAdoptionModal from "@/components/auth/DataAdoptionModal";
 import SyncStatusIndicator from "@/components/sync/SyncStatusIndicator";
+import OverlayHost from "@/components/app/OverlayHost";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { hasLocalDataToAdopt, getAccountWorkspaceId } from "@/lib/adoption";
 import { setActiveWorkspaceId } from "@/lib/repository";
 import { triggerSyncNow } from "@/lib/sync";
 import { getDueFollowUpsCount } from "@/lib/followups";
 import { getPendingCapturesCount } from "@/lib/inbox";
+import { onSyncEvent } from "@/lib/broadcast";
 import { isPrimaryActive } from "@/lib/navigation";
 import { useGlobalShortcuts } from "@/hooks/useGlobalShortcuts";
 
@@ -64,12 +66,43 @@ function AppHeader({ active }: AppHeaderProps) {
   const handleToggleDesktopMore = useCallback(() => setIsDesktopMoreOpen((prev) => !prev), []);
 
   const handleCloseAdoption = useCallback(() => setIsAdoptionOpen(false), []);
-  const handleCaptured = useCallback(() => setPendingCapturesCount((c) => c + 1), []);
+
+  const refreshBadgeCounts = useCallback(() => {
+    getDueFollowUpsCount()
+      .then((count) => setDueFollowUpsCount(count))
+      .catch(() => {});
+    getPendingCapturesCount()
+      .then((count) => setPendingCapturesCount(count))
+      .catch(() => {});
+  }, []);
+
+  const handleCaptured = useCallback(() => {
+    refreshBadgeCounts();
+  }, [refreshBadgeCounts]);
+
+  const isAnyModalOpen =
+    isBackupOpen ||
+    isCaptureOpen ||
+    isAccountOpen ||
+    isAdoptionOpen ||
+    isCommandPaletteOpen ||
+    isAboutOpen ||
+    isMobileMoreOpen;
+
+  const handleToggleMore = useCallback(() => {
+    if (typeof window !== "undefined" && window.innerWidth < 768) {
+      setIsMobileMoreOpen((prev) => !prev);
+    } else {
+      setIsDesktopMoreOpen((prev) => !prev);
+    }
+  }, []);
 
   // Global Keyboard Shortcuts (Cmd+K / Ctrl+K, G-sequences, Alt+C)
   useGlobalShortcuts({
     onToggleCommandPalette: handleToggleCommandPalette,
     onOpenQuickCapture: handleOpenQuickCapture,
+    onToggleMore: handleToggleMore,
+    enabled: !isAnyModalOpen,
   });
 
   const handleAuthenticated = useCallback(async () => {
@@ -90,23 +123,21 @@ function AppHeader({ active }: AppHeaderProps) {
   }, [user]);
 
   useEffect(() => {
-    let mounted = true;
-    getDueFollowUpsCount()
-      .then((count) => {
-        if (mounted) setDueFollowUpsCount(count);
-      })
-      .catch(() => {});
-
-    getPendingCapturesCount()
-      .then((count) => {
-        if (mounted) setPendingCapturesCount(count);
-      })
-      .catch(() => {});
+    refreshBadgeCounts();
+    const unsubscribe = onSyncEvent((event) => {
+      if (
+        event.type === "DATA_MUTATED" ||
+        event.type === "SYNC_COMPLETED" ||
+        event.type === "WORKSPACE_CHANGED"
+      ) {
+        refreshBadgeCounts();
+      }
+    });
 
     return () => {
-      mounted = false;
+      unsubscribe();
     };
-  }, []);
+  }, [refreshBadgeCounts]);
 
   const isTasksActive = isPrimaryActive("tasks", active);
   const isFollowUpsActive = isPrimaryActive("followups", active);
@@ -116,11 +147,11 @@ function AppHeader({ active }: AppHeaderProps) {
   return (
     <>
       <header className="sticky top-0 z-20 border-b border-border bg-bg/85 backdrop-blur-md transition-colors">
-        <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
+        <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-2 px-3 sm:gap-3 sm:px-6">
           {/* Brand */}
           <Link
             href="/"
-            className="group flex items-center gap-2.5 text-text outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            className="group flex items-center gap-2.5 text-text outline-none focus-visible:ring-2 focus-visible:ring-accent shrink-0"
             aria-label="TaskFlow home"
           >
             <div className="flex h-8 w-8 items-center justify-center transition-transform group-hover:scale-105">
@@ -134,7 +165,7 @@ function AppHeader({ active }: AppHeaderProps) {
           {/* Consolidated 4-Destination Desktop Navigation */}
           <nav
             aria-label="Main navigation"
-            className="hidden sm:flex items-center gap-1 rounded-xl border border-border bg-surface-muted/80 p-1"
+            className="hidden md:flex items-center gap-1 rounded-xl border border-border bg-surface-muted/80 p-1"
           >
             {/* 1. Tasks */}
             <Link
@@ -277,14 +308,14 @@ function AppHeader({ active }: AppHeaderProps) {
           </nav>
 
           {/* Header Right Utilities */}
-          <div className="flex items-center gap-2 sm:gap-2.5">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             {/* Command Palette Button */}
             <button
               type="button"
               onClick={handleOpenCommandPalette}
               title="Search & Commands (Cmd+K)"
               aria-label="Search & Commands (Cmd+K)"
-              className="flex items-center gap-1.5 rounded-lg border border-border/80 bg-surface px-2.5 py-1.5 text-xs text-muted shadow-sm transition-all hover:border-border-strong hover:bg-surface-muted hover:text-text active:scale-95"
+              className="flex items-center gap-1.5 rounded-lg border border-border/80 bg-surface p-1.5 sm:px-2.5 sm:py-1.5 text-xs text-muted shadow-sm transition-all hover:border-border-strong hover:bg-surface-muted hover:text-text active:scale-95"
             >
               <svg
                 width="14"
@@ -300,8 +331,8 @@ function AppHeader({ active }: AppHeaderProps) {
                 <circle cx="11" cy="11" r="8" />
                 <path d="m21 21-4.3-4.3" />
               </svg>
-              <span className="hidden lg:inline">Search...</span>
-              <kbd className="hidden sm:inline rounded bg-surface-muted px-1 py-0.2 font-mono text-[9px] text-muted border border-border/60">
+              <span className="hidden xl:inline">Search...</span>
+              <kbd className="hidden lg:inline rounded bg-surface-muted px-1 py-0.2 font-mono text-[9px] text-muted border border-border/60">
                 ⌘K
               </kbd>
             </button>
@@ -312,7 +343,7 @@ function AppHeader({ active }: AppHeaderProps) {
               onClick={handleOpenQuickCapture}
               title="Quick Capture (Alt+C)"
               aria-label="Quick Capture (Alt+C)"
-              className="flex items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-2.5 py-1.5 text-xs font-semibold text-accent shadow-sm transition-all hover:bg-accent/20 active:scale-95"
+              className="flex items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 p-1.5 sm:px-2.5 sm:py-1.5 text-xs font-semibold text-accent shadow-sm transition-all hover:bg-accent/20 active:scale-95"
             >
               <svg
                 width="14"
@@ -344,7 +375,7 @@ function AppHeader({ active }: AppHeaderProps) {
               onClick={handleOpenAccount}
               aria-label={isAuthenticated ? "Manage Account" : "Sign In"}
               title={isAuthenticated ? user?.email : "Sign In"}
-              className="flex items-center gap-1.5 rounded-lg border border-border/80 bg-surface px-2.5 py-1.5 text-xs font-semibold text-text shadow-sm transition-all hover:border-border-strong hover:bg-surface-muted active:scale-95"
+              className="flex items-center gap-1.5 rounded-lg border border-border/80 bg-surface p-1.5 sm:px-2.5 sm:py-1.5 text-xs font-semibold text-text shadow-sm transition-all hover:border-border-strong hover:bg-surface-muted active:scale-95"
             >
               {isAuthenticated ? (
                 <>
@@ -371,13 +402,15 @@ function AppHeader({ active }: AppHeaderProps) {
                     <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
                     <circle cx="12" cy="7" r="4" />
                   </svg>
-                  <span>Sign In</span>
+                  <span className="hidden sm:inline">Sign In</span>
                 </>
               )}
             </button>
           </div>
         </div>
+      </header>
 
+      <OverlayHost>
         {/* Mobile Bottom Sheet for Small Viewports */}
         {isMobileMoreOpen && (
           <MobileBottomSheet
@@ -444,7 +477,7 @@ function AppHeader({ active }: AppHeaderProps) {
             onClose={handleCloseAbout}
           />
         )}
-      </header>
+      </OverlayHost>
 
       {/* Mobile Bottom Navigation Bar (strictly 4 tabs) */}
       <MobileNavBar

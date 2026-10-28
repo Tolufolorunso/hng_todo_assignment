@@ -66,9 +66,10 @@ export default function CapacitySummary({
 
       <div
         role="progressbar"
-        aria-valuenow={plannedMinutes}
+        aria-valuenow={Math.min(Math.max(percent, 0), 100)}
         aria-valuemin={0}
-        aria-valuemax={availableMinutes}
+        aria-valuemax={100}
+        aria-valuetext={statusText}
         aria-label="Planned day capacity utilization"
         className="h-2.5 w-full overflow-hidden rounded-full bg-surface-muted"
       >

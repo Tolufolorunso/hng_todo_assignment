@@ -7,6 +7,8 @@ import {
   matchCommand,
   type NavCommand,
 } from "@/lib/navigation";
+import { getSavedTheme, setStoredTheme, toggleTheme } from "@/lib/theme";
+import { useModalAccessibility } from "@/hooks/useModalAccessibility";
 
 interface CommandPaletteProps {
   isOpen: boolean;
@@ -34,6 +36,12 @@ function CommandPaletteDialog({
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
+  const { containerRef } = useModalAccessibility({
+    isOpen: true,
+    onClose,
+    initialFocusRef: inputRef,
+  });
+
   // Filter commands based on search query
   const filteredCommands = useMemo(() => {
     return COMMAND_PALETTE_ITEMS.filter((item) => matchCommand(item, query));
@@ -43,16 +51,6 @@ function CommandPaletteDialog({
   const clampedIndex = filteredCommands.length === 0
     ? 0
     : Math.min(selectedIndex, filteredCommands.length - 1);
-
-  // Lock body scroll and focus input on mount
-  useEffect(() => {
-    document.body.style.overflow = "hidden";
-    inputRef.current?.focus();
-
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, []);
 
   // Execute selected command
   const executeCommand = (cmd: NavCommand) => {
@@ -77,14 +75,7 @@ function CommandPaletteDialog({
           onOpenAbout();
           break;
         case "theme": {
-          const isDark = document.documentElement.classList.contains("dark");
-          if (isDark) {
-            document.documentElement.classList.remove("dark");
-            localStorage.setItem("taskflow_theme", "light");
-          } else {
-            document.documentElement.classList.add("dark");
-            localStorage.setItem("taskflow_theme", "dark");
-          }
+          setStoredTheme(toggleTheme(getSavedTheme()));
           break;
         }
       }
@@ -151,7 +142,9 @@ function CommandPaletteDialog({
 
       {/* Palette Container */}
       <div
-        className="relative z-10 w-full max-w-xl flex flex-col rounded-2xl border border-border bg-surface-muted/95 shadow-2xl backdrop-blur-xl overflow-hidden transition-all"
+        ref={containerRef}
+        tabIndex={-1}
+        className="relative z-10 w-full max-w-xl flex flex-col rounded-2xl border border-border bg-surface-muted/95 shadow-2xl backdrop-blur-xl overflow-hidden transition-all max-h-[calc(100dvh-2rem)]"
         onKeyDown={handleKeyDown}
       >
         {/* Search Input Bar */}

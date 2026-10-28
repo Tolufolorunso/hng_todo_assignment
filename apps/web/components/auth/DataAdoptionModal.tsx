@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useModalAccessibility } from "@/hooks/useModalAccessibility";
 import { adoptLocalDataIntoAccount, getAccountWorkspaceId } from "@/lib/adoption";
 import { setActiveWorkspaceId } from "@/lib/repository";
 import { triggerSyncNow } from "@/lib/sync";
@@ -18,6 +19,7 @@ export default function DataAdoptionModal({
   onClose,
   onCompleted,
 }: DataAdoptionModalProps) {
+  const { containerRef } = useModalAccessibility({ isOpen, onClose });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -58,8 +60,15 @@ export default function DataAdoptionModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="adoption-modal-title"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
-      <div className="relative w-full max-w-md rounded-2xl border border-border bg-surface p-6 shadow-2xl transition-all">
+      <div
+        ref={containerRef}
+        tabIndex={-1}
+        className="relative w-full max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-2xl border border-border bg-surface p-6 shadow-2xl transition-all"
+      >
         <div className="flex items-start gap-3.5 mb-4">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/15 text-accent">
             <svg

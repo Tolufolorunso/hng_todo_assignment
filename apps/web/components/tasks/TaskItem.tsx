@@ -29,6 +29,10 @@ interface TaskItemProps {
       category?: TaskCategory | null;
     },
   ) => Promise<boolean>;
+  canMoveUp?: boolean;
+  canMoveDown?: boolean;
+  onMoveUp?: (task: Task) => void;
+  onMoveDown?: (task: Task) => void;
   onDelete: (task: Task) => Promise<boolean>;
 }
 
@@ -84,6 +88,10 @@ function TaskItem({
   onDragEnd,
   onToggle,
   onUpdate,
+  canMoveUp = false,
+  canMoveDown = false,
+  onMoveUp,
+  onMoveDown,
   onDelete,
 }: TaskItemProps) {
   const [mode, setMode] = useState<Mode>("view");
@@ -396,6 +404,54 @@ function TaskItem({
         onClick={(event) => event.stopPropagation()}
         className="flex items-center gap-1 opacity-70 transition-opacity group-hover:opacity-100"
       >
+        {onMoveUp && onMoveDown && (
+          <div className="flex items-center gap-0.5 mr-0.5">
+            <button
+              type="button"
+              onClick={() => onMoveUp(task)}
+              disabled={disabled || !canMoveUp}
+              aria-label={`Move ${task.title} up`}
+              title="Move up"
+              className="rounded-lg p-1 text-faint transition-all hover:bg-surface-muted hover:text-text disabled:opacity-25 disabled:pointer-events-none"
+            >
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="m18 15-6-6-6 6" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={() => onMoveDown(task)}
+              disabled={disabled || !canMoveDown}
+              aria-label={`Move ${task.title} down`}
+              title="Move down"
+              className="rounded-lg p-1 text-faint transition-all hover:bg-surface-muted hover:text-text disabled:opacity-25 disabled:pointer-events-none"
+            >
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+            </button>
+          </div>
+        )}
         <button
           type="button"
           onClick={() => setMode("edit")}

@@ -20,7 +20,7 @@ const CATEGORY_COLORS: Record<TaskCategory | "unassigned", { bg: string; bar: st
 
 const PRIORITY_COLORS: Record<TaskPriority, { bg: string; bar: string; text: string }> = {
   high: { bg: "bg-danger-soft", bar: "bg-danger", text: "text-danger" },
-  medium: { bg: "bg-warning-soft", bar: "bg-warning", text: "text-warning" },
+  medium: { bg: "bg-amber-500/10", bar: "bg-amber-500", text: "text-amber-500" },
   low: { bg: "bg-surface-muted", bar: "bg-muted", text: "text-muted" },
 };
 

@@ -285,6 +285,43 @@ export default function TasksScreen() {
     [draggingId, dropIndicator, load, tasks, visibleTasks],
   );
 
+  const handleMoveTask = useCallback(
+    async (taskId: string, direction: "up" | "down") => {
+      const fromIndex = visibleTasks.findIndex((t) => t.id === taskId);
+      if (fromIndex === -1) return;
+      const targetIndex = direction === "up" ? fromIndex - 1 : fromIndex + 1;
+      if (targetIndex < 0 || targetIndex >= visibleTasks.length) return;
+
+      const reorderedVisible = [...visibleTasks];
+      const [moved] = reorderedVisible.splice(fromIndex, 1);
+      reorderedVisible.splice(targetIndex, 0, moved);
+
+      const combined = interleaveReorderedTasks(tasks, reorderedVisible);
+      const updatedTasks = combined.map((task, index) => ({
+        ...task,
+        order: index,
+      }));
+
+      setTasks(updatedTasks);
+      setSort("manual");
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem("taskflow:sort-preference", "manual");
+        } catch {
+          // ignore
+        }
+      }
+
+      try {
+        await reorderTasks(updatedTasks.map((t) => t.id));
+      } catch {
+        setMutationError("Could not save task order. Please try again.");
+        await load();
+      }
+    },
+    [load, tasks, visibleTasks],
+  );
+
   const clearFilters = useCallback(() => {
     setQuery("");
     setStatusFilter("all");
@@ -413,7 +450,7 @@ export default function TasksScreen() {
                 </div>
               ) : (
                 <ul className="flex flex-col gap-2.5">
-                  {visibleTasks.map((task) => (
+                  {visibleTasks.map((task, index) => (
                     <TaskItem
                       key={task.id}
                       task={task}
@@ -424,6 +461,18 @@ export default function TasksScreen() {
                         dropIndicator?.id === task.id && draggingId !== task.id
                           ? dropIndicator.edge
                           : null
+                      }
+                      canMoveUp={index > 0}
+                      canMoveDown={index < visibleTasks.length - 1}
+                      onMoveUp={
+                        sort === "manual"
+                          ? (t) => handleMoveTask(t.id, "up")
+                          : undefined
+                      }
+                      onMoveDown={
+                        sort === "manual"
+                          ? (t) => handleMoveTask(t.id, "down")
+                          : undefined
                       }
                       onDragStart={handleDragStart}
                       onDragOver={handleDragOver}

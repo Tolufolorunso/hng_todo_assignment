@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { useModalAccessibility } from "@/hooks/useModalAccessibility";
 import {
   listSessions,
   revokeAllOtherSessions,
@@ -24,6 +25,7 @@ interface AccountModalProps {
 
 export default function AccountModal({ isOpen, onClose, onAuthenticated }: AccountModalProps) {
   const { user, isAuthenticated, requestOtp, verifyOtp, signOut, deleteAccount, token } = useAuth();
+  const { containerRef } = useModalAccessibility({ isOpen, onClose });
 
   const [step, setStep] = useState<"email" | "code">("email");
   const [email, setEmail] = useState("");
@@ -215,8 +217,15 @@ export default function AccountModal({ isOpen, onClose, onAuthenticated }: Accou
       role="dialog"
       aria-modal="true"
       aria-labelledby="account-modal-title"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) handleClose();
+      }}
     >
-      <div className="relative w-full max-w-md max-h-[85vh] overflow-y-auto rounded-2xl border border-border bg-surface p-6 shadow-2xl transition-all">
+      <div
+        ref={containerRef}
+        tabIndex={-1}
+        className="relative w-full max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-2xl border border-border bg-surface p-6 shadow-2xl transition-all"
+      >
         {/* Close Button */}
         <button
           type="button"

@@ -27,7 +27,7 @@ function MobileNavBar({
   return (
     <nav
       aria-label="Mobile Bottom Navigation"
-      className="fixed bottom-0 left-0 right-0 z-30 border-t border-border bg-bg/95 backdrop-blur-lg transition-colors sm:hidden print:hidden"
+      className="fixed bottom-0 left-0 right-0 z-30 border-t border-border bg-bg/95 backdrop-blur-lg transition-colors md:hidden print:hidden"
     >
       <div className="mx-auto flex max-w-md items-center justify-between px-3 py-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
         {/* 1. Tasks */}

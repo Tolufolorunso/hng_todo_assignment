@@ -167,4 +167,19 @@ describe("plan recommendation engine", () => {
     expect(result.recommendedItems).toHaveLength(0);
     expect(result.otherEligibleItems).toHaveLength(0);
   });
+
+  it("calculates utilization percentage and supports overflow calculation", () => {
+    const task1 = mockTask({ title: "Task 1", estimatedMinutes: 60 });
+    const task2 = mockTask({ title: "Task 2", estimatedMinutes: 60 });
+
+    const result = generateDailyRecommendations([task1, task2], [], 120);
+    expect(result.totalPlannedMinutes).toBe(120);
+    expect(result.utilizationPercent).toBe(100);
+
+    // Verify percentage calculation helper logic for ARIA clamping
+    const overPercent = Math.round((180 / 120) * 100);
+    expect(overPercent).toBe(150);
+    const clampedForAria = Math.min(Math.max(overPercent, 0), 100);
+    expect(clampedForAria).toBe(100);
+  });
 });

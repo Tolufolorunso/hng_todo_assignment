@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { processCapture } from "@/lib/inbox";
+import { useModalAccessibility } from "@/hooks/useModalAccessibility";
 import type { InboxCapture, InboxTargetType, ProcessCaptureResult } from "@/types/inbox";
 import type { TaskCategory, TaskPriority } from "@/types/task";
 
@@ -23,6 +24,7 @@ export default function ConvertCaptureModal({
   onClose,
   onSuccess,
 }: ConvertCaptureModalProps) {
+  const { containerRef } = useModalAccessibility({ isOpen, onClose });
   const defaultTitle = capture.text.split("\n")[0].trim().slice(0, 100);
 
   const [title, setTitle] = useState(defaultTitle || "New Item");
@@ -106,10 +108,15 @@ export default function ConvertCaptureModal({
     <div
       role="dialog"
       aria-modal="true"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-150"
     >
       <div
-        className="w-full max-w-md rounded-2xl border border-border/80 bg-surface p-5 shadow-2xl transition-all scale-in-95"
+        ref={containerRef}
+        tabIndex={-1}
+        className="w-full max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-2xl border border-border/80 bg-surface p-5 shadow-2xl transition-all scale-in-95 outline-none"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-border/60 pb-3">

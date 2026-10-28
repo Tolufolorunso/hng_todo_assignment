@@ -1777,3 +1777,113 @@ Milestone O builds directly on the completed 51-feature cross-platform foundatio
 - **Enhanced Monthly Calendar:** Visually highlight today's date in `MainWindow.xaml` with an accent outline or badge, and display distinct visual indicators for dates containing due tasks versus follow-up commitments.
 - **Text Formatting Parity:** Provide rich-text formatting controls or synchronized formatting support for task descriptions and note bodies to match web capabilities.
 
+## 17. Milestone P: Web Reliability and Data Integrity
+
+Milestone P follows the completed cross-platform roadmap with a focused repair of
+the Next.js web client. It addresses confirmed runtime defects found during a
+full web interaction audit without changing the mobile or Windows applications.
+The work is intentionally consolidated into two features so common causes are
+fixed once rather than patched separately in every screen.
+
+### 17.1 Web responsive overlays, navigation, and interaction hardening (Feature 55)
+
+The current header mounts global overlays beneath a sticky element that uses
+backdrop filtering. In Chromium, that header becomes the containing block for
+fixed descendants. Account, Fast Capture, and Mobile More can therefore be laid
+out inside the header instead of the viewport, placing dialog controls or the
+entire mobile sheet offscreen. Several other dialogs also lack consistent
+short-viewport, focus, dismissal, and error behavior.
+
+Feature 55 will:
+
+- Introduce one body-level overlay host or portal for global dialogs, sheets, and
+  menus that must be positioned relative to the viewport.
+- Center Account, Fast Capture, and other dialogs within the usable viewport.
+- Keep mobile sheets attached to the viewport bottom and above mobile navigation
+  and safe-area insets.
+- Bound dialog height using the dynamic viewport and provide an intentional
+  scrolling region so headers, close controls, and primary actions remain
+  reachable on short screens.
+- Standardize close-button, Escape, backdrop, initial-focus, focus-containment,
+  focus-restoration, background-inertness, and scroll-restoration behavior.
+- Prevent global shortcuts from opening conflicting overlays while a modal
+  interaction is active.
+- Rework constrained-width header behavior so the document does not overflow
+  and secondary utilities move into More when there is insufficient room.
+- Repair desktop More toggle behavior, the advertised `G M` shortcut, mobile
+  More visibility, and Command Palette theme switching.
+- Keep inbox and due-follow-up navigation badges current after all relevant
+  mutations.
+- Add confirmation or undo for permanent inbox deletion and visible errors for
+  failed Inbox and Plan My Day persistence operations.
+- Provide touch and keyboard alternatives for custom task ordering.
+- Correct missing medium-priority analytics styling and invalid over-capacity
+  progress semantics.
+- Add focused browser regression tests for dialog dismissal, viewport bounds,
+  mobile More visibility, focus behavior, header overflow, theme switching, and
+  desktop More toggling at representative mobile, tablet, short-height, and
+  desktop viewport sizes.
+
+Done when:
+
+- Account and Fast Capture are centered and can be closed using their visible
+  controls, Escape, and the documented backdrop behavior.
+- Mobile More opens a visible, usable bottom sheet on supported narrow
+  viewports.
+- Required dialog controls remain reachable at short viewport heights.
+- The page has no horizontal header overflow at 320, 360, 390, and 768 pixels.
+- Modal focus and background interaction follow accessible dialog behavior.
+- The repaired interaction paths have browser-level regression evidence in
+  addition to the existing unit, lint, and production-build gates.
+
+### 17.2 Web account adoption, workspace isolation, and synchronization correctness (Feature 56)
+
+Authentication currently commits the new account state asynchronously, while
+the immediate post-OTP callback can still read the previous anonymous user. The
+adoption decision may therefore be skipped. The main web screens also continue
+to use legacy whole-store helpers instead of consistently using the
+workspace-aware repository, so selecting an account workspace does not reliably
+control which records the interface reads, writes, or queues for synchronization.
+
+Feature 56 will:
+
+- Carry the verified account identity directly into the post-OTP transition or
+  wait for committed authenticated state before evaluating local-data adoption.
+- Preserve the rule that signing in never uploads anonymous local data without
+  an explicit adoption choice.
+- Migrate Tasks, Notes, Follow Ups, Inbox, Plan My Day, task order, and related
+  mutations to the existing workspace-aware repository boundary.
+- Scope all visible reads and writes to the active local or account workspace.
+- Record synchronized account mutations in the outbox without making local
+  writes wait for the network.
+- Prevent local records and adopted account copies from appearing together.
+- Select and refresh the correct workspace during restored authentication,
+  sign-in, adoption, start-fresh selection, sign-out, account deletion, and
+  return to local-only mode.
+- Preserve the original local-only workspace until adopted records have been
+  acknowledged according to the existing synchronization contract.
+- Add tests covering explicit adoption, start-fresh behavior, local-data
+  isolation, outbox creation, restored sessions, sign-out, account deletion,
+  and switching safely back to the local workspace.
+
+Done when:
+
+- A first successful sign-in with local records always presents the explicit
+  adoption decision before any upload.
+- Choosing Start Fresh exposes only the account workspace while retaining the
+  untouched local workspace.
+- Choosing adoption copies supported records once and queues idempotent account
+  mutations.
+- Every main web screen reads and mutates only the selected workspace.
+- Signing out or deleting the account returns the web client to local-only data
+  without mixing or losing records.
+- Offline account writes remain immediately usable and synchronize after
+  connectivity returns through the existing outbox protocol.
+
+### 17.3 Scope boundary
+
+Milestone P applies only to `apps/web`. It does not change React Native, WPF, the
+public API contract, recurrence semantics, product scope, or the optional-account
+privacy model unless implementation uncovers a separate contract defect that is
+planned explicitly before code changes.
+

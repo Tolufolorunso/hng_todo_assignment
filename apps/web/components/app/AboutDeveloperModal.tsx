@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useModalAccessibility } from "@/hooks/useModalAccessibility";
 
 interface AboutDeveloperModalProps {
   isOpen: boolean;
@@ -73,20 +73,7 @@ export default function AboutDeveloperModal({
   isOpen,
   onClose,
 }: AboutDeveloperModalProps) {
-  const modalRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onClose();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+  const { containerRef } = useModalAccessibility({ isOpen, onClose });
 
   if (!isOpen) {
     return null;
@@ -103,11 +90,12 @@ export default function AboutDeveloperModal({
       role="presentation"
     >
       <div
-        ref={modalRef}
+        ref={containerRef}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-labelledby="developer-modal-title"
-        className="relative flex flex-col w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl border border-border bg-surface p-6 shadow-2xl text-text transition-all animate-in zoom-in-95 duration-200"
+        className="relative flex flex-col w-full max-w-lg max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-2xl border border-border bg-surface p-6 shadow-2xl text-text transition-all animate-in zoom-in-95 duration-200"
       >
         {/* Close Button Top Right */}
         <button

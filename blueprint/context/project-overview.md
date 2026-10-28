@@ -1,12 +1,12 @@
 # TaskFlow - Project Overview
 
-<!-- blueprint:source-hash 6b780c99d250b0a0ba3ccc4dcfa31f12e29882f6faf0dd399410cd21b3d7d5cc -->
+<!-- blueprint:source-hash 76e431b485bc2917db276053cb43294ae91befbb50f5a300c82863cec16722b4 -->
 
 > A differentiated local-first personal productivity suite for web, Android/iOS, and Windows, with optional synchronization and proactive Follow Up reminders.
 
 ## Problem
 
-TaskFlow helps people capture work, plan a realistic day, remember commitments, and turn notes into action. The cross-platform foundation (Web, Mobile via Expo, and Windows via WPF) and cloud synchronization are complete through Feature 51. Milestone O delivers targeted usability polish, launch stability, and visual parity across all three client experiences.
+TaskFlow helps people capture work, plan a realistic day, remember commitments, and turn notes into action. The cross-platform product, service foundation, synchronization, and UX milestones are complete through Feature 54. Milestone P now repairs confirmed Next.js web regressions in viewport overlays, responsive navigation, accessible interactions, account adoption, workspace isolation, and synchronized data access without changing mobile, Windows, or the public API contract.
 
 ## Users
 
@@ -33,7 +33,7 @@ TaskFlow helps people capture work, plan a realistic day, remember commitments, 
 
 ## Features
 
-Features 1 through 51 are shipped; Feature 52 is next. Milestone O focuses on cross-platform UX polish, launch recovery, and visual parity.
+Features 1 through 54 are shipped; Feature 55 is next. Milestone P is a web-only reliability and data-integrity repair milestone.
 
 ### Shipped web product
 
@@ -120,7 +120,12 @@ Features 1 through 51 are shipped; Feature 52 is next. Milestone O focuses on cr
 
 52. **Mobile bundling resolution and launch recovery:** fixes Metro bundler module resolution across Expo Router route screens, restores native TypeScript module loading, and verifies error-free launch.
 53. **Web usability, modal clearance, and form polish:** eliminates theme flash, expands Quick Add task details, enables safe task detail inspection, fixes popover z-index, constrains search bar width, adds modal scroll bounds, and unpins desktop footer.
-54. **Windows desktop parity, navigation highlighting, and visual design:** implements active tab sidebar indicators, adds field labels and watermarks, styles form ComboBoxes, bundles official TaskFlow icon, enhances calendar date indicators, and aligns text formatting.
+54. **Windows desktop parity, navigation highlighting, and visual design:** active sidebar state, labeled and themed forms, TaskFlow icon, richer calendar indicators, and text-formatting parity.
+
+### Web reliability and data integrity
+
+55. **Web responsive overlays, navigation, and interaction hardening:** body-level viewport overlays, centered and short-screen-safe dialogs, working mobile More, responsive header behavior, consistent modal accessibility, repaired navigation interactions, visible mutation failures, accessible task ordering, and browser regression coverage.
+56. **Web account adoption, workspace isolation, and synchronization correctness:** reliable post-OTP adoption, workspace-scoped reads and writes through the synchronized repository, outbox-backed account mutations, strict separation of local and account data, and safe workspace transitions across the session lifecycle.
 
 ## Architecture boundaries
 
@@ -193,7 +198,8 @@ apps/
 
 ### Workspace and synchronization
 
-- A device has one local-only workspace plus separate account caches. Signing in never uploads local content automatically.
+- A device has one local-only workspace plus separate account caches, with exactly one active scope presented at a time. Signing in never uploads local content automatically.
+- Every main web screen reads and mutates through the workspace-aware repository; account writes enqueue outbox mutations while local-only writes remain device-bound.
 - Workspace owns entities, history, outbox, cursor, revisions, tombstones, and conflicts.
 - OutboxMutation: mutationId, protocol version, entity type/id, put | delete, base revision, payload.
 - Conflict retains local value and server value or tombstone until resolved.
@@ -230,7 +236,7 @@ Sync returns applied, duplicate, conflict, or invalid per mutation. Server revis
 - **Mobile data and native integration:** expo-sqlite, mobile-owned migrations, recurrence, expo-notifications, expo-secure-store, Linking.openURL launchers, share-sheet capture.
 - **Windows:** C# WPF on .NET 10 LTS, MVVM, Microsoft.Data.Sqlite, DPAPI, Windows notifications, URI launchers.
 - **Rich text:** independent clients conforming to taskflow-html-v1, with final API sanitization.
-- **Testing:** Vitest/browser tests for web, mobile vitest unit/device tests, xUnit for Windows.
+- **Testing:** Vitest/browser tests for web, mobile Vitest unit/device tests, and xUnit for Windows. Milestone P requires focused browser regression coverage for responsive overlays, modal dismissal and focus behavior, header overflow, navigation actions, adoption, workspace isolation, and synchronized outbox writes.
 
 ## Monetization
 
@@ -238,7 +244,7 @@ None planned. Personal productivity and portfolio product. Infrastructure costs 
 
 ## UI/UX
 
-- **Web:** dark-default Linear/Raycast-inspired responsive app. Navigation consolidated to max 4 primary destinations (Tasks, Follow Ups, Notes, More) with anchored floating popover on desktop, draggable bottom sheet on mobile, and global Cmd+K command palette preserving total canvas context.
+- **Web:** dark-default Linear/Raycast-inspired responsive app. Navigation uses at most four primary destinations (Tasks, Follow Ups, Notes, More), with an anchored desktop popover, viewport-anchored mobile bottom sheet, and global command palette. Global dialogs and sheets mount outside the sticky header through a body-level overlay host, remain centered or bottom-anchored within dynamic viewport bounds, and provide consistent dismissal, focus containment, focus restoration, and scroll behavior.
 - **Mobile:** strict 4-tab bottom navigation (Tasks, Follow Ups, Notes, More). File-based Expo Router, platform-native aesthetics (iOS inset grouped cards, Apple Settings style More hub, Cupertino blur; Android Material 3 elevation and ripples), tactile feedback via expo-haptics, virtualized FlatList rendering, safe areas, dynamic text, VoiceOver/TalkBack, local notifications.
 - **Plan My Day:** shows capacity, reasons, editable selection/order before acceptance; never silently modifies backlog.
 - **Follow Up:** shows who, what, when, and how; keeps due items visible without permission; separate completion, skip, snooze, reschedule, launch.

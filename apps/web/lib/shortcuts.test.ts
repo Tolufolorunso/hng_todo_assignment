@@ -82,6 +82,7 @@ describe("Shortcuts Helper Module", () => {
       expect(processSequenceKey(state, "p", 1500).destination).toBe("/plan");
       expect(processSequenceKey(state, "c", 1500).destination).toBe("/calendar");
       expect(processSequenceKey(state, "a", 1500).destination).toBe("/analytics");
+      expect(processSequenceKey(state, "m", 1500).destination).toBe("more");
 
       // Verify state resets after destination matched
       const res = processSequenceKey(state, "t", 1500);

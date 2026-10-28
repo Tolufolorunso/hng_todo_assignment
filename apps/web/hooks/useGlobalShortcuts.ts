@@ -14,12 +14,14 @@ import {
 interface UseGlobalShortcutsOptions {
   onToggleCommandPalette?: () => void;
   onOpenQuickCapture?: () => void;
+  onToggleMore?: () => void;
   enabled?: boolean;
 }
 
 export function useGlobalShortcuts({
   onToggleCommandPalette,
   onOpenQuickCapture,
+  onToggleMore,
   enabled = true,
 }: UseGlobalShortcutsOptions = {}) {
   const router = useRouter();
@@ -62,11 +64,15 @@ export function useGlobalShortcuts({
 
       if (destination) {
         e.preventDefault();
-        router.push(destination);
+        if (destination === "more") {
+          onToggleMore?.();
+        } else {
+          router.push(destination);
+        }
       }
     }
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [enabled, onToggleCommandPalette, onOpenQuickCapture, router]);
+  }, [enabled, onToggleCommandPalette, onOpenQuickCapture, onToggleMore, router]);
 }

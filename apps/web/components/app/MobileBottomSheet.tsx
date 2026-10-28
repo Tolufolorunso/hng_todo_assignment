@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import Link from "next/link";
+import { useModalAccessibility } from "@/hooks/useModalAccessibility";
 import ThemeToggle from "@/components/app/ThemeToggle";
 import {
   SECONDARY_NAV_ITEMS,
@@ -32,27 +32,7 @@ export default function MobileBottomSheet({
   onOpenAccount,
   onOpenAbout,
 }: MobileBottomSheetProps) {
-  const sheetRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape" && isOpen) {
-        onClose();
-      }
-    }
-
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-      window.addEventListener("keydown", handleKeyDown);
-    } else {
-      document.body.style.overflow = "";
-    }
-
-    return () => {
-      document.body.style.overflow = "";
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [isOpen, onClose]);
+  const { containerRef } = useModalAccessibility({ isOpen, onClose });
 
   if (!isOpen) return null;
 
@@ -79,7 +59,7 @@ export default function MobileBottomSheet({
       role="dialog"
       aria-modal="true"
       aria-label="More navigation and tools"
-      className="fixed inset-0 z-50 flex flex-col justify-end sm:hidden"
+      className="fixed inset-0 z-50 flex flex-col justify-end md:hidden"
     >
       {/* Backdrop */}
       <div
@@ -90,7 +70,8 @@ export default function MobileBottomSheet({
 
       {/* Slide-Up Bottom Sheet */}
       <div
-        ref={sheetRef}
+        ref={containerRef}
+        tabIndex={-1}
         className="relative z-10 flex w-full flex-col max-h-[85vh] rounded-t-3xl border-t border-border bg-surface shadow-2xl backdrop-blur-xl animate-in slide-in-from-bottom duration-200"
       >
         {/* Grab Handle */}

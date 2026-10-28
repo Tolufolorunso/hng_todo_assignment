@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useModalAccessibility } from "@/hooks/useModalAccessibility";
 import {
   exportDatabaseBackup,
   parseAndValidateBackup,
@@ -22,6 +23,7 @@ export default function BackupModal({
   onClose,
   onDataRestored,
 }: BackupModalProps) {
+  const { containerRef } = useModalAccessibility({ isOpen, onClose });
   const [activeTab, setActiveTab] = useState<"export" | "restore">("export");
 
   // Export State
@@ -155,8 +157,10 @@ export default function BackupModal({
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg/80 backdrop-blur-sm animate-in fade-in duration-200 cursor-pointer"
     >
       <div
+        ref={containerRef}
+        tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-lg max-h-[85vh] overflow-y-auto cursor-default rounded-2xl border border-border bg-surface p-6 shadow-2xl transition-all"
+        className="relative w-full max-w-lg max-h-[calc(100dvh-2rem)] overflow-y-auto cursor-default rounded-2xl border border-border bg-surface p-6 shadow-2xl transition-all"
       >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border/60 pb-4">

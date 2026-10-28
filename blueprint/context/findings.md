@@ -23,14 +23,6 @@
 **Suggested fix:** Return a stable field identifier or code from the validators, or map the attempted field directly in the submit handler, so focus behavior does not depend on message copy.
 **Resolution:** Fixed in fix/decouple-validation-focus-targets. Added stable `field` property to `ValidationResult` in `lib/validation.ts`, returned `field` on every sub-validator failure, removed `focusFieldFor` from `TaskEditForm.tsx` and `NoteEditor.tsx` in favor of reading `validation.field` directly, and covered all field error return paths with 45 passing unit tests in `lib/validation.test.ts`.
 
-### F-03 [P2] fixed - Calendar day inspector renders WYSIWYG HTML as literal text
-
-**File:** components/calendar/DayInspector.tsx:169-177
-**Found:** 2026-09-30 by /audit (scope: full; lens: quality)
-**Why it matters:** Task descriptions are saved as HTML by the WYSIWYG editor (any multi-paragraph or formatted description is markup, e.g. `<div>...</div>`), and TaskItem.tsx:249-275 correctly detects `hasHtml` and renders it as rich HTML. DayInspector instead renders `{task.description}` as a React text child, so React escapes the markup and the calendar inspector shows raw tags like `<p>Buy milk</p>` instead of the formatted description. Reachable from the calendar for any task created with "Add Details".
-**Suggested fix:** Render the plain-text form (`stripHtmlToText(task.description)`, matching the excerpt pattern used elsewhere) or reuse the TaskItem hasHtml/dangerouslySetInnerHTML rendering so the inspector matches the task list.
-**Resolution:** Fixed in fix/calendar-inspector-wysiwyg-html. Added regex HTML detection (`/<[a-z][\s\S]*>/i.test(task.description)`) and rendered formatted rich text via `dangerouslySetInnerHTML` with scoped typography styling (`text-[11px]`, lists, emphasis, headings, and paragraphs) matching TaskItem, with whitespace-preserving plain-text fallback.
-
 ### F-04 [P2] fixed - Stored WYSIWYG HTML is injected into the DOM without sanitization
 
 **File:** components/tasks/TaskItem.tsx:273, components/notes/StandaloneNoteView.tsx:346
@@ -39,19 +31,18 @@
 **Suggested fix:** Sanitize once on save (restore/import and the editor save path) to a whitelist matching the tags the editor actually produces (p, h1-h3, blockquote, ul, ol, li, b/strong, i/em, u, s, span/font with style color) and drop event-handler attributes and script/style/iframe/link tags. A tiny inline sanitizer avoids adding a dependency; a CSP header in vercel.json is a cheap second layer.
 **Resolution:** Fixed in fix/sanitize-stored-wysiwyg-html. Added `sanitizeHtml` in `lib/html.ts` with tag/attribute whitelisting and recursive script/iframe/style/event-handler stripping; sanitized descriptions and bodies on input and patch in `lib/validation.ts`, and on database restore in `lib/backup.ts`; added CSP security header in `vercel.json`; verified via 193 passing tests in unit test suite.
 
-### F-05 [P3] fixed - Drag reorder with an active filter silently reshuffles hidden tasks
+### F-14 [P2] open - The desktop More trigger cannot toggle its menu closed
 
-**File:** components/tasks/TasksScreen.tsx:238-248
-**Found:** 2026-09-30 by /audit (scope: full; lens: quality)
-**Why it matters:** When a search or filter is active, `handleDrop` builds `combined = reorderedVisible + remainingTasks` and persists `order` indices for every task, so all filtered-out (hidden) tasks are moved to the end of the manual ordering. After clearing the filter, the user's curated order of those hidden tasks has been silently rearranged. No data is lost, but the persisted order no longer reflects what the user arranged.
-**Suggested fix:** When filters are active, either disable dragging, or persist only relative order among visible tasks and keep hidden tasks' positions (interleave using their previous order values).
-**Resolution:** Fixed in fix/preserve-hidden-task-order. Added `interleaveReorderedTasks` helper in `lib/tasks.ts` to preserve hidden task slot positions while applying the new visible task sequence, updated `TasksScreen.tsx`'s `handleDrop` to use `interleaveReorderedTasks(tasks, reorderedVisible)`, and verified with 5 unit tests in `lib/tasks.test.ts` plus full regression suite passing (198 tests).
+**File:** apps/web/components/app/MorePopover.tsx:37-60; apps/web/components/app/AppHeader.tsx:229-276
+**Found:** 2026-10-27 by /audit (scope: apps/web full; lens: quality)
+**Why it matters:** The outside-pointer handler closes the menu on the trigger's pointer event, then the click handler reopens it.
+**Suggested fix:** Include the trigger in the containment boundary or use one explicit toggle path.
+**Resolution:**
 
-### F-06 [P3] fixed - Export failure shows no user feedback
+### F-20 [P2] open - Critical responsive dialog and navigation behavior has no browser coverage
 
-**File:** components/backup/BackupModal.tsx:84
-**Found:** 2026-09-30 by /audit (scope: full; lens: quality)
-**Why it matters:** `handleExport`'s catch writes to `validationError`, but that state is only rendered inside the Restore tab panel. If `exportDatabaseBackup` or `triggerDownload` fails while the Export tab is open, the spinner stops and the UI silently returns to idle with no error message.
-**Suggested fix:** Add an `exportError` state rendered in the Export panel (or surface a shared error banner), and stop writing export failures into the restore-only validation state.
-**Resolution:** Fixed in fix/backup-export-error-feedback. Added `exportError` state in `BackupModal.tsx`, rendered an accessible alert banner (`role="alert"`) inside the Export tab panel, updated `handleExport`'s catch handler to set `exportError` instead of `validationError`, and ensured clean state dismissal via `handleClose`. Verified via full regression suite passing (198 tests), clean lint, and production build.
-
+**File:** apps/web/vitest.config.ts:4-11; apps/web/package.json:5-10
+**Found:** 2026-10-27 by /audit (scope: apps/web full; lens: tests)
+**Why it matters:** All 521 tests run in Node and no browser tests render the header, dialogs, More popover, or bottom sheet. Pure unit tests passed while core viewport behavior was broken.
+**Suggested fix:** Add focused browser coverage for dialog close paths, viewport bounds, mobile More visibility, focus restoration, header overflow, theme action, and desktop More toggle.
+**Resolution:**

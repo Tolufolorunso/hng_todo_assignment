@@ -12,6 +12,8 @@ import {
   listCaptures,
   updateCapture,
 } from "@/lib/inbox";
+import { broadcastSyncEvent } from "@/lib/broadcast";
+import { getActiveWorkspaceId } from "@/lib/repository";
 import type { InboxCapture, InboxCaptureState, InboxTargetType } from "@/types/inbox";
 
 interface InboxScreenProps {
@@ -48,6 +50,8 @@ export default function InboxScreen({
   const [filter, setFilter] = useState<TabFilter>("pending");
   const [query, setQuery] = useState("");
   const [refreshSignal, setRefreshSignal] = useState(0);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Quick inline capture
   const [inlineInput, setInlineInput] = useState("");
@@ -84,6 +88,7 @@ export default function InboxScreen({
     if (!trimmed) return;
 
     setInlineSaving(true);
+    setErrorMessage(null);
     try {
       await createCapture({
         text: trimmed,
@@ -91,37 +96,45 @@ export default function InboxScreen({
       });
       setInlineInput("");
       setRefreshSignal((s) => s + 1);
+      broadcastSyncEvent({ type: "DATA_MUTATED", workspaceId: getActiveWorkspaceId() });
     } catch {
-      // error handled
+      setErrorMessage("Failed to create capture. Please try again.");
     } finally {
       setInlineSaving(false);
     }
   }
 
   async function handleDiscard(id: string) {
+    setErrorMessage(null);
     try {
       await discardCapture(id);
       setRefreshSignal((s) => s + 1);
+      broadcastSyncEvent({ type: "DATA_MUTATED", workspaceId: getActiveWorkspaceId() });
     } catch {
-      // error
+      setErrorMessage("Failed to discard capture. Please try again.");
     }
   }
 
   async function handleRestore(id: string) {
+    setErrorMessage(null);
     try {
       await updateCapture(id, { state: "pending", discardedAt: null });
       setRefreshSignal((s) => s + 1);
+      broadcastSyncEvent({ type: "DATA_MUTATED", workspaceId: getActiveWorkspaceId() });
     } catch {
-      // error
+      setErrorMessage("Failed to restore capture. Please try again.");
     }
   }
 
   async function handleDelete(id: string) {
+    setErrorMessage(null);
     try {
       await deleteCapture(id);
+      setConfirmDeleteId(null);
       setRefreshSignal((s) => s + 1);
+      broadcastSyncEvent({ type: "DATA_MUTATED", workspaceId: getActiveWorkspaceId() });
     } catch {
-      // error
+      setErrorMessage("Failed to delete capture. Please try again.");
     }
   }
 
@@ -152,6 +165,24 @@ export default function InboxScreen({
       <AppHeader active="inbox" />
 
       <main className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6">
+        {/* Visible Error Feedback Banner */}
+        {errorMessage && (
+          <div
+            role="alert"
+            className="flex items-center justify-between rounded-2xl border border-danger/30 bg-danger/10 px-4 py-3 mb-6 text-xs font-medium text-danger shadow-xs"
+          >
+            <span>{errorMessage}</span>
+            <button
+              type="button"
+              onClick={() => setErrorMessage(null)}
+              className="ml-3 rounded-lg p-1 text-danger/80 hover:bg-danger/20 hover:text-danger"
+              aria-label="Dismiss error"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
         {/* Top Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
           <div>
@@ -418,26 +449,48 @@ export default function InboxScreen({
                       )}
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(item.id)}
-                      title="Delete permanently"
-                      className="rounded-lg p-1.5 text-faint hover:bg-rose-500/10 hover:text-rose-500 transition-colors shrink-0"
-                    >
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
+                    {confirmDeleteId === item.id ? (
+                      <div className="flex items-center gap-1.5 shrink-0 rounded-lg border border-rose-500/30 bg-rose-500/10 p-1 text-[11px]">
+                        <span className="text-rose-500 px-1 font-medium">Delete permanently?</span>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(item.id)}
+                          className="rounded px-2 py-0.5 bg-rose-500 text-white font-semibold hover:bg-rose-600 transition-colors"
+                        >
+                          Delete
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setConfirmDeleteId(null)}
+                          className="rounded px-1.5 py-0.5 text-muted hover:text-text transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setConfirmDeleteId(item.id)}
+                        title="Delete permanently"
+                        aria-label="Delete permanently"
+                        className="rounded-lg p-1.5 text-faint hover:bg-rose-500/10 hover:text-rose-500 transition-colors shrink-0"
                       >
-                        <polyline points="3 6 5 6 21 6" />
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                      </svg>
-                    </button>
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          aria-hidden="true"
+                        >
+                          <polyline points="3 6 5 6 21 6" />
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                        </svg>
+                      </button>
+                    )}
                   </div>
 
                   {/* Actions & Resulting Target Links */}
@@ -529,7 +582,10 @@ export default function InboxScreen({
         <FastCaptureModal
           isOpen={isFastModalOpen}
           onClose={() => setIsFastModalOpen(false)}
-          onCaptured={() => setRefreshSignal((s) => s + 1)}
+          onCaptured={() => {
+            setRefreshSignal((s) => s + 1);
+            broadcastSyncEvent({ type: "DATA_MUTATED", workspaceId: getActiveWorkspaceId() });
+          }}
           initialText={initialText || initialTitle}
           initialUrl={initialUrl}
         />
@@ -542,7 +598,10 @@ export default function InboxScreen({
           targetType={convertType}
           isOpen={Boolean(convertTarget)}
           onClose={() => setConvertTarget(null)}
-          onSuccess={() => setRefreshSignal((s) => s + 1)}
+          onSuccess={() => {
+            setRefreshSignal((s) => s + 1);
+            broadcastSyncEvent({ type: "DATA_MUTATED", workspaceId: getActiveWorkspaceId() });
+          }}
         />
       )}
     </>
